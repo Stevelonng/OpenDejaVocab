@@ -2,7 +2,6 @@ from django.contrib import admin
 from django.utils import timezone
 from django.contrib.auth.models import User
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
-from django.db.models import Count, Sum, Avg
 from django.contrib import admin
 from django.http import HttpResponseRedirect
 from django.contrib import messages
@@ -13,18 +12,18 @@ from .feedback_models import Feedback
 from .word_models import WordDefinition, UserWord, WordReference
 from .chat_models import ChatSession, ChatMessage
 
-# 为所有Admin类添加的删除所有记录的操作
+# Action to delete all records for all Admin classes
 def delete_all_records(modeladmin, request, queryset):
-    """删除该模型下的所有记录（谨慎使用）"""
+    """Delete all records of this model (use with caution)"""
     model = modeladmin.model
     count = model.objects.count()
     model.objects.all().delete()
-    messages.success(request, f'成功删除所有{count}条{model._meta.verbose_name}记录')
-delete_all_records.short_description = "⚠️ 删除所有记录（谨慎使用）"
+    messages.success(request, f'Successfully deleted all {count} {model._meta.verbose_name} records')
+delete_all_records.short_description = " Delete all records (use with caution)"
 
-# 为Admin类添加自定义按钮方法
+# Custom button method for Admin classes
 class AdminWithDeleteAllButton:
-    """包含删除所有记录按钮的Admin基类"""
+    """Admin base class with a delete all records button"""
     
     def get_urls(self):
         from django.urls import path
@@ -35,18 +34,18 @@ class AdminWithDeleteAllButton:
         return custom_urls + urls
     
     def delete_all_view(self, request):
-        """处理删除所有记录的视图"""
+        """Handle the view for deleting all records"""
         if request.method == 'POST':
             model = self.model
             count = model.objects.count()
             model.objects.all().delete()
-            self.message_user(request, f'成功删除所有{count}条{model._meta.verbose_name}记录', messages.SUCCESS)
+            self.message_user(request, f'Successfully deleted all {count} {model._meta.verbose_name} records', messages.SUCCESS)
             return HttpResponseRedirect("../")
         else:
             opts = self.model._meta
             context = {
                 **self.admin_site.each_context(request),
-                'title': f'确认删除所有{opts.verbose_name}',
+                'title': f'Confirm deletion of all {opts.verbose_name}',
                 'opts': opts,
                 'app_label': opts.app_label,
                 'count': self.model.objects.count(),
@@ -54,7 +53,7 @@ class AdminWithDeleteAllButton:
             return render(request, 'admin/delete_all_confirmation.html', context)
     
     def changelist_view(self, request, extra_context=None):
-        """添加删除所有按钮到列表页"""
+        """Add delete all button to the list page"""
         extra_context = extra_context or {}
         extra_context['show_delete_all'] = True
         return super().changelist_view(request, extra_context=extra_context)
@@ -64,7 +63,7 @@ class SubtitleInline(admin.TabularInline):
     extra = 0
     fields = ('text', 'start_time', 'end_time')
     
-# 不再需要 SentenceReferenceInline
+# SentenceReferenceInline no longer needed
     
 @admin.register(Video)
 class VideoAdmin(AdminWithDeleteAllButton, admin.ModelAdmin):
@@ -94,26 +93,26 @@ class FeedbackAdmin(AdminWithDeleteAllButton, admin.ModelAdmin):
     actions = ['mark_as_processed', 'adopt_feedback', 'mark_reward_given']
     
     def content_preview(self, obj):
-        """显示反馈内容的前50个字符"""
+        """Display the first 50 characters of feedback content"""
         return obj.content[:50] + '...' if len(obj.content) > 50 else obj.content
-    content_preview.short_description = '反馈内容'
+    content_preview.short_description = 'Feedback Content'
     
     def mark_as_processed(self, request, queryset):
-        """将选中的反馈标记为已处理"""
+        """Mark selected feedback as processed"""
         queryset.update(is_processed=True, processed_at=timezone.now())
-    mark_as_processed.short_description = '标记为已处理'
+    mark_as_processed.short_description = 'Mark as processed'
     
     def adopt_feedback(self, request, queryset):
-        """将选中的反馈标记为已采纳，等待发放 Link零记卡组奖励"""
+        """Mark selected feedback as adopted, pending Link Zero card set reward"""
         queryset.update(is_adopted=True, adopted_at=timezone.now())
-        # 标记为已处理，如果还没标记的话
+        # Mark as processed if not already marked
         queryset.filter(is_processed=False).update(is_processed=True, processed_at=timezone.now())
-    adopt_feedback.short_description = '采纳反馈（可获奖励）'
+    adopt_feedback.short_description = 'Adopt feedback (eligible for reward)'
     
     def mark_reward_given(self, request, queryset):
-        """将选中的反馈标记为已发放奖励"""
+        """Mark selected feedback as rewarded"""
         queryset.update(reward_given=True)
-    mark_reward_given.short_description = '标记为已发放奖励'
+    mark_reward_given.short_description = 'Mark as rewarded'
     
 # User Activity Models
 class UserActivityInline(admin.TabularInline):
@@ -136,9 +135,9 @@ class UserSessionAdmin(AdminWithDeleteAllButton, admin.ModelAdmin):
     
     def session_duration(self, obj):
         if obj.is_active:
-            return "会话活跃中"
-        return f"{obj.get_duration()} 分钟"
-    session_duration.short_description = "会话时长"
+            return "Session active"
+        return f"{obj.get_duration()} minutes"
+    session_duration.short_description = "Session Duration"
 
 @admin.register(UserActivity)
 class UserActivityAdmin(AdminWithDeleteAllButton, admin.ModelAdmin):
@@ -150,9 +149,9 @@ class UserActivityAdmin(AdminWithDeleteAllButton, admin.ModelAdmin):
     
     def get_session_info(self, obj):
         if obj.session:
-            return f"会话ID: {obj.session.id} - {obj.session.start_time.strftime('%Y-%m-%d %H:%M')}"
+            return f"Session ID: {obj.session.id} - {obj.session.start_time.strftime('%Y-%m-%d %H:%M')}"
         return "-"
-    get_session_info.short_description = "会话信息"
+    get_session_info.short_description = "Session Info"
 
 @admin.register(UserMetrics)
 class UserMetricsAdmin(AdminWithDeleteAllButton, admin.ModelAdmin):
@@ -163,19 +162,19 @@ class UserMetricsAdmin(AdminWithDeleteAllButton, admin.ModelAdmin):
     readonly_fields = ('first_seen',)
     
     def get_queryset(self, request):
-        # 添加按最后活跃时间倒序排序
+        # Add sorting by last active time in descending order
         return super().get_queryset(request).order_by('-last_active')
         
-# 添加UserMetricsInline到User管理界面
+# Add UserMetricsInline to User admin interface
 class UserMetricsInline(admin.StackedInline):
     model = UserMetrics
     can_delete = False
-    verbose_name_plural = '用户使用指标'
+    verbose_name_plural = 'User Metrics'
     readonly_fields = ('total_login_count', 'total_session_time', 'videos_count', 
                       'favorite_words_count', 'sentences_count', 
                       'last_active', 'first_seen')
 
-# 扩展User Admin
+# Extend User Admin
 class CustomUserAdmin(AdminWithDeleteAllButton, BaseUserAdmin):
     inlines = (UserMetricsInline,)
     list_display = BaseUserAdmin.list_display + ('get_last_active', 'get_videos_count', 'get_session_time')
@@ -185,34 +184,34 @@ class CustomUserAdmin(AdminWithDeleteAllButton, BaseUserAdmin):
             return obj.metrics.last_active
         except UserMetrics.DoesNotExist:
             return "-"
-    get_last_active.short_description = "最后活跃时间"
+    get_last_active.short_description = "Last Active"
     
     def get_videos_count(self, obj):
         try:
             return obj.metrics.videos_count
         except UserMetrics.DoesNotExist:
             return 0
-    get_videos_count.short_description = "视频数量"
+    get_videos_count.short_description = "Video Count"
     
     def get_session_time(self, obj):
         try:
-            return f"{obj.metrics.total_session_time} 分钟"
+            return f"{obj.metrics.total_session_time} minutes"
         except UserMetrics.DoesNotExist:
-            return "0 分钟"
-    get_session_time.short_description = "总使用时间"
+            return "0 minutes"
+    get_session_time.short_description = "Session Time"
 
-# 替换默认User admin
+# Replace default User admin
 admin.site.unregister(User)
 admin.site.register(User, CustomUserAdmin)
 
-# 添加 WordDefinition 和 UserWord 的注册和管理类
+# Word Models Registration
 @admin.register(WordDefinition)
 class WordDefinitionAdmin(AdminWithDeleteAllButton, admin.ModelAdmin):
     list_display = ('text', 'translation', 'uk_phonetic', 'us_phonetic', 'language', 'created_at')
     list_filter = ('language', 'created_at')
     search_fields = ('text', 'translation')
     fields = ('text', 'language', 'translation', 'uk_phonetic', 'us_phonetic', 'phonetic', 'web_translation', 'has_audio')
-    
+
 @admin.register(UserWord)
 class UserWordAdmin(AdminWithDeleteAllButton, admin.ModelAdmin):
     list_display = ('user', 'word_text', 'notes', 'is_favorite', 'created_at')
@@ -221,10 +220,10 @@ class UserWordAdmin(AdminWithDeleteAllButton, admin.ModelAdmin):
     fields = ('user', 'word_definition', 'notes', 'is_favorite')
     
     def word_text(self, obj):
-        """返回关联的单词文本"""
-        return obj.word_definition.text if obj.word_definition else "无单词"
-    word_text.short_description = "单词"
-    
+        # Return the associated word text
+        return obj.word_definition.text if obj.word_definition else ""
+    word_text.short_description = "Word"
+
 @admin.register(WordReference)
 class WordReferenceAdmin(AdminWithDeleteAllButton, admin.ModelAdmin):
     list_display = ('user_word_text', 'subtitle_preview', 'video_title', 'created_at')
@@ -233,28 +232,25 @@ class WordReferenceAdmin(AdminWithDeleteAllButton, admin.ModelAdmin):
     raw_id_fields = ('user_word', 'subtitle')
     
     def user_word_text(self, obj):
-        """返回关联的单词文本"""
-        if obj.user_word and obj.user_word.word_definition:
-            return obj.user_word.word_definition.text
-        return "未关联单词"
-    user_word_text.short_description = "单词"
+        # Return the associated word text
+        return obj.user_word.word_definition.text if obj.user_word and obj.user_word.word_definition else ""
+    user_word_text.short_description = "Word"
     
     def subtitle_preview(self, obj):
-        """显示字幕内容的前50个字符"""
-        if obj.subtitle and obj.subtitle.text:
-            text = obj.subtitle.text
-            return text[:50] + "..." if len(text) > 50 else text
-        return "无字幕内容"
-    subtitle_preview.short_description = "字幕内容"
+        # Display the first 50 characters of subtitle content
+        if not obj.subtitle:
+            return ""
+        return obj.subtitle.text[:50] + "..." if len(obj.subtitle.text) > 50 else obj.subtitle.text
+    subtitle_preview.short_description = "Subtitle Content"
     
     def video_title(self, obj):
-        """显示关联的视频标题"""
-        if obj.subtitle and obj.subtitle.video:
-            return obj.subtitle.video.title
-        return "未关联视频"
-    video_title.short_description = "视频标题"
+        # Display the associated video title
+        if not obj.subtitle or not obj.subtitle.video:
+            return ""
+        return obj.subtitle.video.title
+    video_title.short_description = "Video Title"
 
-# 聊天消息内联视图
+# Chat message inline view
 class ChatMessageInline(admin.TabularInline):
     model = ChatMessage
     extra = 0
@@ -265,12 +261,10 @@ class ChatMessageInline(admin.TabularInline):
     ordering = ('timestamp',)
     
     def content_preview(self, obj):
-        if obj.content:
-            return obj.content[:100] + "..." if len(obj.content) > 100 else obj.content
-        return "无内容"
-    content_preview.short_description = "消息内容"
+        return obj.content[:50] + "..." if len(obj.content) > 50 else obj.content
+    content_preview.short_description = "Message Content"
 
-# 会话关联视频内联视图
+# Session video inline view
 class SessionVideoInline(admin.TabularInline):
     model = Video
     extra = 0
@@ -278,11 +272,12 @@ class SessionVideoInline(admin.TabularInline):
     readonly_fields = ('title', 'url', 'platform', 'created_at')
     can_delete = False
     max_num = 20
-    verbose_name = "关联视频"
-    verbose_name_plural = "关联视频"
+    verbose_name = "Associated Video"
+    verbose_name_plural = "Associated Videos"
     fk_name = 'chat_session'
 
-# 聊天会话管理
+# Chat session management
+@admin.register(ChatSession)
 class ChatSessionAdmin(AdminWithDeleteAllButton, admin.ModelAdmin):
     list_display = ('id', 'user', 'title', 'created_at', 'ended_at', 'is_active', 'get_videos_count', 'get_messages_count')
     list_filter = ('is_active', 'created_at', 'ended_at')
@@ -293,16 +288,19 @@ class ChatSessionAdmin(AdminWithDeleteAllButton, admin.ModelAdmin):
     date_hierarchy = 'created_at'
     
     def get_videos_count(self, obj):
-        return obj.session_videos.count()
-    get_videos_count.short_description = "视频数量"
+        return obj.videos.count()
+    get_videos_count.short_description = "Video Count"
+    
+    def get_messages_count(self, obj):
+        return obj.messages.count()
+    get_messages_count.short_description = "Message Count"
     
     def mark_as_inactive(self, request, queryset):
-        now = timezone.now()
-        updated = queryset.update(is_active=False, ended_at=now)
-        self.message_user(request, f'成功将{updated}个会话标记为已结束')
-    mark_as_inactive.short_description = "结束选中的会话"
+        queryset.update(is_active=False, ended_at=timezone.now())
+    mark_as_inactive.short_description = "End selected sessions"
 
-# 聊天消息管理
+# Chat message management
+@admin.register(ChatMessage)
 class ChatMessageAdmin(AdminWithDeleteAllButton, admin.ModelAdmin):
     list_display = ('id', 'session', 'role', 'content_preview', 'video', 'timestamp')
     list_filter = ('role', 'timestamp')
@@ -310,11 +308,6 @@ class ChatMessageAdmin(AdminWithDeleteAllButton, admin.ModelAdmin):
     readonly_fields = ('timestamp',)
     
     def content_preview(self, obj):
-        if obj.content:
-            return obj.content[:100] + "..." if len(obj.content) > 100 else obj.content
-        return "无内容"
-    content_preview.short_description = "消息内容"
+        return obj.content[:50] + "..." if len(obj.content) > 50 else obj.content
+    content_preview.short_description = "Message Content"
 
-# 注册聊天会话模型
-admin.site.register(ChatSession, ChatSessionAdmin)
-admin.site.register(ChatMessage, ChatMessageAdmin)

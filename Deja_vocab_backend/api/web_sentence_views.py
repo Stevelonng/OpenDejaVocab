@@ -110,13 +110,13 @@ def delete_sentence(request, sentence_id):
             # Return success response
             return JsonResponse({
                 'status': 'success',
-                'message': '句子已成功删除'
+                'message': 'The sentence was successfully deleted'
             })
         except Exception as e:
             # Return error response
             return JsonResponse({
                 'status': 'error',
-                'message': f'删除失败: {str(e)}'
+                'message': f'Failed to delete sentence: {str(e)}'
             }, status=400)
     else:
         # For form submissions (POST requests)
@@ -124,9 +124,9 @@ def delete_sentence(request, sentence_id):
             try:
                 # Delete the sentence
                 sentence.delete()
-                messages.success(request, '句子已成功删除')
+                messages.success(request, 'The sentence was successfully deleted')
             except Exception as e:
-                messages.error(request, f'删除失败: {str(e)}')
+                messages.error(request, f'Failed to delete sentence: {str(e)}')
             
             # Redirect back to sentence list page
             return redirect('sentence_list')

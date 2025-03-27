@@ -3,35 +3,35 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework import status
 from django.shortcuts import get_object_or_404
-from .models import Video, Subtitle
-from .word_models import WordDefinition, UserWord, WordReference
+from .models import Video
+from .word_models import UserWord, WordReference
 from .word_extractor import WordExtractor
-from .word_adapter import save_word, update_word as update_user_word, delete_word as delete_user_word
+from .word_adapter import update_word as update_user_word, delete_word as delete_user_word
 
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def extract_words_from_video(request, video_id):
-    """提取特定视频中的所有单词并添加到用户词典"""
+    """Extract all words from a specific video and add them to the user's dictionary"""
     try:
         video = get_object_or_404(Video, id=video_id, user=request.user)
         language = request.data.get('language', 'en')
         
-        # 创建单词提取器并处理视频
+        # Create word extractor and process video
         extractor = WordExtractor(request.user, language)
         
-        # 如果请求要求重新处理，则先删除旧单词
+        # If request requires reprocessing, delete old words first
         force_reprocess = request.data.get('force_reprocess', False)
         if force_reprocess:
-            # 这部分功能需要在 WordExtractor 中重新实现
+            # This functionality needs to be reimplemented in WordExtractor
             pass
         
         word_count = extractor.process_video(video)
         
-        # 统计视频字幕中的单词数
-        # 注意：这部分逻辑需要改变，因为我们不再使用 WordReference
-        # 这里只是简单地返回处理结果
-        unique_words = word_count  # 简化处理，实际上应该通过其他方式获取
+        # Count words in video subtitles
+        # Note: This logic needs to change because we no longer use WordReference
+        # This is just a simplified return of the processing result
+        unique_words = word_count  # Simplified processing, should actually be obtained through other means
         
         return Response({
             'success': True,
@@ -51,16 +51,16 @@ def extract_words_from_video(request, video_id):
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def extract_words_from_all_videos(request):
-    """提取用户所有视频中的单词并添加到词典"""
+    """Extract words from all of the user's videos and add them to the dictionary"""
     try:
         language = request.data.get('language', 'en')
         force_reprocess = request.data.get('force_reprocess', False)
         
-        # 创建单词提取器并处理所有视频
+        # Create word extractor and process all videos
         extractor = WordExtractor(request.user, language)
         word_count = extractor.process_all_videos(force_reprocess)
         
-        # 获取用户的单词统计
+        # Get user's word statistics
         total_unique_words = UserWord.objects.filter(user=request.user).count()
         
         return Response({
@@ -80,12 +80,12 @@ def extract_words_from_all_videos(request):
 @api_view(['DELETE'])
 @permission_classes([IsAuthenticated])
 def delete_word(request, word_id):
-    """从用户词典中删除单词"""
+    """Delete a word from the user's dictionary"""
     try:
-        # 使用适配器删除单词
+        # Use adapter to delete word
         word_id_clean = word_id
         if word_id.startswith('new_'):
-            word_id_clean = word_id[4:]  # 移除前缀
+            word_id_clean = word_id[4:]  # Remove prefix
             
         word = get_object_or_404(UserWord, id=word_id_clean, user=request.user)
         word_text = word.word_definition.text
@@ -107,27 +107,27 @@ def delete_word(request, word_id):
 @api_view(['PUT'])
 @permission_classes([IsAuthenticated])
 def update_word(request, word_id):
-    """更新单词的翻译和笔记"""
+    """Update a word's translation and notes"""
     try:
-        # 使用适配器更新单词
+        # Use adapter to update word
         word_id_clean = word_id
         if word_id.startswith('new_'):
-            word_id_clean = word_id[4:]  # 移除前缀
+            word_id_clean = word_id[4:]  # Remove prefix
             
         user_word = get_object_or_404(UserWord, id=word_id_clean, user=request.user)
         word_def = user_word.word_definition
         
-        # 准备更新的数据
+        # Prepare update data
         update_data = {}
         if 'translation' in request.data:
             update_data['translation'] = request.data['translation']
         if 'notes' in request.data:
             update_data['notes'] = request.data['notes']
         
-        # 使用适配器更新单词
+        # Use adapter to update word
         updated_word = update_user_word(request.user, word_id, **update_data)
         
-        # 查找单词引用次数
+        # Find word reference count
         reference_count = WordReference.objects.filter(user_word=user_word).count()
         
         return Response({

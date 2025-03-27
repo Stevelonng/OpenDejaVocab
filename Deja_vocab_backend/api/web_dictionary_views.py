@@ -4,12 +4,6 @@ from django.views.generic import ListView, DetailView, View
 from django.utils.decorators import method_decorator
 from django.contrib import messages
 from django.http import JsonResponse, HttpResponse, Http404
-from django.views.decorators.http import require_GET, require_POST
-from django.urls import reverse
-from django.utils import timezone
-from django.db.models import F
-from django.template.loader import render_to_string
-from django.db import transaction
 
 import json
 import os
@@ -22,35 +16,35 @@ from .word_extractor import WordExtractor
 
 @method_decorator(login_required, name='dispatch')
 class DictionaryView(ListView):
-    """个人词典视图 - 显示用户的所有单词"""
+    """Personal dictionary view - displays all words for the user"""
     template_name = 'api/dictionary.html'
     context_object_name = 'words'
     paginate_by = 10
     
     def get_queryset(self):
-        # 使用适配器获取用户的所有单词，按照频率排序
-        # 处理过滤和排序
+        # Use adapter to get user's words, sorted by frequency
+        # Handle filtering and sorting
         search_query = self.request.GET.get('q')
         sort_by = self.request.GET.get('sort', 'frequency')
         
-        # 使用适配器获取单词列表 - 不需要分页参数，因为ListView本身会处理分页
+        # Use adapter to get word list - no pagination parameters needed, ListView handles pagination
         words = get_user_words(self.request.user, search_query=search_query, sort_by=sort_by)
         return words
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         
-        # 添加排序和搜索信息
+        # Add sorting and search information
         context['current_sort'] = self.request.GET.get('sort', 'frequency')
         context['search_query'] = self.request.GET.get('q', '')
         
-        # 添加词典统计信息 - 使用新模型
+        # Add dictionary statistics - using new model
         context['total_words'] = UserWord.objects.filter(user=self.request.user).count()
         
-        # 检查每个单词是否已收藏 - 这部分应该已经在get_user_words中处理了，但为确保一致性仍保留此代码
+        # Check if each word is favorited - this part should already be handled in get_user_words, but kept for consistency
         words = context['words']
         for i, word in enumerate(words):
-            # 检查单词是否被收藏 - 注意：word是字典，不是对象
+            # Check if word is favorited - note: word is a dictionary, not an object
             result = check_word_favorite(self.request.user, word)
             words[i]['is_favorite'] = result.get('is_favorite', False)
         
@@ -59,63 +53,89 @@ class DictionaryView(ListView):
 
 @method_decorator(login_required, name='dispatch')
 class WordDetailView(DetailView):
-    """单词详情视图 - 显示单词的所有上下文引用"""
+    """Word detail view - displays all context references for a word"""
     template_name = 'api/word_detail.html'
     context_object_name = 'word'
     
     def get_object(self, queryset=None):
-        # 从URL中获取主键
+        # Get primary key from URL
         pk = self.kwargs.get('pk')
         
         try:
-            # 输出调试信息
-            print(f"正在处理单词ID: {pk}")
+            # Output debug information
+            print(f"Processing word ID: {pk}")
             
-            # 尝试解析格式为 "word_hash" 的主键
-            parts = pk.split('_')
-            print(f"解析后的部分: {parts}, 长度: {len(parts)}")
-            
-            if len(parts) < 2:
-                raise ValueError("无效的单词ID格式")
+            # Check if the ID is in the format "the_hash"
+            if pk.startswith('the_'):
+                # This is the new format where the word text isn't in the ID
+                hash_code = pk[4:]  # Extract hash part (after "the_")
+                print(f"ID is in the_hash format, hash: {hash_code}")
                 
-            # 单词部分是除了最后一个部分以外的所有部分（处理包含下划线的单词）
-            word_text = '_'.join(parts[:-1])
-            hash_code = parts[-1]
-            
-            print(f"解析出的单词文本: {word_text}, 哈希码: {hash_code}")
-            
-            # 在这里不需要验证哈希码，因为我们会检查当前用户是否有此单词
-            # 如果不是当前用户的单词，无论哈希码是否正确，都会返回404
-            
-            # 使用单词文本查找
-            word_def = WordDefinition.objects.filter(text=word_text).first()
-            print(f"找到的单词定义: {word_def}")
-            
-            if not word_def:
-                raise Http404(f"找不到单词: {word_text}")
+                # Try to find the word based on the hash code by checking all user's words
+                from .word_adapter import generate_secure_word_id
                 
-            # 查找当前用户的单词关系
+                # Get all user's word definitions
+                user_words = UserWord.objects.filter(user=self.request.user).select_related('word_definition')
+                print(f"Checking {user_words.count()} user words")
+                
+                # Find the word that matches the hash
+                for user_word in user_words:
+                    word_text = user_word.word_definition.text
+                    expected_id = generate_secure_word_id(word_text, self.request.user.id)
+                    expected_hash = expected_id.split('_')[-1]
+                    
+                    if hash_code == expected_hash:
+                        # Found matching word
+                        print(f"Found matching word: {word_text}")
+                        word_def = user_word.word_definition
+                        break
+                else:
+                    # No match found
+                    raise Http404("Word not found")
+                
+            else:
+                # Try to parse the primary key in the format "word_hash"
+                parts = pk.split('_')
+                print(f"Parsed parts: {parts}, length: {len(parts)}")
+                
+                if len(parts) < 2:
+                    raise ValueError("Invalid word ID format")
+                    
+                # The word part is all parts except the last one (handle words containing underscores)
+                word_text = '_'.join(parts[:-1])
+                hash_code = parts[-1]
+                
+                print(f"Parsed word text: {word_text}, hash code: {hash_code}")
+                
+                # Use word text to find
+                word_def = WordDefinition.objects.filter(text=word_text).first()
+                print(f"Found word definition: {word_def}")
+                
+                if not word_def:
+                    raise Http404(f"Word not found: {word_text}")
+            
+            # Find the user's word relationship
             user_word = UserWord.objects.filter(
                 user=self.request.user,
                 word_definition=word_def
             ).first()
             
-            print(f"找到的用户单词: {user_word}")
+            print(f"Found user word: {user_word}")
             
             if not user_word:
-                raise Http404(f"您的词典中没有单词: {word_text}")
+                raise Http404(f"Your dictionary does not contain the word: {word_def.text}")
 
-            # 验证哈希码是否匹配（可选，增加额外安全性）
+            # Validate hash code (optional, for added security)
             from .word_adapter import generate_secure_word_id
-            expected_id = generate_secure_word_id(word_text, self.request.user.id)
+            expected_id = generate_secure_word_id(word_def.text, self.request.user.id)
             expected_hash = expected_id.split('_')[-1]
             
-            print(f"期望的哈希: {expected_hash}, 实际哈希: {hash_code}")
+            print(f"Expected hash: {expected_hash}, actual hash: {hash_code}")
             
             if hash_code != expected_hash:
-                raise Http404("无效的单词访问请求")
+                raise Http404("Invalid word access request")
                 
-            # 构建完整的单词数据
+            # Build complete word data
             word_data = {
                 'id': expected_id,
                 'text': word_def.text,
@@ -135,12 +155,12 @@ class WordDetailView(DetailView):
             return word_data
             
         except Exception as e:
-            # 打印详细的异常信息以进行调试
+            # Print detailed error information for debugging
             import traceback
-            print(f"处理单词ID时出错: {str(e)}")
+            print(f"Error processing word ID: {str(e)}")
             print(traceback.format_exc())
             
-            # 如果解析失败，尝试使用适配器方法
+            # If parsing fails, try using adapter method
             result = get_word_detail(self.request.user, pk)
             if not result['success']:
                 raise Http404(result['message'])
@@ -150,50 +170,50 @@ class WordDetailView(DetailView):
         context = super().get_context_data(**kwargs)
         word = self.get_object()
         
-        # 根据word是字典还是对象不同，正确获取is_favorite属性
+        # Get the is_favorite property correctly, depending on whether word is a dictionary or an object
         if isinstance(word, dict):
             context['is_favorite'] = word.get('is_favorite', False)
         else:
             context['is_favorite'] = getattr(word, 'is_favorite', False)
         
-        # 获取用户的认证令牌，如果会话中没有，则获取或创建一个
+        # Get user authentication token, if not in session, create one
         if 'auth_token' not in self.request.session:
             from rest_framework.authtoken.models import Token
             token, created = Token.objects.get_or_create(user=self.request.user)
             self.request.session['auth_token'] = token.key
         
         try:
-            # 获取当前单词对象
+            # Get current word object
             word = self.object
             word_text = word['text']
             
-            # 尝试查找用户单词和相关引用
+            # Try to find user word and related references
             try:
-                # 查找单词定义
+                # Find word definition
                 word_def = WordDefinition.objects.filter(text=word_text).first()
                 
                 if word_def:
-                    # 查找用户单词
+                    # Find user word
                     user_word = UserWord.objects.filter(
                         user=self.request.user,
                         word_definition=word_def
                     ).first()
                     
                     if user_word:
-                        # 查找单词的上下文引用
+                        # Find word references
                         word_references = WordReference.objects.filter(
                             user_word=user_word
                         ).select_related('subtitle', 'subtitle__video').order_by('-created_at')
                         
                         if word_references.exists():
-                            # 将视频ID提取到URL为基础
+                            # Extract video ID from URL
                             video_url_map = {}
                             normalized_references = []
                             
                             for ref in word_references:
                                 video = ref.subtitle.video
                                 video_url = video.url
-                                # 从URL中提取视频ID
+                                # Extract video ID from URL
                                 if 'youtube.com' in video_url or 'youtu.be' in video_url:
                                     video_id = None
                                     if 'v=' in video_url:
@@ -206,37 +226,37 @@ class WordDetailView(DetailView):
                                             video_url_map[video_id] = []
                                         video_url_map[video_id].append(ref)
                                 else:
-                                    # 对于非YouTube视频，使用完整URL作为键
+                                    # For non-Youtube videos, use full URL as key
                                     if video_url not in video_url_map:
                                         video_url_map[video_url] = []
                                     video_url_map[video_url].append(ref)
                             
-                            # 将分组后的引用传递给模板
+                            # Pass grouped references to template
                             context['video_url_map'] = video_url_map
-                            # 将原始引用也传递给模板
+                            # Pass original references to template
                             context['references'] = word_references
-                            # 使用引用计数替代手动增加的frequency
+                            # Use reference count instead of manually incremented frequency
                             word['frequency'] = word_references.count()
                             context['model_changed'] = False
                         else:
-                            # 没有找到引用，但不是因为模型变更
-                            word['frequency'] = 0  # 如果没有引用，则频率为0
+                            # No references found, but not due to model change
+                            word['frequency'] = 0  # If no references, frequency is 0
                             context['model_changed'] = False
                     else:
-                        # 设置为不显示"模型已更新"消息
+                        # Set to not display "Model updated" message
                         context['model_changed'] = False
                 else:
-                    # 设置为不显示"模型已更新"消息
+                    # Set to not display "Model updated" message
                     context['model_changed'] = False
                     
             except Exception as e:
-                # 出现错误时，也不显示"模型已更新"消息
+                # When an error occurs, do not display "Model updated" message
                 context['model_changed'] = False
                 context['error_message'] = str(e)
                 
         except Exception as e:
-            print(f"获取上下文数据时出错: {str(e)}")
-            # 确保即使发生错误，也会提供基本的上下文
+            print(f"Error getting context data: {str(e)}")
+            # Ensure even if an error occurs, basic context is provided
             context['references'] = []
             context['reference_count'] = 0
             context['video_count'] = 0
@@ -244,7 +264,7 @@ class WordDetailView(DetailView):
         return context
         
     def _extract_youtube_id(self, url):
-        """从 URL 中提取 YouTube 视频 ID"""
+        """Extract YouTube video ID from URL"""
         import re
         youtube_regex = r'(?:youtube\.com\/(?:[^\/\n\s]+\/\S+\/|(?:v|e(?:mbed)?)\/|\S*?[?&]v=)|youtu\.be\/)([a-zA-Z0-9_-]{11})'
         match = re.search(youtube_regex, url)
@@ -256,108 +276,107 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.views import APIView
 
 class WordPronunciationView(APIView):
-    """提供单词发音的API视图
-    支持会话和Token认证，兼容网页和Chrome扩展端
+    """Provide word pronunciation API view
+    Support session and token authentication, compatible with web and Chrome extension
     """
     authentication_classes = [TokenAuthentication, SessionAuthentication]
-    # 允许未登录用户访问，但会尝试先认证
-    permission_classes = []  # 移除IsAuthenticated
+    # Allow unauthenticated users to access, but will attempt to authenticate first
+    permission_classes = []  # Remove IsAuthenticated
     
     def get(self, request, text):
         text = text.lower()
-        print(f"尝试获取单词 '{text}' 的发音")
+        print(f"Trying to get pronunciation for word '{text}'")
         
-        # 检查是否通过URL参数传递了token
+        # Check if token is passed via URL parameter
         token_param = request.GET.get('token')
-        print(f"查询参数: {request.GET}")
-        print(f"获取的token参数: {token_param}")
+        print(f"Query parameters: {request.GET}")
+        print(f"Token parameter: {token_param}")
         
         if token_param and not request.user.is_authenticated:
             try:
-                # 从Token参数获取用户
+                # Get user from token parameter
                 from rest_framework.authtoken.models import Token
                 token_obj = Token.objects.get(key=token_param)
                 request.user = token_obj.user
-                print(f"通过URL参数token认证用户: {request.user.username}")
+                print(f"Authenticated user via URL parameter token: {request.user.username}")
             except Exception as e:
-                print(f"Token参数认证失败: {str(e)}")
+                print(f"Token parameter authentication failed: {str(e)}")
         
-        # 检查是否是当前用户的单词
+        # Check if the word belongs to the current user
         word = None
         if request.user.is_authenticated:
             try:
                 word = WordDefinition.objects.get(text=text)
-                print(f"找到单词: {text}")
+                print(f"Found word: {text}")
             except WordDefinition.DoesNotExist:
-                print(f"没有找到单词: {text}")
-                # 如果数据库中没有这个单词，则尝试即时获取发音
+                print(f"Word not found: {text}")
+                # If the word is not in the database, try to get the pronunciation immediately
                 word = None
         else:
-            print("用户未认证，尝试直接获取发音")
+            print("User not authenticated, trying to get pronunciation directly")
             
         try:
-            # 检查发音文件是否已经存在
+            # Check if the pronunciation file already exists
             voice_file_path = os.path.join(VOICE_DIR, text + '.mp3')
             if not os.path.isfile(voice_file_path):
-                print(f"发音文件不存在，尝试下载: {voice_file_path}")
-                # 显式指定下载发音
+                print(f"Pronunciation file does not exist, trying to download: {voice_file_path}")
+                # Explicitly specify download pronunciation
                 spider = YoudaoSpider(text)
                 voice_file_path = spider.get_voice(text, download=True)
-                print(f"下载结果: {voice_file_path}")
+                print(f"Download result: {voice_file_path}")
                 
-                # 如果成功下载且单词存在，更新单词的has_audio标志
+                # If successfully downloaded and word exists, update word's has_audio flag
                 if word and voice_file_path:
                     word.has_audio = True
                     word.save()
-                    print(f"更新单词 '{text}' 的has_audio标志")
+                    print(f"Updating word '{text}' has_audio flag")
             else:
-                print(f"发音文件已存在: {voice_file_path}")
+                print(f"Pronunciation file already exists: {voice_file_path}")
             
-            # 如果发音文件存在，提供给用户
+            # If pronunciation file exists, provide it to the user
             if voice_file_path and os.path.isfile(voice_file_path):
-                print(f"提供发音文件: {voice_file_path}")
+                print(f"Providing pronunciation file: {voice_file_path}")
                 with open(voice_file_path, 'rb') as f:
-                    # 读取音频文件内容
+                    # Read audio file content
                     audio_data = f.read()
                     
-                    # 创建响应对象
+                    # Create response object
                     response = HttpResponse(audio_data, content_type='audio/mpeg')
                     
-                    # 添加必要的响应头，允许跨域访问
+                    # Add necessary response headers, allow cross-origin access
                     response['Access-Control-Allow-Origin'] = '*'
                     response['Access-Control-Allow-Methods'] = 'GET, OPTIONS'
                     response['Access-Control-Allow-Headers'] = 'Origin, Content-Type, Accept, Authorization'
                     response['Content-Disposition'] = f'inline; filename="{text}.mp3"'
                     
-                    # 告诉浏览器这不是一个下载文件而是可以直接播放
+                    # Tell the browser this is not a download file but can be played directly
                     response['X-Content-Type-Options'] = 'nosniff'
                     
-                    # 记录返回大小
-                    print(f"返回音频文件大小: {len(audio_data)} 字节")
+                    # Record return size
+                    print(f"Returning audio file size: {len(audio_data)} bytes")
                     
                     return response
             else:
-                print(f"发音文件不存在: {voice_file_path}")
-                raise Http404("单词发音不存在")
+                print(f"Pronunciation file does not exist: {voice_file_path}")
+                raise Http404("Word pronunciation does not exist")
                 
         except Exception as e:
-            print(f"获取单词 '{text}' 的发音出错: {str(e)}")
-            raise Http404(f"获取单词发音失败: {str(e)}")
+            print(f"Failed to get pronunciation for word '{text}': {str(e)}")
+            raise Http404(f"Failed to get word pronunciation: {str(e)}")
 
 
 @method_decorator(login_required, name='dispatch')
 class FavoriteDictionaryView(ListView):
-    """收藏词典视图 - 显示用户收藏的所有单词"""
     template_name = 'api/dictionary.html'
     context_object_name = 'words'
     paginate_by = 10
     
     def get_queryset(self):
-        # 获取排序参数
+        # Get sort and search parameters
         sort_by = self.request.GET.get('sort', 'newest')
         search_query = self.request.GET.get('q')
         
-        # 使用适配器获取单词列表，仅限收藏的单词
+        # Use adapter to get word list, only favorites
         words = get_user_words(
             self.request.user, 
             search_query=search_query, 
@@ -370,12 +389,12 @@ class FavoriteDictionaryView(ListView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         
-        # 添加视图类型标记和排序信息
+        # Add view type marker and sort information
         context['is_favorite_view'] = True
         context['current_sort'] = self.request.GET.get('sort', 'newest')
         context['search_query'] = self.request.GET.get('q', '')
         
-        # 添加词典统计
+        # Add dictionary statistics
         context['total_words'] = UserWord.objects.filter(user=self.request.user, is_favorite=True).count()
         
         return context
@@ -390,12 +409,12 @@ from rest_framework.permissions import IsAuthenticated
 @authentication_classes([TokenAuthentication])
 @permission_classes([IsAuthenticated])
 def verify_token(request):
-    """验证Token是否有效"""
+    """Verify token validity"""
     auth_header = request.headers.get('Authorization', '')
-    print(f"收到验证请求 - 认证头: {auth_header}")
-    print(f"认证用户信息: {request.user}, 认证方式: {request.auth}")
+    print(f"Received verification request - authentication header: {auth_header}")
+    print(f"Authentication user information: {request.user}, authentication method: {request.auth}")
     
-    # 尝试手动验证Token
+    # Try to manually verify token
     if auth_header.startswith('Token '):
         token_key = auth_header.split(' ')[1]
         try:
@@ -403,61 +422,55 @@ def verify_token(request):
             token = Token.objects.get(key=token_key)
             return Response({
                 'status': 'success',
-                'message': '认证成功',
+                'message': 'Token verification successful',
                 'user_id': token.user.id,
                 'username': token.user.username
             })
         except Exception as e:
             return Response({
                 'status': 'error',
-                'message': f'认证失败: {str(e)}',
+                'message': f'Token verification failed: {str(e)}',
                 'received_token': token_key
             }, status=400)
     
     return Response({
         'status': 'error',
-        'message': '缺少Token或格式不正确',
+        'message': 'Token missing or format incorrect',
         'received_header': auth_header
     }, status=400)
 
 from rest_framework.authtoken.models import Token
-from django.contrib.auth import get_user_model
 
 def get_user_from_token(request):
-    """从请求中提取Token并返回相应的用户"""
+    """Extracts token from request and returns the corresponding user"""
     auth_header = request.headers.get('Authorization', '')
-    # print(f"处理用户认证 - 收到认证头: {auth_header}")
     
     if not auth_header:
-        print("没有提供认证头")
+        print("No authentication header provided")
         return None
         
     if not auth_header.startswith('Token '):
-        print(f"认证头格式不正确: {auth_header}")
+        print(f"Invalid authentication header format: {auth_header}")
         return None
     
     token_key = auth_header.split(' ')[1]
-    # print(f"提取的Token值: {token_key}")
     
     try:
         token = Token.objects.get(key=token_key)
-        # print(f"找到用户: {token.user.username}")
         return token.user
     except Token.DoesNotExist:
-        # print(f"没有找到对应的Token: {token_key}")
         return None
     except Exception as e:
-        # print(f"处理Token时出错: {str(e)}")
         return None
 
 def verify_token(request):
-    """验证Token并返回用户信息，用于调试"""
+    """Verifies token and returns user information for debugging"""
     user = get_user_from_token(request)
     
     if user:
         return JsonResponse({
             'status': 'success',
-            'message': 'Token验证成功',
+            'message': 'Token verification successful',
             'user_id': user.id,
             'username': user.username,
             'is_authenticated': user.is_authenticated
@@ -465,25 +478,25 @@ def verify_token(request):
     else:
         return JsonResponse({
             'status': 'error',
-            'message': 'Token无效或不存在',
+            'message': 'Token invalid or does not exist',
             'auth_header': request.headers.get('Authorization', 'None')
         }, status=401)
 
 def get_favorite_words(request):
-    """获取用户收藏的单词列表"""
+    """Gets a list of the user's favorite words"""
     user = get_user_from_token(request)
     
     if not user or not user.is_authenticated:
         return JsonResponse({
             'status': 'error',
-            'message': '用户未认证',
+            'message': 'User not authenticated',
         }, status=401)
     
     try:
-        # 获取用户收藏的单词，使用新模型UserWord
+        # Get user's favorite words using new model UserWord
         favorite_words = UserWord.objects.filter(user=user, is_favorite=True).select_related('word_definition')
         
-        # 准备响应数据
+        # Prepare response data
         words_data = [{
             'id': f"new_{user_word.id}",
             'text': user_word.word_definition.text,
@@ -497,20 +510,20 @@ def get_favorite_words(request):
             'words': words_data
         })
     except Exception as e:
-        print(f"获取收藏单词时出错: {str(e)}")
+        print(f"Error getting favorite words: {str(e)}")
         return JsonResponse({
             'status': 'error',
-            'message': f'获取收藏单词失败: {str(e)}'
+            'message': f'Error getting favorite words: {str(e)}'
         }, status=500)
 
 @api_view(['POST', 'GET'])
 @authentication_classes([TokenAuthentication, SessionAuthentication])
 @permission_classes([IsAuthenticated])
 def check_favorite_word(request):
-    """检查单词是否已被收藏"""
-    user = request.user
+    """Check if a word is already favorited"""
+    user = get_user_from_token(request)
     
-    # 支持POST和GET请求
+    # Support POST and GET requests
     if request.method == 'POST':
         word_id = request.POST.get('word_id')
         word_text = request.POST.get('word')
@@ -519,17 +532,17 @@ def check_favorite_word(request):
         word_text = request.GET.get('word')
     
     if not word_id and not word_text:
-        return JsonResponse({'status': 'error', 'message': '缺少必要参数'}, status=400)
+        return JsonResponse({'status': 'error', 'message': 'Missing required parameters'}, status=400)
     
     try:
-        # 构建单词信息用于适配器
+        # Build word information for adapter
         word_info = {}
         if word_id:
             word_info['id'] = word_id
         elif word_text:
             word_info['text'] = word_text.lower()
         
-        # 使用适配器检查单词是否被收藏
+        # Use adapter to check word favorite status
         result = check_word_favorite(user, word_info)
         
         return JsonResponse({
@@ -549,27 +562,27 @@ def check_favorite_word(request):
 @authentication_classes([TokenAuthentication, SessionAuthentication])
 @permission_classes([IsAuthenticated])
 def toggle_favorite_word(request):
-    """添加或移除收藏的单词"""
-    user = request.user
+    """Add or remove a favorite word"""
+    user = get_user_from_token(request)
     word_id = request.POST.get('word_id')
-    word_text = request.POST.get('word')  # 添加支持直接使用单词文本
-    action = request.POST.get('action')  # 'add-favorite' 或 'remove-favorite'
+    word_text = request.POST.get('word')  # Add support for directly using word text
+    action = request.POST.get('action')  # 'add-favorite' or 'remove-favorite'
     
     if not action or (not word_id and not word_text):
-        return JsonResponse({'status': 'error', 'message': '缺少必要参数'}, status=400)
+        return JsonResponse({'status': 'error', 'message': 'Missing required parameters'}, status=400)
     
     try:
-        # 设置操作类型
+        # Set operation type
         is_add = (action == 'add-favorite')
         
-        # 直接调用toggle_favorite函数，传递word_id或word_text
+        # Directly call toggle_favorite function, pass word_id or word_text
         result = toggle_favorite(user, word_id, word_text)
         
         if result['success']:
             return JsonResponse({
                 'status': 'success',
                 'message': result['message'],
-                'word_id': result.get('word_id', word_id),  # 如果结果中没有word_id，使用请求中的word_id
+                'word_id': result.get('word_id', word_id),  # If result doesn't have word_id, use word_id from request
                 'is_favorite': result['is_favorite']
             })
         else:
@@ -581,7 +594,7 @@ def toggle_favorite_word(request):
 
 @login_required
 def extract_words_view(request, video_id=None):
-    """从视频或所有视频中提取单词的视图"""
+    """Extract words from video or all videos"""
     if request.method == 'POST':
         language = request.POST.get('language', 'en')
         force_reprocess = request.POST.get('force_reprocess') == 'on'
@@ -590,31 +603,31 @@ def extract_words_view(request, video_id=None):
             extractor = WordExtractor(request.user)
             
             if video_id:
-                # 处理单个视频
+                # Process single video
                 video = get_object_or_404(Video, id=video_id, user=request.user)
                 
                 if force_reprocess:
-                    # 先删除现有单词关联
+                    # Delete existing word associations
                     subtitles = Subtitle.objects.filter(video=video)
-                    # 使用新模型，删除与这些字幕相关的用户单词
-                    # 注：由于新模型架构，单词与字幕没有直接关联，这个操作可能需要移至WordExtractor中
+                    # Use new model, delete user words associated with these subtitles
+                    # Note: due to new model architecture, words and subtitles are not directly linked, this operation may need to be moved to WordExtractor
                 word_count = extractor.process_video(video)
-                messages.success(request, f'成功从视频《{video.title}》中提取了单词！')
+                messages.success(request, f'Successfully extracted words from video {video.title}!')
                 return redirect('video_detail', pk=video_id)
             else:
-                # 处理所有视频，性能优化模式，不下载发音文件
+                # Process all videos, performance optimization mode, no pronunciation file download
                 word_count = extractor.process_all_videos(force_reprocess)
-                messages.success(request, f'成功处理了所有视频，提取了单词！')
+                messages.success(request, f'Successfully processed all videos, extracted words!')
                 return redirect('dictionary')
                 
         except Exception as e:
-            messages.error(request, f'提取单词时出错: {str(e)}')
+            messages.error(request, f'Error extracting words: {str(e)}')
             if video_id:
                 return redirect('video_detail', pk=video_id)
             else:
                 return redirect('dictionary')
     
-    # GET请求，显示表单
+    # GET request, display form
     context = {
         'video_id': video_id
     }
@@ -628,28 +641,28 @@ def extract_words_view(request, video_id=None):
 
 @login_required
 def update_word_view(request, word_id):
-    """更新单词翻译和笔记的视图"""
-    # 先获取单词以显示表单
+    """Update word translation and notes"""
+    # Get word to display form
     try:
         word = UserWord.objects.get(id=word_id, user=request.user)
     except UserWord.DoesNotExist:
-        messages.error(request, "单词不存在或不属于当前用户")
+        messages.error(request, "Word does not exist or does not belong to current user")
         return redirect('dictionary')
     
     if request.method == 'POST':
-        # 准备更新数据
+        # Prepare update data
         updates = {
             'translation': request.POST.get('translation', ''),
             'notes': request.POST.get('notes', '')
         }
         
-        # 使用适配器更新单词
+        # Use adapter to update word
         result = update_word(request.user, word_id, updates)
         
         if result['success']:
             messages.success(request, result['message'])
             
-            # 如果是Ajax请求，返回JSON响应
+            # If Ajax request, return JSON response
             if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
                 return JsonResponse({
                     'success': True,
@@ -657,11 +670,11 @@ def update_word_view(request, word_id):
                     'word': result['word']
                 })
             
-            # 普通表单提交，重定向回单词详情页
+            # Redirect back to word detail page
             return redirect('word_detail', pk=word_id)
         else:
             messages.error(request, result['message'])
-            # 如果是Ajax请求，返回错误响应
+            # If Ajax request, return error response
             if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
                 return JsonResponse({
                     'success': False,
@@ -677,9 +690,9 @@ def update_word_view(request, word_id):
 
 @login_required
 def delete_word_view(request, word_id):
-    """删除单词的视图"""
+    """Delete a word"""
     if request.method == 'POST':
-        # 使用适配器删除单词
+        # Use adapter to delete word
         result = delete_word(request.user, word_id)
         
         if result['success']:
@@ -687,18 +700,18 @@ def delete_word_view(request, word_id):
         else:
             messages.error(request, result['message'])
             
-        # 重定向回词典页面
+        # Redirect back to dictionary page
         return redirect('dictionary')
     
-    # 如果不是POST请求，重定向到词典页面
+    # If not POST request, redirect to dictionary page
     return redirect('dictionary')
 
 
 @login_required
 def delete_all_words(request):
-    """删除用户所有的单词和单词引用"""
+    """Delete all words and word references for the user"""
     if request.method == 'POST':
-        # 使用适配器删除所有单词
+        # Use adapter to delete all words
         result = adapter_delete_all_words(request.user)
         
         if result['success']:
@@ -708,43 +721,35 @@ def delete_all_words(request):
             
         return redirect('dictionary')
     
-    # 对于GET请求，显示确认页面
+    # For GET request, display confirmation page
     word_count = UserWord.objects.filter(user=request.user).count()
     return render(request, 'api/delete_all_words_confirm.html', {'word_count': word_count})
 
 
-# 删除不再需要的视图函数
-# @login_required
-# def delete_all_words_confirm(request):
-#     """显示删除所有单词的确认页面"""
-#     word_count = UserWord.objects.filter(user=request.user).count()
-#     return render(request, 'api/delete_all_words_confirm.html', {'word_count': word_count})
-
-
 @login_required
 def get_video_subtitles(request, pk=None, video_id=None):
-    """获取视频的所有字幕作为JSON数据返回
-    支持通过pk或video_id参数来指定视频
+    """Get all subtitles for a video as JSON data
+    Supports specifying video via pk or video_id parameter
     """
     try:
-        # 确保视频属于当前用户
+        # Ensure video belongs to current user
         if pk is not None:
-            # 如果使用pk参数
+            # If using pk parameter
             video = get_object_or_404(Video, id=pk, user=request.user)
-            video_id = pk  # 为了兼容返回值
+            video_id = pk  # For compatibility with return value
         elif video_id is not None:
-            # 如果使用video_id参数
+            # If using video_id parameter
             video = get_object_or_404(Video, id=video_id, user=request.user)
         else:
             return JsonResponse({
                 'success': False,
-                'message': '需要指定视频ID'
-            }, status=400)
+                'message': 'Missing required parameters'
+            }, status=400) 
         
-        # 获取该视频的所有字幕
+        # Get all subtitles for this video
         subtitles = Subtitle.objects.filter(video=video).order_by('start_time')
         
-        # 格式化字幕数据为JSON
+        # Format subtitle data as JSON
         subtitles_data = [{
             'id': subtitle.id,
             'text': subtitle.text,
@@ -762,5 +767,5 @@ def get_video_subtitles(request, pk=None, video_id=None):
     except Exception as e:
         return JsonResponse({
             'success': False,
-            'message': f'获取字幕时出错: {str(e)}'
+            'message': f'Error getting subtitles: {str(e)}'
         }, status=400)

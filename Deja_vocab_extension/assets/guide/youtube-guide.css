@@ -1,4 +1,4 @@
-/* 支持网站引导界面样式 - 与Chat UI匹配的Glassmorphism风格 */
+/* YouTube guide container style - matches Chat UI Glassmorphism style */
 .youtube-guide-container {
   display: flex;
   flex-direction: column;
@@ -14,7 +14,7 @@
   overflow: hidden;
 }
 
-/* 背景装饰元素 - 与聊天UI匹配 */
+/* Background decoration elements - matches Chat UI */
 .youtube-guide-container::before {
   content: '';
   position: absolute;
@@ -27,7 +27,7 @@
   z-index: 0;
 }
 
-/* 深色模式 */
+/* Dark mode */
 html.dark .youtube-guide-container {
   background-color: var(--neutral-950);
   color: var(--text-dark);
@@ -45,7 +45,7 @@ html.dark .youtube-guide-container {
   box-shadow: 0 8px 32px var(--glass-shadow);
   backdrop-filter: blur(var(--glass-blur));
   -webkit-backdrop-filter: blur(var(--glass-blur));
-  z-index: 10; /* 确保内容在花纹之上 */
+  z-index: 10; /* Ensure content is above the pattern */
 }
 
 html.dark .guide-content {
@@ -56,7 +56,7 @@ html.dark .guide-content {
 .guide-icon {
   font-size: 3.5rem;
   margin-bottom: 1.5rem;
-  color: var(--primary); /* 更新为品牌主色调，而非YouTube红色 */
+  color: var(--primary); /* Update to brand primary color, not YouTube red */
   filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.2));
   transition: transform 0.3s ease;
 }
@@ -136,7 +136,7 @@ html.dark .step:hover {
   font-weight: 500;
 }
 
-/* 支持网站区域 */
+/* Supported sites section */
 .supported-sites {
   display: flex;
   justify-content: center;
@@ -145,7 +145,7 @@ html.dark .step:hover {
   width: 100%;
 }
 
-/* 支持网站标题 */
+/* Supported sites header */
 .supported-sites-header {
   display: flex;
   align-items: center;
@@ -169,7 +169,7 @@ html.dark .step:hover {
   white-space: nowrap;
 }
 
-/* 网站链接按钮通用样式 */
+/* Website link button common style */
 .site-link {
   display: inline-flex;
   align-items: center;
@@ -186,14 +186,14 @@ html.dark .step:hover {
   max-width: 160px;
 }
 
-/* YouTube链接样式 */
+/* YouTube link style */
 .site-link:nth-child(1) {
-  background-color: #ff0000; /* YouTube红色 */
+  background-color: #ff0000; /* YouTube red */
 }
 
-/* Deja Vocab官网链接样式 */
+/* Deja Vocab website link style */
 .site-link:nth-child(2) {
-  background-color: var(--primary); /* 使用主品牌色 */
+  background-color: var(--primary); /* Use brand primary color */
 }
 
 html.dark .site-link {
@@ -220,7 +220,7 @@ html.dark .site-link {
   transform: translateY(-1px);
 }
 
-/* 旧YouTube链接兼容性支持，以免破坏任何现有引用 */
+/* Old YouTube link compatibility support, to avoid breaking any existing references */
 .youtube-link {
   display: inline-flex;
   align-items: center;
@@ -312,7 +312,7 @@ html.dark .youtube-link {
   }
 }
 
-/* 中等窄屏优化 */
+/* Medium-width screen optimization */
 @media (min-width: 481px) and (max-width: 768px) {
   .guide-content {
     padding: 2rem 1.8rem;
@@ -333,7 +333,7 @@ html.dark .youtube-link {
   }
 }
 
-/* 低高度屏幕优化 */
+/* Low-height screen optimization */
 @media (max-height: 600px) {
   .guide-content {
     padding-top: 1.5rem;

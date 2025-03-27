@@ -1,6 +1,6 @@
 /**
- * 聊天监听器 - 负责在聊天过程中触发字幕收集
- * 这个模块作为聊天UI和自动字幕收集功能之间的桥梁
+ * Chat Listener - Responsible for triggering subtitle collection during chat
+ * This module serves as a bridge between the chat UI and automatic subtitle collection
  */
 
 class ChatListener {
@@ -9,81 +9,81 @@ class ChatListener {
     this.browser = window.browser || window.chrome;
     this.currentVideoId = null;
     
-    // 初始化时检查当前标签
+    // Initialize when checking current tab
     this.init();
   }
   
   /**
-   * 初始化聊天监听器
+   * Initialize chat listener
    */
   async init() {
     if (this.initialized) return;
     
     try {
-      console.log('[聊天监听器] 初始化中...');
+      console.log('[ChatListener] Initializing...');
       
-      // 监听消息发送事件
+      // Listen for chat message sent events
       document.addEventListener('chat-message-sent', this.handleChatMessageSent.bind(this));
       
-      // 监听用户打开聊天界面事件
+      // Listen for chat UI opened events
       document.addEventListener('chat-ui-opened', this.handleChatUiOpened.bind(this));
       
-      // 创建自定义事件处理器，以适配聊天UI的新消息发送机制
+      // Set up custom event listeners to adapt to the new chat UI message sending mechanism
       this.setupCustomEventListeners();
       
-      // 检查当前是否在YouTube页面，如果是则获取视频ID
+      // Check if current page is YouTube, if so, get video ID
       await this.checkCurrentTab();
       
       this.initialized = true;
-      console.log('[聊天监听器] 初始化完成');
+      console.log('[ChatListener] Initialized');
     } catch (error) {
-      console.error('[聊天监听器] 初始化失败:', error);
+      console.error('[ChatListener] Initialization failed:', error);
     }
   }
   
   /**
-   * 设置自定义事件监听器
-   * 这允许聊天监听器与更新后的聊天UI集成
+   * Set up custom event listeners
+   * This allows the chat listener to integrate with the updated chat UI
    */
   setupCustomEventListeners() {
-    // 创建全局函数，让聊天UI可以直接调用触发字幕收集
+    // Create global function, allowing chat UI to directly trigger subtitle collection
     window.triggerSubtitleCollection = async (videoId) => {
       if (videoId) {
         this.currentVideoId = videoId;
       }
       
-      console.log('[聊天监听器] 通过全局函数触发字幕收集:', this.currentVideoId);
+      console.log('[ChatListener] Triggering subtitle collection:', this.currentVideoId);
       await this.triggerSubtitleCollection();
     };
     
-    // 创建消息事件，监听从聊天UI发送的消息
+    // Create message event listener, listening for messages from chat UI
     window.addEventListener('message', async (event) => {
-      // 安全检查
+      // Security check
       if (!event.data || typeof event.data !== 'object') return;
       
-      // 处理聊天消息事件
+      // Handle chat message event
       if (event.data.type === 'CHAT_MESSAGE_SENT') {
-        console.log('[聊天监听器] 从消息事件接收到聊天消息:', event.data);
+        console.log('[ChatListener] Received chat message from message event:', event.data);
         
-        // 如果提供了视频ID，更新当前值
+        // If video ID is provided, update current value
         if (event.data.videoId) {
           this.currentVideoId = event.data.videoId;
         }
         
-        // 触发字幕收集
+        // Trigger subtitle collection
         await this.handleChatMessageSent();
       }
     });
     
-    console.log('[聊天监听器] 自定义事件监听器设置完成');
+    console.log('[ChatListener] Custom event listeners set up');
   }
   
   /**
-   * 检查当前标签是否为YouTube视频页面
+   * Check if current tab is a YouTube video page
    */
   async checkCurrentTab() {
     try {
-      // 获取当前活动标签
+      // Get current active tab
       const tabs = await this.browser.tabs.query({ active: true, currentWindow: true });
       if (tabs.length === 0) return;
       
@@ -91,46 +91,46 @@ class ChatListener {
       const url = currentTab.url;
       
       if (url && url.includes('youtube.com/watch')) {
-        // 提取视频ID
+        // Extract video ID
         const videoIdMatch = url.match(/[?&]v=([^&]+)/);
         this.currentVideoId = videoIdMatch ? videoIdMatch[1] : null;
         
         if (this.currentVideoId) {
-          console.log('[聊天监听器] 检测到YouTube视频:', this.currentVideoId);
+          console.log('[ChatListener] Detected YouTube video:', this.currentVideoId);
         }
       } else {
         this.currentVideoId = null;
       }
     } catch (error) {
-      console.error('[聊天监听器] 检查当前标签失败:', error);
+      console.error('[ChatListener] Checking current tab failed:', error);
     }
   }
   
   /**
-   * 处理用户发送聊天消息事件
+   * Handle user send chat message event
    */
   async handleChatMessageSent(event) {
     try {
-      console.log('[聊天监听器] 接收到聊天消息事件');
+      console.log('[ChatListener] Received chat message event');
       
-      // 如果没有event参数，尝试从存储中获取当前视频信息
+      // If no event parameter, try to get current video info from storage
       if (!event) {
-        // 从存储中获取当前视频ID（以防未通过事件接收）
+        // Get current video ID from storage (in case not received via event)
         const storage = await this.browser.storage.local.get(['currentVideoInfo']);
         if (storage.currentVideoInfo && storage.currentVideoInfo.videoId) {
           this.currentVideoId = storage.currentVideoInfo.videoId;
         } else {
-          // 如果存储中没有，再尝试检查当前标签
+          // If not, try checking the current label again
           await this.checkCurrentTab();
         }
       }
       
       if (!this.currentVideoId) {
-        console.log('[聊天监听器] 当前不在YouTube视频页面，跳过字幕收集');
+        console.log('[ChatListener] Not on YouTube video page, skipping subtitle collection');
         return;
       }
       
-      // 检查是否已经有字幕
+      // Check if subtitles already exist
       const storage = await this.browser.storage.local.get(['currentVideoInfo', 'currentSubtitles']);
       
       const hasValidSubtitles = storage.currentVideoInfo && 
@@ -140,34 +140,34 @@ class ChatListener {
                                storage.currentSubtitles.length > 0;
       
       if (hasValidSubtitles) {
-        console.log('[聊天监听器] 已有当前视频的字幕，完全跳过收集过程');
+        console.log('[ChatListener] Already has subtitles for current video, skipping collection');
         return;
       }
       
-      // 只有在没有有效字幕的情况下才触发收集
-      console.log('[聊天监听器] 当前视频没有字幕，触发收集:', this.currentVideoId);
+      // Only trigger collection if no valid subtitles exist
+      console.log('[ChatListener] No subtitles found for current video, triggering collection:', this.currentVideoId);
       await this.triggerSubtitleCollection();
     } catch (error) {
-      console.error('[聊天监听器] 处理聊天消息失败:', error);
+      console.error('[ChatListener] Failed to handle chat message:', error);
     }
   }
   
   /**
-   * 处理用户打开聊天界面事件
+   * Handle user opening chat interface event
    */
   async handleChatUiOpened() {
     try {
-      console.log('[聊天监听器] 聊天界面已打开');
+      console.log('[ChatListener] Chat interface opened');
       
-      // 更新当前标签信息
+      // Update current tab information
       await this.checkCurrentTab();
       
       if (!this.currentVideoId) {
-        console.log('[聊天监听器] 当前不在YouTube视频页面，跳过字幕检查');
+        console.log('[ChatListener] Not on YouTube video page, skipping subtitle check');
         return;
       }
       
-      // 仅检查字幕状态，不主动触发收集
+      // Only check subtitle status, do not trigger collection
       const storage = await this.browser.storage.local.get(['currentVideoInfo', 'currentSubtitles']);
       
       const hasValidSubtitles = storage.currentVideoInfo && 
@@ -177,73 +177,73 @@ class ChatListener {
                                storage.currentSubtitles.length > 0;
       
       if (hasValidSubtitles) {
-        console.log('[聊天监听器] 已有当前视频的字幕:', storage.currentSubtitles.length, '条');
+        console.log('[ChatListener] Already has subtitles for current video:', storage.currentSubtitles.length, 'items');
       } else {
-        console.log('[聊天监听器] 当前视频没有字幕，等待用户发送消息时收集');
+        console.log('[ChatListener] No subtitles found for current video, waiting for user message to trigger collection');
       }
     } catch (error) {
-      console.error('[聊天监听器] 处理聊天界面打开事件失败:', error);
+      console.error('[ChatListener] Failed to handle chat interface opened event:', error);
     }
   }
   
   /**
-   * 触发字幕收集
+   * Trigger subtitle collection
    */
   async triggerSubtitleCollection() {
     try {
       if (!this.currentVideoId) {
-        console.error('[聊天监听器] 无法触发字幕收集: 没有当前视频ID');
+        console.error('[ChatListener] Failed to trigger subtitle collection: no current video ID');
         return;
       }
       
-      console.log('[聊天监听器] 开始触发字幕收集:', this.currentVideoId);
+      console.log('[ChatListener] Triggering subtitle collection:', this.currentVideoId);
       
-      // 查找所有YouTube标签页
+      // Find all YouTube tabs
       const tabs = await this.browser.tabs.query({url: "*://*.youtube.com/*"});
       
       if (tabs.length === 0) {
-        console.log('[聊天监听器] 未找到YouTube标签页，无法触发字幕收集');
+        console.log('[ChatListener] No YouTube tabs found, cannot trigger subtitle collection');
         return;
       }
       
-      // 尝试向每个YouTube标签页发送消息
+      // Try to send message to each YouTube tab
       let collectionTriggered = false;
       
       for (const tab of tabs) {
         try {
-          // 向内容脚本发送消息，触发字幕收集
+          // Send message to content script to trigger subtitle collection
           const response = await this.browser.tabs.sendMessage(tab.id, {
             action: 'collectSubtitles',
             videoId: this.currentVideoId
           });
           
-          console.log('[聊天监听器] 字幕收集请求响应:', response);
+          console.log('[ChatListener] Response to subtitle collection request:', response);
           
-          // 如果收到成功响应
+          // If successful response
           if (response && response.success) {
-            console.log('[聊天监听器] 成功触发字幕收集在标签页', tab.id);
+            console.log('[ChatListener] Successfully triggered subtitle collection in tab', tab.id);
             collectionTriggered = true;
-            break; // 成功触发后不再尝试其他标签
+            break; // Successfully triggered, no need to try other tabs
           }
         } catch (error) {
-          console.log('[聊天监听器] 无法在标签页上触发字幕收集:', tab.id, error);
-          // 继续尝试其他标签
+          console.log('[ChatListener] Failed to trigger subtitle collection in tab', tab.id, error);
+          // Keep trying other tabs
         }
       }
       
       if (!collectionTriggered) {
-        console.log('[聊天监听器] 所有标签页尝试失败，无法触发字幕收集');
+        console.log('[ChatListener] Failed to trigger subtitle collection in all tabs');
       }
     } catch (error) {
-      console.error('[聊天监听器] 触发字幕收集失败:', error);
+      console.error('[ChatListener] Failed to trigger subtitle collection:', error);
     }
   }
 }
 
-// 创建聊天监听器实例
+// Create chat listener instance
 const chatListener = new ChatListener();
 
-// 暴露给全局
+// Expose to global
 window.chatListener = chatListener;
 
 export default chatListener;

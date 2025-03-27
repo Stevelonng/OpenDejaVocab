@@ -1,9 +1,5 @@
-/* 
- * Déjà Vocab - 高级通知系统
- * 现代风格、玻璃态设计的通知组件
- */
 
-/* 通知容器 - 固定在页面中央 */
+/* Notification container - Fixed in the center of the page */
 .notification-container {
   position: fixed;
   top: 50%;
@@ -12,10 +8,10 @@
   z-index: 9999;
   width: 90%;
   max-width: 420px;
-  pointer-events: none; /* 允许点击通知下方的元素 */
+  pointer-events: none; /* Allow interaction with elements below */
 }
 
-/* 通知卡片 - 玻璃态设计 */
+/* Notification card - Glassmorphism Design */
 .notification-card {
   background: rgba(255, 255, 255, 0.12);
   backdrop-filter: blur(16px);
@@ -34,22 +30,22 @@
   transform: translateY(20px);
   transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
   overflow: hidden;
-  pointer-events: auto; /* 使通知可点击 */
+  pointer-events: auto; /* Allow interaction with elements below */
   color: white;
 }
 
-/* 浅色模式卡片文字颜色 */
+/* Light mode card text color */
 html:not(.dark) .notification-card {
   color: #333;
 }
 
-/* 活跃状态的通知卡片 */
+/* Active notification card */
 .notification-card.active {
   opacity: 1;
   transform: translateY(0);
 }
 
-/* 通知图标容器 */
+/* Notification Icon Container */
 .notification-icon {
   width: 48px;
   height: 48px;
@@ -62,7 +58,7 @@ html:not(.dark) .notification-card {
   overflow: hidden;
 }
 
-/* 通知图标背景 */
+/* Notification Icon Background */
 .notification-icon::before {
   content: '';
   position: absolute;
@@ -75,13 +71,13 @@ html:not(.dark) .notification-card {
   z-index: -1;
 }
 
-/* 通知图标 */
+/* Notification icon */
 .notification-icon i {
   font-size: 1.5rem;
   color: white;
 }
 
-/* 通知标题 */
+/* Notification title */
 .notification-title {
   font-size: 1.1rem;
   font-weight: 600;
@@ -90,12 +86,12 @@ html:not(.dark) .notification-card {
   color: white;
 }
 
-/* 浅色模式标题 */
+/* Light mode title */
 html:not(.dark) .notification-title {
   color: #333;
 }
 
-/* 通知内容 */
+/* Notification content */
 .notification-content {
   font-size: 0.95rem;
   text-align: center;
@@ -105,12 +101,12 @@ html:not(.dark) .notification-title {
   color: rgba(255, 255, 255, 0.9);
 }
 
-/* 浅色模式内容 */
+/* Light mode content */
 html:not(.dark) .notification-content {
   color: #555;
 }
 
-/* 通知按钮 */
+/* Notification button */
 .notification-button {
   padding: 8px 24px;
   border-radius: 8px;
@@ -126,19 +122,19 @@ html:not(.dark) .notification-content {
   overflow: hidden;
 }
 
-/* 按钮悬停效果 */
+/* Button hover effect */
 .notification-button:hover {
   transform: translateY(-2px);
   box-shadow: 0 6px 16px rgba(0, 0, 0, 0.25);
 }
 
-/* 按钮激活效果 */
+/* Button active effect */
 .notification-button:active {
   transform: translateY(1px);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
 }
 
-/* 按钮内光晕效果 */
+/* Button inner glow effect */
 .notification-button::before {
   content: '';
   position: absolute;
@@ -154,43 +150,43 @@ html:not(.dark) .notification-content {
   transition: opacity 0.3s ease;
 }
 
-/* 按钮悬停光晕效果 */
+/* Button hover glow effect */
 .notification-button:hover::before {
   opacity: 0.8;
 }
 
-/* 深色模式适配 */
+/* Dark mode adaptation */
 html.dark .notification-card {
   background: rgba(15, 23, 42, 0.75);
   border-color: rgba(255, 255, 255, 0.08);
 }
 
-/* 通知类型 - 成功 */
+/* Notification Type - Success */
 .notification-success .notification-icon::before {
   background: linear-gradient(135deg, #10b981, #059669);
 }
 
-/* 通知类型 - 信息 */
+/* Notification Type - Information */
 .notification-info .notification-icon::before {
   background: linear-gradient(135deg, #3b82f6, #2563eb);
 }
 
-/* 通知类型 - 警告 */
+/* Notification Type - Warning */
 .notification-warning .notification-icon::before {
   background: linear-gradient(135deg, #f59e0b, #d97706);
 }
 
-/* 通知类型 - 错误 */
+/* Notification Type - Error */
 .notification-error .notification-icon::before {
   background: linear-gradient(135deg, #ef4444, #dc2626);
 }
 
-/* 通知类型 - 切换模式 */
+/* Notification Type - Mode Change */
 .notification-mode-change .notification-icon::before {
   background: linear-gradient(135deg, var(--primary), var(--secondary));
 }
 
-/* 响应式设计 */
+/* Responsive Design */
 @media (max-width: 480px) {
   .notification-container {
     width: 95%;

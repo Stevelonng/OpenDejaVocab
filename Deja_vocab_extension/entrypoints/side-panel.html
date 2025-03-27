@@ -8,29 +8,29 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.2/font/bootstrap-icons.css" rel="stylesheet">
-  <!-- 引入登录界面样式 -->
+  <!-- Introduces login interface styles -->
   <link href="../assets/login/login-ui.css" rel="stylesheet">
-  <!-- 引入YouTube引导界面样式 -->
+  <!-- Introduces YouTube guide interface styles -->
   <link href="../assets/guide/youtube-guide.css" rel="stylesheet">
-  <!-- 引入聊天界面样式 -->
+  <!-- Introduces chat interface styles -->
   <link id="chat-ui-css" href="../assets/chat/chat-ui.css" rel="stylesheet">
-  <!-- 引入通知系统样式 -->
+  <!-- Introduces notification system styles -->
   <link href="../assets/notification/notification.css" rel="stylesheet">
 </head>
 <body>
-  <!-- 主容器 -->
+  <!-- Main container -->
   <div class="app-container">
-    <!-- 装饰背景元素 -->
+    <!-- Decorative background elements -->
     <div class="animated-background">
       <div class="gradient-sphere sphere-1"></div>
       <div class="gradient-sphere sphere-2"></div>
       <div class="gradient-sphere sphere-3"></div>
     </div>
     
-    <!-- 通知容器 -->
+    <!-- Notification container -->
     <div id="notification-container" class="notification-container"></div>
     
-    <!-- 登录界面 -->
+    <!-- Login interface -->
     <div class="auth-container" id="auth-main-content">
       <div class="brand-header">
         <div class="logo-container">
@@ -49,12 +49,12 @@
               <circle cx="21" cy="21" r="19" fill="url(#logo-gradient)" filter="url(#glow-effect)">
                 <animate attributeName="r" values="19;19.5;19;19.3;19" dur="3s" repeatCount="indefinite" />
               </circle>
-              <!-- D 字母图标 -->
+              <!-- D letter icon -->
               <path d="M16,15 L20,15 C23.5,15 25,17 25,21 C25,25 23.5,27 20,27 L16,27 Z" fill="white" filter="url(#glow-effect)" />
               <path d="M18,18 L20,18 C21.5,18 22,19 22,21 C22,23 21.5,24 20,24 L18,24 Z" fill="#E0F2FE">
                 <animate attributeName="fill-opacity" values="1;0.85;1" dur="4s" repeatCount="indefinite" />
               </path>
-              <!-- 字幕标记 -->
+              <!-- Subtitle marker -->
               <rect x="13" y="25" width="16" height="1.8" rx="0.9" fill="#FFFFFF" opacity="0.9">
                 <animate attributeName="opacity" values="0.9;0.7;0.9" dur="2.5s" repeatCount="indefinite" />
               </rect>
@@ -81,7 +81,7 @@
         </div>
         
         <div class="auth-forms">
-          <!-- 登录表单 -->
+          <!-- Login form -->
           <div id="login-content" class="form-container active">
             <div class="form-group">
               <label for="login-email">
@@ -114,7 +114,7 @@
             <div id="login-status" class="status-message hidden"></div>
           </div>
           
-          <!-- 注册表单 -->
+          <!-- Register form -->
           <div id="register-content" class="form-container">
             <div class="form-group">
               <label for="register-name">
@@ -170,17 +170,10 @@
       
       <div class="footer">
         <div class="copyright">&copy; 2025 Déjà Vocab</div>
-        <div class="env-switcher">
-          <span>环境:</span>
-          <select id="environment-select">
-            <option value="production">生产环境</option>
-            <option value="localhost" selected>本地开发</option>
-          </select>
-        </div>
       </div>
     </div>
     
-    <!-- 支持网站引导提示界面 -->
+    <!-- Support site guide interface -->
     <div id="youtube-guide" class="youtube-guide-container">
       <div class="guide-content">
         <div class="guide-icon">
@@ -218,7 +211,7 @@
       </div>
     </div>
     
-    <!-- 聊天界面 -->
+    <!-- Chat interface -->
     <div id="main-container" class="chat-main-container hidden">
       <div class="chat-container" id="chat-container">
         <div class="chat-header">
@@ -253,13 +246,13 @@
         </div>
         
         <div class="chat-messages" id="chat-messages">
-          <!-- 会话视频列表容器 -->
+          <!-- Session videos container -->
           <div id="session-videos-container" class="session-videos-container">
             <div class="session-videos-title">
               <i class="bi bi-collection-play"></i> 当前会话视频
             </div>
             <ul id="session-videos-list" class="session-videos-list">
-              <!-- 视频列表项将由JavaScript动态添加 -->
+              <!-- Video list items will be dynamically added by JavaScript -->
             </ul>
           </div>
           
@@ -280,7 +273,7 @@
             </button>
           </form>
           <div class="notes-export-container">
-            <!-- 移除导出会话按钮，只保留模式切换按钮 -->
+            <!-- Remove session export button, only keep mode toggle button -->
             <button id="chat-mode-toggle" class="mode-toggle-button small-toggle">
               <i class="bi bi-layers"></i> 专注模式
             </button>
@@ -289,32 +282,32 @@
       </div>
     </div>
     
-    <!-- 登录UI JavaScript -->
+    <!-- Login UI JavaScript -->
     <script type="module" src="../assets/login/login-ui.js"></script>
     
-    <!-- 聊天UI JavaScript -->
+    <!-- Chat UI JavaScript -->
     <script type="module" id="chat-ui-script" src="../assets/chat/chat-ui.js"></script>
     
-    <!-- 通知系统 JavaScript -->
+    <!-- Notification System JavaScript -->
     <script type="module">
-      // 导入通知系统
+      // Import notification system
       import NotificationSystem from '../assets/notification/notification.js';
       
-      // 确保单例模式下初始化
+      // Ensure singleton initialization
       document.addEventListener('DOMContentLoaded', () => {
-        // 避免重复初始化
+        // Avoid duplicate initialization
         if (window.NOTIFICATION_SYSTEM_INITIALIZED) {
-          console.log('[INFO] 通知系统已经初始化');
+          console.log('[INFO] Notification system already initialized');
           return;
         }
         
-        console.log('[INFO] 初始化通知系统');
+        console.log('[INFO] Initializing notification system');
         
-        // 获取实例并初始化
+        // Get instance and initialize
         const notificationSystem = NotificationSystem.getInstance();
         notificationSystem.initialize();
         
-        // 标记为已初始化
+        // Mark as initialized
         window.NOTIFICATION_SYSTEM_INITIALIZED = true;
       });
     </script>

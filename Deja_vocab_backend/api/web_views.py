@@ -14,8 +14,7 @@ import csv
 import io
 import threading
 from .models import Video, Subtitle
-from .word_models import WordDefinition, UserWord
-from .word_extractor import WordExtractor
+from .word_models import UserWord
 
 
 def login_view(request):
@@ -28,15 +27,15 @@ def login_view(request):
         if user is not None:
             login(request, user)
             
-            # 获取或创建用户的认证令牌，并将其存储在会话中
+            # Get or create user token and store in session
             from rest_framework.authtoken.models import Token
-            token, created = Token.objects.get_or_create(user=user)
+            token = Token.objects.get_or_create(user=user)
             request.session['auth_token'] = token.key
             
-            messages.success(request, f'欢迎回来，{username}!')
+            messages.success(request, f'Welcome back, {username}!')
             return redirect('dashboard')
         else:
-            messages.error(request, '用户名或密码错误。')
+            messages.error(request, 'Invalid username or password.')
     
     return render(request, 'api/login.html')
 
@@ -50,22 +49,22 @@ def register_view(request):
         password2 = request.POST.get('password2')
         
         if password != password2:
-            messages.error(request, '两次输入的密码不匹配。')
+            messages.error(request, 'The two passwords do not match.')
             return render(request, 'api/register.html')
             
         if User.objects.filter(username=username).exists():
-            messages.error(request, '用户名已被使用。')
+            messages.error(request, 'Username already exists.')
             return render(request, 'api/register.html')
         
-        # 创建用户
+        # Create user
         user = User.objects.create_user(username=username, email=email, password=password)
         login(request, user)
         
-        # 获取或创建用户的认证令牌，并将其存储在会话中
+        # Get or create user token and store in session
         from rest_framework.authtoken.models import Token
         token, created = Token.objects.get_or_create(user=user)
         request.session['auth_token'] = token.key
-        messages.success(request, f'账号创建成功！欢迎，{username}！')
+        messages.success(request, f'Account created successfully! Welcome, {username}!')
         return redirect('dashboard')
     
     return render(request, 'api/register.html')
@@ -74,7 +73,7 @@ def register_view(request):
 def logout_view(request):
     """Handle user logout"""
     logout(request)
-    messages.info(request, '您已退出登录。')
+    messages.info(request, 'You have successfully logged out.')
     return redirect('login')
 
 
@@ -87,14 +86,14 @@ class DashboardView(ListView):
     paginate_by = 12
     
     def get_queryset(self):
-        # 获取用户的视频并添加字幕数量
+        # Get user's videos and add subtitle count
         return Video.objects.filter(user=self.request.user) \
                            .annotate(subtitle_count=Count('subtitles')) \
                            .order_by('-created_at')
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        # 为每个视频添加YouTube ID
+        # Add YouTube ID for each video
         for video in context['videos']:
             video.youtube_id = extract_youtube_id(video.url)
         return context
@@ -108,7 +107,7 @@ class VideoDetailView(DetailView):
     context_object_name = 'video'
     
     def get_queryset(self):
-        # 只允许用户查看自己的视频
+        # Only allow users to view their own videos
         return Video.objects.filter(user=self.request.user)
     
     def get_context_data(self, **kwargs):
@@ -117,16 +116,16 @@ class VideoDetailView(DetailView):
         context['subtitles'] = Subtitle.objects.filter(video=video).order_by('start_time')
         context['video'].youtube_id = extract_youtube_id(video.url)
         
-        # 检查该视频是否已提取单词
+        # Check if the video has already processed words
         has_processed_words = UserWord.objects.filter(
             references__subtitle__video=video
         ).exists()
         
-        # 只有在没有处理过单词时才启动后台提取线程
+        # Only start background word extraction if words haven't been processed
         if context['subtitles'].exists() and not has_processed_words:
             self.start_background_word_extraction(video)
         
-        # 获取用户的认证Token，传递给前端用于API调用
+        # Get user's authentication token and pass it to the frontend for API calls
         if self.request.user.is_authenticated:
             from rest_framework.authtoken.models import Token
             token, _ = Token.objects.get_or_create(user=self.request.user)
@@ -135,25 +134,25 @@ class VideoDetailView(DetailView):
         return context
     
     def start_background_word_extraction(self, video):
-        """在后台启动单词提取线程"""
+        """Start word extraction in the background"""
         def process_video_words(video_id, user_id):
             try:
                 from django.contrib.auth.models import User
                 from .models import Video
                 from .word_extractor import WordExtractor
                 
-                # 重新获取视频和用户对象（在新线程中必要）
+                # Re-get video and user objects (necessary in new thread)
                 video = Video.objects.get(id=video_id)
                 user = User.objects.get(id=user_id)
                 
-                # 初始化单词提取器并处理视频
+                # Initialize word extractor and process video
                 extractor = WordExtractor(user)
                 count = extractor.process_video(video)
-                print(f"后台提取完成: 从视频 '{video.title}' 中提取了 {count} 个单词")
+                print(f"Word extraction completed: Extracted {count} words from video '{video.title}'")
             except Exception as e:
-                print(f"后台单词提取错误: {str(e)}")
+                print(f"Word extraction error: {str(e)}")
         
-        # 启动新线程
+        # Start new thread
         thread = threading.Thread(
             target=process_video_words,
             args=(video.id, video.user.id)
@@ -168,13 +167,13 @@ def download_subtitles(request, pk):
     video = get_object_or_404(Video, pk=pk, user=request.user)
     subtitles = Subtitle.objects.filter(video=video).order_by('start_time')
     
-    # 创建CSV文件
+    # Create CSV file
     response = HttpResponse(content_type='text/csv')
     response['Content-Disposition'] = f'attachment; filename="{video.title.replace(" ", "_")}_subtitles.csv"'
     
-    # 写入CSV数据
+    # Write CSV data
     writer = csv.writer(response)
-    writer.writerow(['开始时间', '结束时间', '文本'])
+    writer.writerow(['Start Time', 'End Time', 'Text'])
     
     for subtitle in subtitles:
         writer.writerow([
@@ -193,17 +192,17 @@ def delete_video(request, pk):
         video = get_object_or_404(Video, pk=pk, user=request.user)
         video_title = video.title
         
-        # 删除视频（会自动删除相关联的字幕）
+        # Delete video (will automatically delete related subtitles)
         video.delete()
         
-        # 清理用户的孤立单词 - 可能需要在word_adapter.py中实现专门的清理函数
-        # 由于数据模型的变化，这部分逻辑需要重新评估
-        # 现在先不执行清理操作
+        # Clean up orphaned words - may need to implement specialized cleanup function in word_adapter.py
+        # Since data model has changed, this logic needs to be re-evaluated
+        # For now, skip cleanup
         
-        messages.success(request, f'已删除视频: {video_title}')
+        messages.success(request, f'Deleted video: {video_title}')
         return redirect('dashboard')
     
-    # GET请求，显示确认页面
+    # GET request, show confirmation page
     video = get_object_or_404(Video, pk=pk, user=request.user)
     return render(request, 'api/video_confirm_delete.html', {'video': video})
 

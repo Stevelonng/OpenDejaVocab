@@ -2,8 +2,10 @@ from django.shortcuts import render
 from datetime import date
 
 def privacy_policy(request):
-    """显示隐私政策页面"""
+    """
+    Display privacy policy page
+    """
     context = {
-        'update_date': date.today().strftime('%Y年%m月%d日')
+        'update_date': date.today().strftime('%Y-%m-%d')
     }
     return render(request, 'api/privacy_policy.html', context)

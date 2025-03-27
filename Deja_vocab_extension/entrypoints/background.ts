@@ -1,11 +1,11 @@
 import { defineBackground } from 'wxt/sandbox';
 import { browser } from 'wxt/browser';
 
-// YouTube视频页面的Origin
+// YouTube video page Origin
 const YOUTUBE_ORIGIN = 'https://www.youtube.com';
 
 export default defineBackground(() => {
-  // 字幕收集请求类型定义
+  // Subtitle collection request type definition
   interface SubtitleCollectionRequest {
     action: string;
     videoId: string;
@@ -13,7 +13,7 @@ export default defineBackground(() => {
     videoTitle: string;
   }
 
-  // 检查请求是否为字幕收集请求
+  // Check if request is a subtitle collection request
   function isSubtitleCollectionRequest(request: unknown): request is SubtitleCollectionRequest {
     return (
       request !== null &&
@@ -25,34 +25,34 @@ export default defineBackground(() => {
     );
   }
 
-  // 字幕收集功能
-  // 处理来自内容脚本的字幕收集请求
-  // 使用类型断言来解决TypeScript错误
-  // @ts-ignore - 忽略类型错误，因为WXT对WebExtension API的类型定义与标准的稍有不同
+  // Subtitle collection functionality
+  // Handle subtitle collection requests from content scripts
+  // Use type assertion to resolve TypeScript errors
+  // @ts-ignore - Ignore type errors, as WXT's type definitions for WebExtension API are slightly different from standard
   browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
-    // 对非字幕收集请求不处理
+    // Don't process non-subtitle collection requests
     if (!isSubtitleCollectionRequest(request)) {
       return false;
     }
     
-    // 处理字幕收集请求
-    sendResponse({ success: true, message: '请求已收到' });
+    // Process subtitle collection request
+    sendResponse({ success: true, message: 'Request received' });
     
-    // 异步处理字幕收集
+    // Process subtitle collection asynchronously
     (async () => {
         await handleCollectSubtitlesAsync(request);
     })();
     
-    // 返回true以支持异步sendResponse
+    // Return true to support async sendResponse
     return true;
   });
   
-  // 定义侧面板操作请求接口
+  // Define side panel request interface
   interface SidePanelRequest {
     action: 'openPopup' | 'recordLoginRequest' | 'checkIfYouTube';
   }
   
-  // 检查请求是否为侧面板操作请求
+  // Check if request is a side panel request
   function isSidePanelRequest(request: unknown): request is SidePanelRequest {
     return (
       request !== null &&
@@ -66,138 +66,138 @@ export default defineBackground(() => {
     );
   }
   
-  // 处理打开侧面板和弹出窗口的请求
-  // @ts-ignore - 忽略类型错误，因为WXT对WebExtension API的类型定义与标准的稍有不同
+  // Handle requests for opening side panels and popups
+  // @ts-ignore - Ignore type errors, as WXT's type definitions for WebExtension API are slightly different from standard
   browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
-    // 检查是否为侧面板操作请求
+    // Check if it's a side panel request
     if (!isSidePanelRequest(request)) {
       return false;
     }
     
-    // 处理侧面板请求
+    // Handle side panel requests
     (async () => {
       try {
         
-        // 检查是否为打开弹出窗口请求
+        // Check if it's a request to open popup
         if (request.action === 'openPopup') {
           try {
-            // 如果侧面板打开失败，尝试打开扩展的弹出窗口
-            // 注意：这种方法在技术上有限制，可能无法直接从内容脚本触发
-            // 但我们可以尝试通过执行browser.action.openPopup()或者显示通知引导用户
+            // If side panel fails to open, try to open the extension popup
+            // Note: This method has technical limitations and may not be directly triggered from content scripts
+            // But we can try using browser.action.openPopup() or displaying a notification to guide users
             
-            // 显示通知，提醒用户登录
+            // Display a notification reminding the user to log in
             await browser.notifications.create({
               type: 'basic',
               iconUrl: '../assets/icon-128.png',
-              title: 'Dejavocab 登录提示',
-              message: '请先登录后再使用全屏功能。点击扩展图标登录。'
+              title: 'Dejavocab Login Reminder',
+              message: 'Please log in before using the fullscreen feature. Click the extension icon to log in.'
             });
             
-            sendResponse({ success: true, message: '已显示登录提示通知' });
+            sendResponse({ success: true, message: 'Login prompt notification displayed' });
           } catch (error) {
-            sendResponse({ success: false, message: '显示通知失败' });
+            sendResponse({ success: false, message: 'Failed to display notification' });
           }
         }
         
-        // 处理recordLoginRequest请求
+        // Handle recordLoginRequest requests
         if (request.action === 'recordLoginRequest') {
           try {
-            // 获取当前活动标签页
+            // Get the current active tab
             const tabs = await browser.tabs.query({ active: true, currentWindow: true });
             const currentTab = tabs[0];
             
             if (!currentTab || !currentTab.id) {
-              sendResponse({ success: false, message: '无法获取当前标签页' });
+              sendResponse({ success: false, message: 'Unable to get current tab' });
               return;
             }
             
-            // 尝试通过通知引导用户点击扩展图标
+            // Try to guide the user to click the extension icon via notification
             await browser.notifications.create({
               type: 'basic',
               iconUrl: '../assets/icon-128.png',
-              title: 'Dejavocab 登录提示',
-              message: '需要登录才能使用全屏功能。请点击浏览器扩展图标登录。'
+              title: 'Dejavocab Login Reminder',
+              message: 'Login required to use fullscreen feature. Please click the browser extension icon to log in.'
             });
             
-            sendResponse({ success: true, message: '已处理recordLoginRequest请求' });
+            sendResponse({ success: true, message: 'recordLoginRequest request processed' });
           } catch (error) {
-            sendResponse({ success: false, message: '处理recordLoginRequest请求失败' });
+            sendResponse({ success: false, message: 'Failed to process recordLoginRequest request' });
           }
         }
         
-        // 处理检查是否为YouTube页面的请求
+        // Handle requests to check if current page is YouTube
         if (request.action === 'checkIfYouTube') {
           try {
-            // 获取当前活动标签页
+            // Get the current active tab
             const tabs = await browser.tabs.query({ active: true, currentWindow: true });
             const currentTab = tabs[0];
             
             if (!currentTab || !currentTab.url) {
-              // 如果无法获取URL，尝试使用storage中的URL
+              // If URL can't be retrieved, try using URL from storage
               const result = await browser.storage.local.get('lastVisitedUrl');
               const lastUrl = result.lastVisitedUrl as string;
               
               if (lastUrl) {
                 const isYouTube = (lastUrl as string).includes('youtube.com') || (lastUrl as string).includes('dejavocab.com');
-                console.log(`[BACKGROUND] 使用存储的URL: ${lastUrl}, 是否为支持聊天的网站: ${isYouTube}`);
-                sendResponse({ isYouTube, message: isYouTube ? '当前页面支持聊天' : '当前页面不支持聊天' });
+                console.log(`[BACKGROUND] Using stored URL: ${lastUrl}, is chat-supported site: ${isYouTube}`);
+                sendResponse({ isYouTube, message: isYouTube ? 'Current page supports chat' : 'Current page does not support chat' });
                 return;
               }
               
-              console.log('[BACKGROUND] 无法获取当前标签页URL');
-              sendResponse({ isYouTube: false, message: '无法获取当前标签页URL' });
+              console.log('[BACKGROUND] Unable to get current tab URL');
+              sendResponse({ isYouTube: false, message: 'Unable to get current tab URL' });
               return;
             }
             
-            // 检查URL是否为YouTube或dejavocab.com
+            // Check if URL is YouTube or dejavocab.com
             const isYouTube = (currentTab.url as string).includes('youtube.com') || (currentTab.url as string).includes('dejavocab.com');
             
-            // 存储当前URL
+            // Store current URL
             try {
-              // 首先检查存储API是否可用
+              // First check if storage API is available
               if (browser?.storage?.local) {
                 await browser.storage.local.set({ lastVisitedUrl: currentTab.url });
               }
             } catch (error) {
-              // 如果存储操作失败，记录错误但继续执行
-              console.warn('[BACKGROUND] 存储URL到本地存储失败:', error);
-              // 不再抛出错误，因为这可能是由于扩展上下文无效导致的
+              // If storage operation fails, log error but continue execution
+              console.warn('[BACKGROUND] Failed to store URL in local storage:', error);
+              // No longer throw error as this might be caused by invalid extension context
             }
             
-            console.log(`[BACKGROUND] 当前页面URL: ${currentTab.url}, 是否为支持聊天的网站: ${isYouTube}`);
-            sendResponse({ isYouTube, message: isYouTube ? '当前页面支持聊天' : '当前页面不支持聊天' });
+            console.log(`[BACKGROUND] Current page URL: ${currentTab.url}, is chat-supported site: ${isYouTube}`);
+            sendResponse({ isYouTube, message: isYouTube ? 'Current page supports chat' : 'Current page does not support chat' });
           } catch (error) {
-            console.error('[BACKGROUND] 检查页面类型时出错:', error);
-            sendResponse({ isYouTube: false, message: '检查页面类型时出错' });
+            console.error('[BACKGROUND] Error checking page type:', error);
+            sendResponse({ isYouTube: false, message: 'Error checking page type' });
           }
         }
       } catch (error) {
-        sendResponse({ success: false, message: '处理请求失败' });
+        sendResponse({ success: false, message: 'Failed to process request' });
       }
     })();
     
-    return true; // 表示将异步发送响应
+    return true; // Indicates response will be sent asynchronously
   });
   
-  // 从后端API获取字幕的异步函数
+  // Async function to retrieve subtitles from backend API
   async function handleCollectSubtitlesAsync(request: SubtitleCollectionRequest) {
     try {
-      // 获取API配置
+      // Get API configuration
       const result = await browser.storage.local.get(['apiUrl', 'authToken']);
       const apiUrl = result.apiUrl as string;
       const authToken = result.authToken as string;
       
       if (!apiUrl || !authToken) {
-        return { success: false, error: '缺少API URL或认证信息' };
+        return { success: false, error: 'Missing API URL or authentication information' };
       }
       
-      // 构建API请求URL - 确保匹配Django路由定义
+      // Build API request URL - ensure it matches Django route definition
       const baseUrl = apiUrl.endsWith('/') ? apiUrl : `${apiUrl}/`;
       
-      // 直接使用videos路径 - Django urls.py中的root配置已经将api/添加到所有路径
+      // Use videos path directly - Django urls.py root config already adds api/ to all paths
       const apiEndpoint = `videos/${request.videoId}/fetch-subtitles/`;
       
-      // 请求后端API获取字幕
+      // Request subtitles from backend API
       const response = await fetch(`${baseUrl}${apiEndpoint}`, {
         method: 'POST',
         headers: {
@@ -210,22 +210,22 @@ export default defineBackground(() => {
         })
       });
       
-      // 检查响应状态
+      // Check response status
       if (!response.ok) {
-        throw new Error(`API请求失败: ${response.status} ${response.statusText}`);
+        throw new Error(`API request failed: ${response.status} ${response.statusText}`);
       }
       
       const data = await response.json();
       
       return { success: true, data };
     } catch (error) {
-      return { success: false, error: error instanceof Error ? error.message : '未知错误' };
+      return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
     }
   }
   
-  // 设置侧面板默认选项
+  // Set default side panel options
   try {
-    // @ts-ignore - 忽略TypeScript错误，因为这些API存在但类型定义可能不完善
+    // @ts-ignore - Ignore TypeScript errors, as these APIs exist but type definitions may be incomplete
     browser.sidePanel.setPanelBehavior({ openPanelOnActionClick: true })
       .catch((error: any) => {});
 
@@ -233,10 +233,10 @@ export default defineBackground(() => {
     browser.sidePanel.setOptions({ path: 'side-panel.html' })
       .catch((error: any) => {});
   } catch (error) {
-    // 忽略错误 - 部分浏览器可能不支持这些API
+    // Ignore error - some browsers may not support these APIs
   }
   
-  // 监听标签页更新，在YouTube网站启用侧边栏
+  // Listen for tab updates and enable side panel on YouTube pages
   // @ts-ignore
   browser.tabs.onUpdated.addListener(async (tabId, info, tab) => {
     if (!tab.url) return;
@@ -244,9 +244,9 @@ export default defineBackground(() => {
     try {
       const url = new URL(tab.url);
       
-      // 在YouTube网站启用侧边栏
+      // Enable side panel on YouTube pages
       if (url.origin === YOUTUBE_ORIGIN) {
-        // 如果是YouTube视频页面，启用侧边栏
+        // If it's a YouTube video page, enable side panel
         if (url.pathname.includes('/watch')) {
           // @ts-ignore
           await browser.sidePanel.setOptions({
@@ -260,7 +260,7 @@ export default defineBackground(() => {
     }
   });
 
-  // 当用户在YouTube视频页面点击Action图标时，打开侧边栏
+  // Open side panel when user clicks Action icon on YouTube video pages
   // @ts-ignore
   browser.action.onClicked.addListener(async (tab) => {
     if (!tab.url) return;
@@ -269,13 +269,13 @@ export default defineBackground(() => {
       const url = new URL(tab.url);
       
       if (url.origin === YOUTUBE_ORIGIN && url.pathname.includes('/watch')) {
-        // 尝试先关闭再打开侧边栏来强制刷新
+        // Try to close and reopen side panel to force refresh
         try {
-          // 检查侧边栏状态
+          // Check side panel status
           // @ts-ignore
           const panelState = await browser.sidePanel.getOptions({ tabId: tab.id });
           
-          // 重新设置侧边栏选项，强制刷新
+          // Reset side panel options to force refresh
           // @ts-ignore
           await browser.sidePanel.setOptions({
             tabId: tab.id,
@@ -285,16 +285,16 @@ export default defineBackground(() => {
         } catch (e) {
         }
         
-        // 等待一小段时间再打开侧边栏
+        // Wait for a short period before opening side panel
         setTimeout(async () => {
           try {
-            // 使用scripting API执行脚本
+            // Execute script using scripting API
             await browser.scripting.executeScript({
               target: { tabId: tab.id as number },
               files: ['content.js']
             });
             
-            // 打开侧面板
+            // Open side panel
             // @ts-ignore
             await browser.sidePanel.open({ tabId: tab.id });
           } catch (error) {

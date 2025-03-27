@@ -1,7 +1,7 @@
 import { ref, watch, nextTick, Ref, onMounted, computed } from 'vue';
 import { browser } from 'wxt/browser';
 
-// 字幕类型定义
+// Subtitle interface definition
 export interface Subtitle {
   id?: number;
   startTime: number;
@@ -10,7 +10,7 @@ export interface Subtitle {
   saved?: boolean;
 }
 
-// 视频信息类型定义
+// Video information interface definition
 interface VideoInfo {
   videoId: string;
   title: string;
@@ -18,11 +18,11 @@ interface VideoInfo {
 }
 
 /**
- * 字幕控制与导航功能的组合式API
- * 包含字幕数据获取、格式化、导航和自动滚动等功能
+ * Subtitle control and navigation functionality
+ * Includes subtitle data retrieval, formatting, navigation, and automatic scrolling
  */
 export function useSubtitles(currentVideoTime: Ref<number>) {
-  // 字幕数据与状态
+  // Subtitle data and state
   const subtitles = ref<Subtitle[]>([]);
   const loading = ref(true);
   const error = ref<string | null>(null);
@@ -30,15 +30,15 @@ export function useSubtitles(currentVideoTime: Ref<number>) {
   const currentVideoInfo = ref<VideoInfo | null>(null);
   const processedVideoIds = ref<Record<string, boolean | string>>({});
   
-  // 从YouTube URL获取视频ID
+  // Get video ID from YouTube URL
   const getYouTubeVideoId = (url: string): string | null => {
     const match = url.match(/(?:youtube\.com\/watch\?v=|\/videos\/|youtu\.be\/|embed\/|\?v=)([^&?\n]+)/);
     return match ? match[1] : null;
   };
 
-  // 提取当前页面的视频信息
+  // Extract video information from current page
   const extractVideoInfo = (): VideoInfo | null => {
-    // 检查是否在YouTube视频页面
+    // Check if we are on a YouTube video page
     if (!window.location.href.includes('youtube.com/watch')) {
       return null;
     }
@@ -46,31 +46,31 @@ export function useSubtitles(currentVideoTime: Ref<number>) {
     const videoId = getYouTubeVideoId(window.location.href);
     if (!videoId) return null;
     
-    // 获取原始标题，不再添加视频ID作为后缀
+    // Get original title, no longer add video ID suffix
     const rawTitle = document.title.replace(' - YouTube', '');
     
-    // 在内部我们仍然使用视频ID进行唯一标识，但在前端显示中不显示这个ID
+    // In internal we still use video ID for unique identification, but do not display this ID in the frontend
     return {
       videoId,
-      title: rawTitle, // 直接使用原始标题，不添加视频ID
+      title: rawTitle, // Use original title, no longer add video ID suffix
       url: window.location.href
     };
   };
 
-  // 检查后端是否已有字幕
+  // Check if backend has existing subtitles
   const checkExistingSubtitles = async (videoId: string): Promise<boolean> => {
     try {
-      // 获取API配置
+      // Get API configuration
       const result = await browser.storage.local.get(['apiUrl', 'authToken']);
       const apiUrl = result.apiUrl as string;
       const authToken = result.authToken as string;
       const baseUrl = apiUrl?.endsWith('/') ? apiUrl : `${apiUrl}/`;
       
       if (!baseUrl || !authToken) {
-        throw new Error('缺少 API URL 或认证信息');
+        throw new Error('Missing API URL or authentication information');
       }
       
-      // 构建请求URL
+      // Build request URL
       const videoUrl = `https://www.youtube.com/watch?v=${videoId}`;
       const videoResponse = await fetch(`${baseUrl}videos/?url=${encodeURIComponent(videoUrl)}`, {
         headers: {
@@ -82,14 +82,14 @@ export function useSubtitles(currentVideoTime: Ref<number>) {
       
       const videoData = await videoResponse.json();
       
-      // 检查是否有匹配的视频
+      // Check if there is a matching video
       if (videoData.results && videoData.results.length > 0) {
-        // 查找完全匹配的视频，使用videoId进行匹配
+        // Find completely matching video, using videoId for matching
         for (const video of videoData.results) {
-          // 检查URL中是否包含相同的videoId
+          // Check if URL contains the same videoId
           const urlVideoId = getYouTubeVideoId(video.url);
           if (urlVideoId === videoId) {
-            // 检查视频是否有字幕
+            // Check if video has subtitles
             const subtitleResponse = await fetch(`${baseUrl}subtitles/?video_id=${video.id}`, {
               headers: {
                 'Authorization': `Token ${authToken}`
@@ -98,7 +98,7 @@ export function useSubtitles(currentVideoTime: Ref<number>) {
             
             if (subtitleResponse.ok) {
               const subtitleData = await subtitleResponse.json();
-              // 处理不同的API响应格式（分页或非分页）
+              // Handle different API response formats (pagination or non-pagination)
               if (Array.isArray(subtitleData)) {
                 return subtitleData.length > 0;
               } else {
@@ -115,20 +115,20 @@ export function useSubtitles(currentVideoTime: Ref<number>) {
     }
   };
 
-  // 从后端获取字幕
+  // Fetch subtitles from backend
   const fetchSubtitlesFromBackend = async (videoId: string): Promise<Subtitle[]> => {
     try {
-      // 获取API配置
+      // Get API configuration
       const result = await browser.storage.local.get(['apiUrl', 'authToken']);
       const apiUrl = result.apiUrl as string;
       const authToken = result.authToken as string;
       const baseUrl = apiUrl?.endsWith('/') ? apiUrl : `${apiUrl}/`;
       
       if (!baseUrl || !authToken) {
-        throw new Error('缺少 API URL 或认证信息');
+        throw new Error('Missing API URL or authentication information');
       }
       
-      // 构建请求URL
+      // Build request URL
       const videoUrl = `https://www.youtube.com/watch?v=${videoId}`;
       const videoResponse = await fetch(`${baseUrl}videos/?url=${encodeURIComponent(videoUrl)}`, {
         headers: {
@@ -137,20 +137,20 @@ export function useSubtitles(currentVideoTime: Ref<number>) {
       });
       
       if (!videoResponse.ok) {
-        throw new Error('获取视频信息失败');
+        throw new Error('Failed to get video information');
       }
       
       const videoData = await videoResponse.json();
       
-      // 检查是否有视频数据
+      // Check if there is video data
       if (!videoData.results || videoData.results.length === 0) {
-        throw new Error('未找到视频数据，请先收集字幕');
+        throw new Error('Failed to find video data, please collect subtitles first');
       }
       
-      // 查找完全匹配的视频，使用videoId进行匹配
+      // Find the exact matching video, using videoId for matching
       let exactVideoMatch = null;
       for (const video of videoData.results) {
-        // 检查URL中是否包含相同的videoId
+        // Check if the URL contains the same videoId
         const urlVideoId = getYouTubeVideoId(video.url);
         if (urlVideoId === videoId) {
           exactVideoMatch = video;
@@ -159,10 +159,10 @@ export function useSubtitles(currentVideoTime: Ref<number>) {
       }
       
       if (!exactVideoMatch) {
-        throw new Error('找到视频但URL不完全匹配，请重新收集字幕');
+        throw new Error('Failed to find video but URL is not completely matched, please collect subtitles again');
       }
       
-      // 获取视频字幕
+      // Get subtitles
       const response = await fetch(`${baseUrl}subtitles/?video_id=${exactVideoMatch.id}`, {
         headers: {
           'Authorization': `Token ${authToken}`
@@ -170,12 +170,12 @@ export function useSubtitles(currentVideoTime: Ref<number>) {
       });
       
       if (!response.ok) {
-        throw new Error('获取字幕失败');
+        throw new Error('Failed to get subtitles');
       }
       
       const data = await response.json();
       
-      // 处理API响应格式（分页或非分页）
+      // Handle API response format (pagination or non-pagination)
       let subtitlesData;
       if (Array.isArray(data)) {
         subtitlesData = data;
@@ -183,7 +183,7 @@ export function useSubtitles(currentVideoTime: Ref<number>) {
         subtitlesData = data.results;
       }
       
-      // 更新视频信息并返回格式化后的字幕
+      // Return formatted subtitles
       return subtitlesData.map((sub: any) => ({
         id: sub.id,
         startTime: sub.start_time,
@@ -196,22 +196,21 @@ export function useSubtitles(currentVideoTime: Ref<number>) {
     }
   };
 
-  // 通过后端API从YouTube收集字幕
   const collectSubtitlesUsingBackend = async (videoInfo: VideoInfo): Promise<void> => {
     try {
-      // 设置状态
+      // Set status
       loading.value = true;
       error.value = null;
       
-      // 从本地存储获取字幕并发送到后端
+      // Get subtitles from local storage and send to backend
       const result = await sendLocalSubtitlesToBackend(videoInfo);
       if (result) {
-        // 如果成功发送本地字幕，直接返回
+        // If successful, return
         return;
       }
       
-      // 如果本地没有字幕或发送失败，使用旧方法
-      // 发送消息到背景脚本，让背景脚本调用API
+      // If local subtitles not found or send failed, use old method
+      // Send message to background script to call API
       browser.runtime.sendMessage({
         action: 'collectSubtitles',
         videoId: videoInfo.videoId,
@@ -219,17 +218,17 @@ export function useSubtitles(currentVideoTime: Ref<number>) {
         videoTitle: videoInfo.title
       });
       
-      // 记录当前视频为处理中
+      // Record current video as processing
       processedVideoIds.value[videoInfo.videoId] = 'collecting';
       
-      // 轮询等待字幕收集完成
+      // Poll for subtitles collection completion
       let pollCount = 0;
-      const maxPolls = 5; // 最多轮询5次，避免无限循环
-      const pollInterval = 1500; // 每1.5秒检查一次
+      const maxPolls = 5; 
+      const pollInterval = 1500; 
       
       const pollForSubtitles = async () => {
         if (pollCount >= maxPolls) {
-          // 尝试最后一次获取
+          // Try last attempt
           try {
             const subs = await fetchSubtitlesFromBackend(videoInfo.videoId);
             if (subs.length > 0) {
@@ -238,14 +237,14 @@ export function useSubtitles(currentVideoTime: Ref<number>) {
               return true;
             }
           } catch (e) {
-            // 超时处理
-            throw new Error('字幕收集超时，请稍后重试');
+            // Timeout handling
+            throw new Error('Subtitle collection timeout, please try again later');
           }
         }
         
         pollCount++;
         
-        // 检查是否有字幕
+        // Check if subtitles exist
         const hasSubtitles = await checkExistingSubtitles(videoInfo.videoId);
         if (hasSubtitles) {
           const subs = await fetchSubtitlesFromBackend(videoInfo.videoId);
@@ -253,7 +252,7 @@ export function useSubtitles(currentVideoTime: Ref<number>) {
           processedVideoIds.value[videoInfo.videoId] = true;
           return true;
         } else {
-          // 继续轮询
+          // Continue polling
           return new Promise<boolean>((resolve) => {
             setTimeout(async () => {
               const result = await pollForSubtitles();
@@ -263,13 +262,13 @@ export function useSubtitles(currentVideoTime: Ref<number>) {
         }
       };
       
-      // 开始轮询前先等待一段时间，让后台有时间开始处理
+      // Wait for a moment before starting polling, allowing background script to process
       setTimeout(async () => {
         try {
           await pollForSubtitles();
         } catch (err: any) {
           error.value = err.message;
-          // 出错时移除"collecting"状态，允许重试
+          // Remove "collecting" state on error, allowing retry
           if (processedVideoIds.value[videoInfo.videoId] === 'collecting') {
             delete processedVideoIds.value[videoInfo.videoId];
           }
@@ -280,96 +279,96 @@ export function useSubtitles(currentVideoTime: Ref<number>) {
     } catch (err: any) {
       error.value = err.message;
       loading.value = false;
-      // 出错时移除"collecting"状态，允许重试
+      // Remove "collecting" state on error, allowing retry
       if (processedVideoIds.value[videoInfo.videoId] === 'collecting') {
         delete processedVideoIds.value[videoInfo.videoId];
       }
     }
   };
 
-  // 主字幕获取函数
+  // Main subtitle fetching function
   const fetchSubtitles = async (forceRefresh: boolean = false, shouldCollect: boolean = false) => {
-    // 重置状态
+    // Reset state
     loading.value = true;
     error.value = null;
     
     try {
-      // 提取当前视频信息
+      // Extract current video information
       const videoInfo = extractVideoInfo();
       if (!videoInfo) {
-        throw new Error('无法获取视频信息，请确保您在YouTube视频页面上');
+        throw new Error('Failed to get video information, please ensure you are on a YouTube video page');
       }
       
-      // 检查是否是新视频，如果是则清空现有字幕
+      // Check if it's a new video, if so, clear existing subtitles
       if (!currentVideoInfo.value || currentVideoInfo.value.videoId !== videoInfo.videoId) {
-        subtitles.value = []; // 立即清空字幕
-        currentSubtitleIndex.value = -1; // 重置当前字幕索引
+        subtitles.value = []; // Immediately clear subtitles
+        currentSubtitleIndex.value = -1; // Reset current subtitle index
         
-        // 同时从浏览器存储中清除当前字幕
+        // Also clear current subtitles from browser storage
         try {
-          // 首先检查存储API是否可用
+          // First check if storage API is available
           if (browser?.storage?.local) {
             await browser.storage.local.remove(['currentSubtitles']);
           }
         } catch (error) {
-          // 如果存储操作失败，记录错误但继续执行
-          console.warn('[WARNING] 清除存储中的字幕数据失败:', error);
-          // 不再抛出错误，因为这可能是由于扩展上下文无效导致的
+          // If storage operation fails, log warning but continue execution
+          console.warn('[WARNING] Failed to clear subtitles from storage:', error);
+          // Do not throw error, as this may be due to invalid extension context
         }
       }
       
-      // 更新当前视频信息
+      // Update current video information
       currentVideoInfo.value = videoInfo;
       
-      // 如果强制刷新，重置处理状态
+      // If forced refresh, reset processing state
       if (forceRefresh && processedVideoIds.value[videoInfo.videoId]) {
         delete processedVideoIds.value[videoInfo.videoId];
       }
       
-      // 检查是否已经处理过该视频
+      // Check if the video has already been processed
       if (processedVideoIds.value[videoInfo.videoId] === true) {
         if (subtitles.value.length > 0) {
-          // 已有字幕，直接返回
+          // Already have subtitles, return
           loading.value = false;
           return;
         } else {
-          // 标记为已处理但没有字幕，尝试重新获取
+          // Mark as processed but no subtitles, try to re-fetch
           delete processedVideoIds.value[videoInfo.videoId];
         }
       }
       
-      // 正在处理中，避免重复请求
+      // Processing in progress, avoid duplicate requests
       if (processedVideoIds.value[videoInfo.videoId] === 'collecting') {
         loading.value = false;
         return;
       }
       
-      // 标记为正在处理
+      // Mark as processing
       processedVideoIds.value[videoInfo.videoId] = 'collecting';
       
-      // 检查是否有现有字幕
+      // Check for existing subtitles
       const hasExistingSubtitles = await checkExistingSubtitles(videoInfo.videoId);
       
       if (hasExistingSubtitles) {
-        // 后端已有字幕，直接获取
+        // Backend already has subtitles, fetch them
         const subs = await fetchSubtitlesFromBackend(videoInfo.videoId);
         subtitles.value = subs;
         processedVideoIds.value[videoInfo.videoId] = true;
         loading.value = false;
       } else if (shouldCollect) {
-        // 只有当 shouldCollect 为 true 时，才尝试收集和发送字幕
+        // Only try to collect and send subtitles when shouldCollect is true
         const localSubtitleResult = await sendLocalSubtitlesToBackend(videoInfo);
         
-        // 如果本地没有字幕或发送失败，则尝试收集新字幕
+        // If local subtitles are not available or sending fails, try to collect new subtitles
         if (!localSubtitleResult) {
-          // 当本地字幕不可用时，尝试从视频获取字幕
+          // When local subtitles are unavailable, try to collect new subtitles from the video
           await collectSubtitlesUsingBackend(videoInfo);
         }
       } else {
-        // 当 shouldCollect 为 false 时，不要尝试发送字幕，只显示提示信息
-        error.value = '该视频未收集字幕，请点击全屏按钮收集字幕';
+        // When shouldCollect is false, do not attempt to send subtitles, only show prompt
+        error.value = 'This video has no subtitles, please click the fullscreen button to collect subtitles';
         loading.value = false;
-        // 移除'collecting'状态，以便未来可以重试
+        // Remove 'collecting' state, so future retries are possible
         delete processedVideoIds.value[videoInfo.videoId];
       }
     } catch (err: any) {
@@ -378,44 +377,44 @@ export function useSubtitles(currentVideoTime: Ref<number>) {
     }
   };
   
-  // 在组件挂载时初始化 - 移除自动收集逻辑
+  // Initialize on component mount - Remove auto collection logic
   onMounted(() => {
-    // 不再自动调用 fetchSubtitles()
-    // 改为只在用户点击全屏按钮时才收集字幕
+    // No longer automatically call fetchSubtitles()
+    // Instead, collect subtitles only when user clicks fullscreen button
   });
 
-  // 格式化时间（秒 -> MM:SS）
+  // Format time (seconds -> MM:SS)
   const formatTime = (timeInSeconds: number): string => {
     const minutes = Math.floor(timeInSeconds / 60);
     const seconds = Math.floor(timeInSeconds % 60);
     return `${minutes}:${seconds < 10 ? '0' + seconds : seconds}`;
   };
 
-  // 更新当前字幕
+  // Update current subtitle
   const updateCurrentSubtitle = (currentTime: number) => {
-    // 限制更新频率，避免过于频繁的计算
+    // Limit update frequency to avoid too frequent calculations
     for (let i = 0; i < subtitles.value.length; i++) {
       const sub = subtitles.value[i];
       if (currentTime >= sub.startTime && currentTime < sub.endTime) {
         if (currentSubtitleIndex.value !== i) {
           currentSubtitleIndex.value = i;
-          // 当字幕更新时，向side panel发送字幕信息
+          // When subtitle updates, send subtitle info to side panel
           sendSubtitleToSidePanel(sub);
         }
         return;
       }
     }
-    // 如果没有匹配的字幕
+    // If no matching subtitle
     if (currentSubtitleIndex.value !== -1) {
       currentSubtitleIndex.value = -1;
-      // 通知side panel当前没有字幕
+      // Notify side panel that there is no subtitle
       sendSubtitleToSidePanel(null);
     }
   };
   
-  // 向side panel发送字幕信息
+  // Send subtitle information to side panel
   const sendSubtitleToSidePanel = (subtitle: Subtitle | null) => {
-      // 使用browser API如果可用
+      // Use browser API if available
       if (typeof browser !== 'undefined' && browser.runtime && browser.runtime.sendMessage) {
         browser.runtime.sendMessage({
           action: 'updateCurrentSubtitle',
@@ -423,7 +422,7 @@ export function useSubtitles(currentVideoTime: Ref<number>) {
           videoInfo: currentVideoInfo.value
         });
       }
-      // 否则尝试使用chrome API
+      // Otherwise try using chrome API
       else if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.sendMessage) {
         chrome.runtime.sendMessage({
           action: 'updateCurrentSubtitle',
@@ -433,27 +432,27 @@ export function useSubtitles(currentVideoTime: Ref<number>) {
       }
   };
 
-  // 从本地存储获取字幕并发送到后端
+  // Get subtitles from local storage and send to backend
   const sendLocalSubtitlesToBackend = async (videoInfo: VideoInfo): Promise<boolean> => {
     try {      
       const allStorage = await browser.storage.local.get(null);
       
-      // 首先检查该视频是否已被标记为无字幕
+      // First check if the video has been marked as having no subtitles
       const noSubsData = await browser.storage.local.get(['noSubtitleVideos']) as { noSubtitleVideos?: string[] };
       if (noSubsData.noSubtitleVideos && 
           Array.isArray(noSubsData.noSubtitleVideos) && 
           videoInfo.videoId && 
           noSubsData.noSubtitleVideos.includes(videoInfo.videoId)) {
-        error.value = '该视频没有可用字幕';
+        error.value = 'The video has no available subtitles';
         loading.value = false;
         return false;
       }
 
-      // 获取本地存储的字幕
+      // Get subtitles from local storage
       const data = await browser.storage.local.get('currentSubtitles') as { currentSubtitles?: Subtitle[] };
       const videoInfoData = await browser.storage.local.get('currentVideoInfo') as { currentVideoInfo?: VideoInfo };
       
-      // 验证字幕数据
+      // Validate subtitle data
       if (
         !data.currentSubtitles || 
         !Array.isArray(data.currentSubtitles) || 
@@ -469,7 +468,7 @@ export function useSubtitles(currentVideoTime: Ref<number>) {
       const authToken = apiData.authToken;
       
       if (!authToken) {
-        error.value = 'API授权失败，请重新登录';
+        error.value = 'API authorization failed, please re-login';
         loading.value = false;
         return false;
       }
@@ -485,7 +484,7 @@ export function useSubtitles(currentVideoTime: Ref<number>) {
       
       const requestData = {
         video_id: videoInfoData.currentVideoInfo.videoId,
-        video_title: videoInfoData.currentVideoInfo.title, // 添加视频标题
+        video_title: videoInfoData.currentVideoInfo.title, // Add video title
         subtitles: formattedSubtitles
       };
       
@@ -515,7 +514,7 @@ export function useSubtitles(currentVideoTime: Ref<number>) {
                 errorText = errorResponse;
               }
             } catch (e) {
-              errorText = `HTTP错误: ${response.status} ${response.statusText}`;
+              errorText = `HTTP error: ${response.status} ${response.statusText}`;
             }
             
             if ((response.status === 500 || response.status === 404) && retryCount < maxRetries - 1) {
@@ -526,7 +525,7 @@ export function useSubtitles(currentVideoTime: Ref<number>) {
               continue;
             }
             
-            error.value = `保存字幕失败: ${response.status} ${errorText.substring(0, 100)}`;
+            error.value = `Failed to save subtitles: ${response.status} ${errorText.substring(0, 100)}`;
             loading.value = false;
             return false;
           }
@@ -541,29 +540,29 @@ export function useSubtitles(currentVideoTime: Ref<number>) {
         } catch (err: any) {
           if (retryCount < maxRetries - 1) {
             retryCount++;
-            lastError = err.message || '未知错误';
+            lastError = err.message || 'Unknown error';
             const delay = 1000 * Math.pow(2, retryCount);
             await new Promise(r => setTimeout(r, delay));
             continue;
           }
           
-          error.value = lastError || err.message || '发送字幕失败';
+          error.value = lastError || err.message || 'Failed to send subtitles';
           loading.value = false;
           return false;
         }
       }
       
-      error.value = lastError || '多次重试后仍然失败';
+      error.value = lastError || 'Multiple retries failed';
       loading.value = false;
       return false;
     } catch (err: any) {
-      error.value = err.message || '发送字幕失败';
+      error.value = err.message || 'Failed to send subtitles';
       loading.value = false;
       return false;
     }
   };
 
-  // 保存字幕到本地存储，用于聊天功能
+  // Save subtitles to local storage for chat functionality
   const saveSubtitlesToLocalStorage = (): Promise<void> => {
     if (!subtitles.value || subtitles.value.length === 0 || !currentVideoInfo.value) {
       return Promise.resolve();
@@ -585,14 +584,14 @@ export function useSubtitles(currentVideoTime: Ref<number>) {
     });
   };
 
-  // 当获取到字幕时，也保存到本地存储
+  // When subtitles are retrieved, also save to local storage
   watch(subtitles, (newSubtitles) => {
     if (newSubtitles && newSubtitles.length > 0) {
       saveSubtitlesToLocalStorage();
     }
   });
 
-  // 标记当前字幕保存到用户词典
+  // Mark current subtitle saved to user dictionary
   const markCurrentSubtitle = async (): Promise<boolean> => {
     if (!currentVideoInfo.value || currentSubtitleIndex.value < 0 || !subtitles.value[currentSubtitleIndex.value]) {
       return false;
@@ -605,7 +604,7 @@ export function useSubtitles(currentVideoTime: Ref<number>) {
       const baseUrl = apiUrl?.endsWith('/') ? apiUrl : `${apiUrl}/`;
       
       if (!baseUrl || !authToken) {
-        throw new Error('缺少 API URL 或认证信息');
+        throw new Error('Missing API URL or authentication information');
       }
       
       const currentSub = subtitles.value[currentSubtitleIndex.value];
@@ -623,7 +622,7 @@ export function useSubtitles(currentVideoTime: Ref<number>) {
       });
       
       if (!response.ok) {
-        throw new Error('标记字幕失败');
+        throw new Error('Failed to mark subtitle');
       }
       
       subtitles.value[currentSubtitleIndex.value] = {
@@ -637,14 +636,16 @@ export function useSubtitles(currentVideoTime: Ref<number>) {
     }
   };
 
-  // 监听视频时间变化，更新当前字幕
+  /**
+   * Listen to video time changes and update current subtitle
+   */
   watch(currentVideoTime, (newTime) => {
     updateCurrentSubtitle(newTime);
   });
 
   /**
-   * 当前字幕计算属性
-   * 基于当前索引获取字幕对象
+   * Current subtitle computed property
+   * Gets the subtitle object based on the current index
    */
   const currentSubtitle = computed(() => {
     if (subtitles.value && currentSubtitleIndex.value >= 0 && currentSubtitleIndex.value < subtitles.value.length) {
@@ -654,26 +655,25 @@ export function useSubtitles(currentVideoTime: Ref<number>) {
   });
 
   /**
-   * 处理当前字幕文本
-   * 该函数需要一个外部传入的处理函数来格式化文本
+   * Process current subtitle text
+   * This function requires an external function to format the text
    */
   const getProcessedCurrentSubtitle = (processTextFunction: (text: string) => string) => {
     return computed(() => {
       if (currentSubtitleIndex.value >= 0 && subtitles.value[currentSubtitleIndex.value]) {
         return processTextFunction(subtitles.value[currentSubtitleIndex.value].text);
       }
-      return ''; // 返回空字符串，不显示“无字幕”
+      return ''; // Return empty string, do not display "No subtitle"
     });
   };
 
   /**
-   * 字幕显示控制
-   * 控制字幕的显示和隐藏
+   * Control the display and hiding of subtitles
    */
   const subtitlesEnabled = ref(true);
 
   /**
-   * 切换字幕显示状态
+   * Toggle the display of subtitles
    */
   const toggleSubtitles = () => {
     subtitlesEnabled.value = !subtitlesEnabled.value;
@@ -693,13 +693,13 @@ export function useSubtitles(currentVideoTime: Ref<number>) {
     getProcessedCurrentSubtitle,
     subtitlesEnabled,
     toggleSubtitles,
-    saveSubtitlesToLocalStorage  // 暴露保存字幕的方法
+    saveSubtitlesToLocalStorage  // Expose the method to save subtitles
   };
 }
 
 /**
- * 字幕导航功能的组合式API
- * 处理字幕之间的跳转和自动滚动功能
+ * Subtitle navigation functionality
+ * Handles subtitle navigation and automatic scrolling
  */
 export function useSubtitleNavigation(
   videoElement: Ref<HTMLVideoElement | null>,
@@ -710,7 +710,9 @@ export function useSubtitleNavigation(
 ) {
   const subtitlesList = ref<HTMLElement | null>(null);
 
-  // 跳转到上一句字幕
+  /**
+   * Jump to previous subtitle
+   */
   const prevSubtitle = () => {
     if (subtitles.value.length === 0 || currentSubtitleIndex.value <= 0) return;
     
@@ -719,7 +721,7 @@ export function useSubtitleNavigation(
     seekToSubtitle(prevTime);
   };
 
-  // 跳转到下一句字幕
+  // Jump to next subtitle
   const nextSubtitle = () => {
     if (subtitles.value.length === 0 || currentSubtitleIndex.value >= subtitles.value.length - 1) return;
     
@@ -728,40 +730,40 @@ export function useSubtitleNavigation(
     seekToSubtitle(nextTime);
   };
 
-  // 跳转到指定时间点并播放
+  // Jump to a specific time point and play
   const seekToSubtitle = (time: number) => {
     if (!videoElement.value) return;
-    // 设置时间位置
+    // Set time position
     videoElement.value.currentTime = time;
     
-    // 强制播放视频，即使当前是暂停状态
+    // Force play video, even if it's paused
     if (isPlaying && togglePlay) {
-      // 如果提供了播放状态和切换函数，使用它们来确保 UI 状态同步
+      // If provided play state and toggle function, use them to ensure UI state sync
       if (!isPlaying.value) {
-        togglePlay(); // 切换播放状态
+        togglePlay(); // Toggle play state
       }
     } else {
-      // 如果没有提供播放控制，直接调用播放
+      // If no play control provided, directly call play
       videoElement.value.play();
     }
   };
 
 
-  // 监听当前字幕索引变化，实现字幕自动滚动
+  // Listen to changes in current subtitle index to implement automatic subtitle scrolling
   let disableAutoScroll = false;
   
-  // 添加方法检测并设置是否在小屏幕上
+  // Add method to check screen size and set whether it's a small screen
   const checkScreenSize = () => {
     disableAutoScroll = window.innerWidth <= 991.98;
   };
   
-  // 初始化检查并添加监听器
+  // Initialize check and add listener
   checkScreenSize();
   
-  // 添加窗口大小变化监听
+  // Add window size change listener
   window.addEventListener('resize', checkScreenSize);
   
-  // 在组件卸载时处理
+  // Handle component unmount
   onMounted(() => {
     return () => {
       window.removeEventListener('resize', checkScreenSize);
@@ -771,15 +773,15 @@ export function useSubtitleNavigation(
   watch(currentSubtitleIndex, async (newIndex) => {
     if (!subtitlesList.value || newIndex < 0) return;
     
-    // 等待DOM更新
+    // Wait for DOM update
     await nextTick();
     
-    // 获取当前字幕元素
+    // Get current subtitle element
     const currentElement = subtitlesList.value.children[newIndex] as HTMLElement;
     if (!currentElement) return;
     
-    // 滚动到当前字幕
-    // 只在宽屏模式下执行滚动，窄屏模式下不执行
+    // Scroll to current subtitle
+    // Only scroll in wide screen mode, do not scroll in narrow screen mode
     if (!disableAutoScroll) {
       currentElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }

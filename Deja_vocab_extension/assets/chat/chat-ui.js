@@ -1,6 +1,6 @@
 import browser from 'webextension-polyfill';
 import ChatModeManager from './chat-mode.js';
-import './chat-listener.js';  // 引入聊天监听器
+import './chat-listener.js';  // Import chat listener
 
 /**
  * Modern Chat Interface - Redesigned
@@ -40,7 +40,7 @@ class ChatUI {
     this.chatHistory = [];
     this.currentRequest = null;
     
-    // 聊天模式 - 不再在这里设置默认值，由ChatModeManager管理
+    // Chat mode - No longer set default value here, managed by ChatModeManager
     this.chatModeManager = null;
     
     // Stream processing
@@ -53,15 +53,15 @@ class ChatUI {
     
     // Video change detection
     this.lastVideoId = '';
-    this.isFirstVideoLoad = true; // 添加标记，区分首次加载和后续切换
+    this.isFirstVideoLoad = true; // Add flag to distinguish first load and subsequent switches
     
-    // 视频标题缓存
+    // Video title cache
     this.videoTitleCache = new Map();
     
-    // 初始化标记
+    // Initialization flag
     this.initialized = false;
     
-    // 事件处理函数ID
+    // Event handler ID
     this._eventHandlersId = null;
   }
 
@@ -194,17 +194,9 @@ class ChatUI {
       const settings = await browser.storage.local.get(['apiUrl', 'environment']);
       const environment = settings.environment || 'production';
       
-      // Set default API URL based on environment if not stored
-      if (!settings.apiUrl) {
-        this.apiUrl = environment === 'localhost' 
-          ? 'http://localhost:8000/api/' 
-          : 'https://dejavocab.com/api/';
-        
-        // Save to storage for consistency
-        await browser.storage.local.set({ apiUrl: this.apiUrl });
-      } else {
-        this.apiUrl = settings.apiUrl;
-      }
+      // Set default API URL if not stored
+      this.apiUrl = settings.apiUrl || 'http://localhost:8000/api/';
+      await browser.storage.local.set({ apiUrl: this.apiUrl });
       
       this.environment = environment;
       console.log('[INFO] Using API URL:', this.apiUrl, 'Environment:', this.environment);
@@ -229,10 +221,10 @@ class ChatUI {
       // Show chat interface
       this.activateChatView();
       
-      // Load settings (包含初始化ChatModeManager)
+      // Load settings (include ChatModeManager initialization)
       await this.loadSettings();
       
-      // Set up event listeners (确保在ChatModeManager初始化后设置事件)
+      // Set up event listeners (ensure after ChatModeManager initialization)
       this.setupEventListeners();
       
       // Load chat history
@@ -241,7 +233,7 @@ class ChatUI {
       // Load dark mode setting
       await this.loadDarkModeSetting();
       
-      // 设置storage变化监听器，用于检测视频信息更新
+      // Set up storage change listener
       this.setupStorageChangeListener();
       
       // Mark this instance as initialized
@@ -254,25 +246,25 @@ class ChatUI {
   }
   
   /**
-   * 设置storage变化监听器
+   * Set up storage change listener
    */
   setupStorageChangeListener() {
-    const self = this; // 保存this引用
+    const self = this; // Save this reference
     
-    // 添加标题缓存映射，用于记录每个视频ID对应的标题
-    // 这样即使存储数据延迟更新，我们仍然可以使用正确的标题
+    // Add title cache mapping, used to record the title corresponding to each video ID
+    // This way, even if the storage data is delayed, we can still use the correct title
     if (!this.videoTitleCache) {
       this.videoTitleCache = new Map();
     }
     
     browser.storage.onChanged.addListener(async (changes, areaName) => {
       if (areaName === 'local') {
-        // 检查视频信息变化
+        // Check for video info changes
         if (changes.currentVideoInfo) {
           console.log('[DEBUG] Video info changed in storage');
           
           try {
-            // 获取完整的新旧值
+            // Get complete new and old values
             const newValue = changes.currentVideoInfo.newValue;
             const oldValue = changes.currentVideoInfo.oldValue;
             
@@ -286,48 +278,47 @@ class ChatUI {
               console.log('[INFO] Old video info:', JSON.stringify(oldValue));
             }
             
-            // 提取视频ID和标题
+            // Extract video ID and title
             const newVideoId = newValue.videoId;
             
-            // 如果没有视频ID，忽略这次更新
+            // If no video ID, ignore this update
             if (!newVideoId) {
               console.log('[WARN] Invalid video info - missing ID');
               return;
             }
             
-            // 如果视频ID没变，不做处理
+            // If video ID hasn't changed, do nothing
             if (newVideoId === self.lastVideoId) {
               console.log('[INFO] Ignoring update for same video ID:', newVideoId);
               return;
             }
             
-            // ===== 修复：区分首次加载和真正的视频切换 =====
-            // 如果是首次加载（没有历史记录的lastVideoId）
+            // If first load (no history lastVideoId)
             if (self.isFirstVideoLoad) {
               console.log('[INFO] First video load detected, setting initial video ID:', newVideoId);
-              // 只更新状态，不添加系统消息
+              // Only update state, no system message
               self.lastVideoId = newVideoId;
-              self.isFirstVideoLoad = false; // 标记为非首次加载
+              self.isFirstVideoLoad = false; // Mark as non-first load
               
-              // 如果有标题，我们仍然更新缓存
+              // If there's a title, still update cache
               if (newValue.title) {
                 self.videoTitleCache.set(newVideoId, newValue.title);
               }
               
-              return; // 不继续执行以避免显示首次加载的通知
+              return; // Do not continue execution to avoid showing first load notification
             }
             
-            // ===== 对于真正的视频变更：获取准确的视频标题 =====
+            // For actual video change: get accurate video title
             console.log('[INFO] Detected video ID change, getting latest title from YouTube');
             let accurateTitle = await self.getYouTubeVideoTitle(newVideoId);
             
-            // 如果无法获取新标题，退回到存储数据
+            // If cannot get new title, fallback to storage data
             if (!accurateTitle && newValue.title) {
               console.log('[INFO] Using storage title as fallback:', newValue.title);
               accurateTitle = newValue.title;
             }
             
-            // 更新标题缓存
+            // Update title cache
             self.videoTitleCache.set(newVideoId, accurateTitle);
             
             console.log('[INFO] Confirmed video change:', 
@@ -340,16 +331,16 @@ class ChatUI {
               content: `您已切换到新视频: ${accurateTitle || newVideoId}`
             });
             
-            // 渲染聊天历史
+            // Render chat history
             self.renderChatHistory();
             
-            // 如果不是累积模式，清除聊天历史但保留系统消息
+            // If not accumulate mode, clear chat history but keep system messages
             if (self.chatModeManager && self.chatModeManager.getCurrentMode() !== 'accumulate') {
               console.log('[INFO] Non-accumulate mode active, clearing chat history except system messages');
               self.chatHistory = self.chatHistory.filter(msg => msg.role === 'system');
             }
             
-            // 更新内部视频ID记录
+            // Update internal video ID record
             self.lastVideoId = newVideoId;
           } catch (error) {
             console.error('[ERROR] Error processing video change:', error);
@@ -360,49 +351,49 @@ class ChatUI {
   }
 
   /**
-   * 从YouTube页面直接获取视频标题
-   * 用于确保我们显示的是正确的视频标题，而不仅仅依赖存储数据
-   * @param {string} videoId - 视频ID
-   * @returns {Promise<string>} - 视频标题
+   * Get video title from YouTube page
+   * Used to ensure we display the correct video title, not just storage data
+   * @param {string} videoId - Video ID
+   * @returns {Promise<string>} - Video title
    */
   async getYouTubeVideoTitle(videoId) {
     try {
-      // 查询所有标签页找到匹配的YouTube视频
+      // Query all tabs to find matching YouTube video
       const tabs = await browser.tabs.query({});
       console.log(`[DEBUG] Searching ${tabs.length} tabs for video ID: ${videoId}`);
       
       for (const tab of tabs) {
-        // 检查是否为YouTube视频页面
+        // Check if it's a YouTube video page
         if (tab.url && tab.url.includes('youtube.com/watch') && tab.url.includes(videoId)) {
           console.log(`[INFO] Found matching YouTube tab for ${videoId}: ${tab.title}`);
           
           try {
-            // 使用scripting API执行内容脚本获取页面标题元素
-            // 使用更精确的方式获取视频标题，避免获取到通知计数前缀 (如 "(56)")
+            // Use scripting API to execute content script to get page title element
+            // Use more precise way to get video title, avoid getting notification count prefix (e.g. "(56)")
             const result = await browser.scripting.executeScript({
               target: { tabId: tab.id },
               func: () => {
-                // 尝试从视频标题元素直接获取
+                // Try to get video title from video title element
                 const videoTitleElement = document.querySelector('h1.title.style-scope.ytd-video-primary-info-renderer');
                 if (videoTitleElement) {
                   return videoTitleElement.textContent.trim();
                 }
                 
-                // 备选方案：从meta标签获取
+                // Alternative: get from meta tag
                 const metaTitle = document.querySelector('meta[property="og:title"]')?.getAttribute('content');
                 if (metaTitle) {
                   return metaTitle;
                 }
                 
-                // 最后尝试：从document.title获取，并处理前缀
+                // Last try: get from document.title and handle prefix
                 let docTitle = document.querySelector('title').textContent;
-                // 处理通知计数前缀，如 "(56) 视频标题 - YouTube"
+                // Handle notification count prefix, e.g. "(56) Video Title - YouTube"
                 const notificationPrefix = docTitle.match(/^\(\d+\)\s*/);
                 if (notificationPrefix) {
                   docTitle = docTitle.replace(notificationPrefix[0], '');
                 }
                 
-                // 还需要处理YouTube后缀
+                // Need to handle YouTube suffix
                 if (docTitle.includes(' - YouTube')) {
                   docTitle = docTitle.replace(' - YouTube', '');
                 }
@@ -422,8 +413,8 @@ class ChatUI {
         }
       }
       
-      // 如果找不到匹配的标签页或无法获取标题，尝试通过YouTube API获取
-      // 注意：这需要跨域权限，可能在某些环境下不工作
+      // If no matching tab or cannot get title, try through YouTube API
+      // Note: This requires cross-origin permissions, may not work in some environments
       console.log(`[INFO] Attempting to fetch title for ${videoId} from YouTube API`);
       const response = await fetch(`https://www.youtube.com/oembed?url=https://www.youtube.com/watch?v=${videoId}&format=json`);
       
@@ -463,18 +454,18 @@ class ChatUI {
       chatContainer.style.display = 'flex';
     }
     
-    // 隐藏YouTube引导界面（如果存在）
+    // Hide YouTube guide interface (if exists)
     const guideContainer = document.getElementById('youtube-guide');
     if (guideContainer) {
       guideContainer.style.display = 'none';
-      console.log('[INFO] 已隐藏YouTube引导界面');
+      console.log('[INFO] Hidden YouTube guide interface');
     }
     
-    console.log('[INFO] 聊天界面已激活');
+    console.log('[INFO] Chat interface activated');
   }
   
   /**
-   * Deactivate chat view - 用于在非YouTube页面上隐藏聊天界面
+   * Deactivate chat view - used to hide chat interface on non-Youtube pages
    */
   deactivateChatView() {
     // Remove chat-active class from body
@@ -491,14 +482,14 @@ class ChatUI {
       chatContainer.style.display = 'none';
     }
     
-    // 显示YouTube引导界面（如果存在）
+    // Show YouTube guide interface (if exists)
     const guideContainer = document.getElementById('youtube-guide');
     if (guideContainer) {
-      guideContainer.style.display = 'flex'; // 修改这里，从'none'改为'block'
-      console.log('[INFO] 已显示YouTube引导界面');
+      guideContainer.style.display = 'flex';
+      console.log('[INFO] Show YouTube guide interface');
     }
     
-    console.log('[INFO] 聊天界面已停用');
+    console.log('[INFO] Chat interface deactivated');
   }
 
   /**
@@ -524,36 +515,36 @@ class ChatUI {
   }
 
   /**
-   * 导出当前会话，包括结束当前会话并生成AI总结
+   * Export current session, including ending current session and generating AI summary
    */
-  // 标记当前是否正在导出（防止同时进行多次导出）
+  // Mark current export status (prevent multiple exports)
   _isExporting = false;
   
   async exportChatSession() {
-    // 如果导出操作正在进行，则直接返回
+    // If export operation is already in progress, return
     if (this._isExporting) {
       console.log('[INFO] Export already in progress, ignoring duplicate request');
       return;
     }
     
-    // 设置标记以防止重复调用
+    // Set flag to prevent duplicate calls
     this._isExporting = true;
     
-    // 不再检查前端的聊天历史，直接尝试从后端导出
-    // 后端会检查是否有消息可导出
+    // No longer check for chat history in frontend, directly try to export from backend
+    // Backend will check if there are messages to export
 
     try {
-      // 显示加载中提示
+      // Show loading prompt
       const exportBtn = document.getElementById('export-notes-btn');
       if (exportBtn) {
         exportBtn.disabled = true;
-        exportBtn.innerHTML = '<i class="bi bi-hourglass-split"></i> 生成中...';
+        exportBtn.innerHTML = '<i class="bi bi-hourglass-split"></i> Generating...';
       }
       
-      // 确保API URL正确格式
+      // Ensure API URL is in correct format
       const baseUrl = this.apiUrl.endsWith('/') ? this.apiUrl.slice(0, -1) : this.apiUrl;
       
-      // 1. 首先结束当前会话
+      // 1. First end current session
       const endSessionUrl = `${baseUrl}/chat/end-session/`;
       console.log('[INFO] Ending chat session at:', endSessionUrl);
       
@@ -572,7 +563,7 @@ class ChatUI {
       const sessionData = await endSessionResponse.json();
       console.log('[INFO] Session ended successfully:', sessionData);
       
-      // 2. 导出会话笔记
+      // 2. Export session notes
       const exportNotesUrl = `${baseUrl}/chat/export-notes/${sessionData.session_id}/`;
       console.log('[INFO] Exporting session notes from:', exportNotesUrl);
       
@@ -587,49 +578,49 @@ class ChatUI {
         throw new Error(`Failed to export notes: ${exportResponse.status}`);
       }
       
-      // 获取导出数据但不下载文件
+      // Get export data but do not download file
       const exportData = await exportResponse.json();
       
-      // 只打印导出的笔记信息，不创建下载
+      // Only print export notes information, do not create download
       console.log('[INFO] Notes content prepared but not downloaded as requested');
       
-      // 如果需要展示导出内容，可以在消息区域显示部分内容
+      // If need to display exported content, can show part of the content in message area
       if (exportData && exportData.content && exportData.content.length > 0) {
         console.log('[INFO] Summary content generated successfully');
       }
       
       console.log('[INFO] Successfully exported session notes');
       
-      // 添加系统消息告知用户会话已结束
+      // Add system message to inform user session has ended
       this.addMessageToChat({
         role: 'system',
-        content: '当前会话已结束。将自动开始新的会话。',
+        content: 'Current session has ended. Will automatically start a new session.',
         timestamp: new Date().toISOString()
       });
       
-      // 清除当前聊天历史，为新会话做准备
+      // Clear current chat history, prepare for new session
       this.chatHistory = [];
       this.saveChatHistory();
       
-      // 清除会话相关的缓存状态
+      // Clear session related cache state
       localStorage.removeItem('dejavu_chat_session_state');
       localStorage.removeItem('dejavu_current_video');
       
-      // 重置视频跟踪状态
+      // Reset video tracking state
       this.lastVideoId = '';
       
     } catch (error) {
       console.error('[ERROR] Failed to export session:', error);
-      alert(`导出会话失败: ${error.message}`);
+      alert(`Failed to export session: ${error.message}`);
     } finally {
-      // 恢复按钮状态
+      // Restore button state
       const exportBtn = document.getElementById('export-notes-btn');
       if (exportBtn) {
         exportBtn.disabled = false;
-        exportBtn.innerHTML = '<i class="bi bi-file-earmark-text"></i> 导出会话';
+        exportBtn.innerHTML = '<i class="bi bi-file-earmark-text"></i> Export Session';
       }
       
-      // 延时重置导出状态标记，防止快速重复点击
+      // Reset export state marker to prevent quick repeated clicks
       setTimeout(() => {
         this._isExporting = false;
       }, 2000);
@@ -640,14 +631,14 @@ class ChatUI {
    * Set up event listeners
    */
   setupEventListeners() {
-    // 添加调试ID，帮助识别事件绑定情况
+    // Add debug ID to help identify event binding
     const debugId = Math.random().toString(36).substring(2, 8);
-    console.log(`[DEBUG ${debugId}] 开始设置事件监听器`);
+    console.log(`[DEBUG ${debugId}] Starting event listener setup`);
     
-    // 先移除已有的事件监听器
+    // First remove existing event listeners
     this.removeExistingEventListeners();
     
-    // 先检查元素是否都存在
+    // Check if elements exist
     const elements = {
       sendButton: document.getElementById('send-button'),
       inputField: document.getElementById('chat-input'),
@@ -656,8 +647,8 @@ class ChatUI {
       logoutBtn: document.getElementById('logout-btn')
     };
     
-    // 检查元素是否都存在
-    console.log(`[DEBUG ${debugId}] 检查UI元素:`, {
+    // Check if elements exist
+    console.log(`[DEBUG ${debugId}] Checking UI elements:`, {
       sendButton: !!elements.sendButton,
       inputField: !!elements.inputField,
       clearChatBtn: !!elements.clearChatBtn,
@@ -665,7 +656,7 @@ class ChatUI {
       logoutBtn: !!elements.logoutBtn
     });
     
-    // 检查是否有旧的处理函数
+    // Check for old handlers
     const hasOldHandlers = {
       sendHandler: !!this.sendHandler,
       keydownHandler: !!this.keydownHandler,
@@ -673,21 +664,21 @@ class ChatUI {
       darkModeHandler: !!this.darkModeHandler,
       logoutHandler: !!this.logoutHandler
     };
-    console.log(`[DEBUG ${debugId}] 旧的事件处理函数:`, hasOldHandlers);
+    console.log(`[DEBUG ${debugId}] Old event handlers:`, hasOldHandlers);
     
-    // 为事件处理函数存储唯一标识符
+    // Store unique identifier for event handlers
     this._eventHandlersId = debugId;
     
-    // Send button click event - 使用一个检查确保只绑定一次
+    // Send button click event - use a check to ensure only one binding
     if (elements.sendButton && !elements.sendButton._hasClickListener) {
       this.sendHandler = (e) => {
         e.preventDefault();
-        console.log(`[事件 ${this._eventHandlersId}] 发送按钮点击`);
+        console.log(`[Event ${this._eventHandlersId}] Send button click`);
         this.handleSendMessage();
       };
       elements.sendButton.addEventListener('click', this.sendHandler);
       elements.sendButton._hasClickListener = true;
-      console.log(`[DEBUG ${debugId}] 已添加发送按钮点击事件监听器`);
+      console.log(`[DEBUG ${debugId}] Added send button click event listener`);
     }
     
     // Input field keypress event (Enter to send)
@@ -698,7 +689,7 @@ class ChatUI {
         // Check for Enter key (without shift) to send message
         if (e.key === 'Enter' && !e.shiftKey) {
           e.preventDefault();
-          console.log(`[事件 ${this._eventHandlersId}] 回车键发送`);
+          console.log(`[Event ${this._eventHandlersId}] Enter key to send`);
           this.handleSendMessage();
         }
       };
@@ -710,63 +701,62 @@ class ChatUI {
         this.adjustTextareaHeight();
       };
       elements.inputField.addEventListener('input', this.inputHandler);
-      console.log(`[DEBUG ${debugId}] 已添加输入框事件监听器`);
+      console.log(`[DEBUG ${debugId}] Added input field event listener`);
     }
     
     // Clear chat button click event
     if (elements.clearChatBtn && !elements.clearChatBtn._hasClickListener) {
       this.clearChatHandler = (e) => {
         e.preventDefault();
-        console.log(`[事件 ${this._eventHandlersId}] 清除聊天按钮点击`);
+        console.log(`[Event ${this._eventHandlersId}] Clear chat button click`);
         this.clearChat();
       };
       elements.clearChatBtn.addEventListener('click', this.clearChatHandler);
       elements.clearChatBtn._hasClickListener = true;
-      console.log(`[DEBUG ${debugId}] 已添加清除聊天按钮事件监听器`);
+      console.log(`[DEBUG ${debugId}] Added clear chat button event listener`);
     }
     
     // Dark mode toggle button click event
     if (elements.darkModeToggle && !elements.darkModeToggle._hasClickListener) {
       this.darkModeHandler = (e) => {
         e.preventDefault();
-        console.log(`[事件 ${this._eventHandlersId}] 暗黑模式切换按钮点击`);
+        console.log(`[Event ${this._eventHandlersId}] Dark mode toggle button click`);
         this.toggleDarkMode();
       };
       elements.darkModeToggle.addEventListener('click', this.darkModeHandler);
       elements.darkModeToggle._hasClickListener = true;
-      console.log(`[DEBUG ${debugId}] 已添加暗黑模式按钮事件监听器`);
+      console.log(`[DEBUG ${debugId}] Added dark mode toggle button event listener`);
     }
     
     // Logout button click event
     if (elements.logoutBtn && !elements.logoutBtn._hasClickListener) {
       this.logoutHandler = (e) => {
         e.preventDefault();
-        console.log(`[事件 ${this._eventHandlersId}] 登出按钮点击`);
         this.logout();
       };
       elements.logoutBtn.addEventListener('click', this.logoutHandler);
       elements.logoutBtn._hasClickListener = true;
-      console.log(`[DEBUG ${debugId}] 已添加登出按钮事件监听器`);
+      console.log(`[DEBUG ${debugId}] Added logout button event listener`);
     }
     
-    // 初始化聊天模式切换按钮（由ChatModeManager处理）
+    // Chat mode toggle button click event
     if (this.chatModeManager) {
       this.chatModeManager.bindEvents();
     } else {
       console.warn('[WARNING] Chat mode manager not initialized, skipping event setup');
     }
     
-    // Resize event for responsive design - 同样使用检查避免重复添加
+    // Resize event for responsive design - Use check to avoid duplicate addition
     if (!window._hasResizeListener) {
       this.resizeHandler = () => {
         this.adjustTextareaHeight();
       };
       window.addEventListener('resize', this.resizeHandler);
       window._hasResizeListener = true;
-      console.log(`[DEBUG ${debugId}] 已添加窗口大小调整事件监听器`);
+      console.log(`[DEBUG ${debugId}] Added window resize event listener`);
     }
     
-    console.log(`[DEBUG ${debugId}] 事件监听器设置完成`);
+    console.log(`[DEBUG ${debugId}] Event listeners setup completed`);
   }
 
   /**
@@ -774,9 +764,8 @@ class ChatUI {
    */
   removeExistingEventListeners() {
     const debugId = Math.random().toString(36).substring(2, 8);
-    console.log(`[DEBUG ${debugId}] 开始移除现有事件监听器`);
+    console.log(`[DEBUG ${debugId}] Starting to remove existing event listeners`);
     
-    // 获取所有按钮元素
     const elements = {
       sendButton: document.getElementById('send-button'),
       inputField: document.getElementById('chat-input'),
@@ -785,18 +774,18 @@ class ChatUI {
       logoutBtn: document.getElementById('logout-btn')
     };
     
-    // 移除所有可能的事件监听器，同时重置_hasClickListener标记
+    // Remove all possible event listeners, reset _hasClickListener flag
     
     // Send button
     if (elements.sendButton) {
       if (this.sendHandler) {
         elements.sendButton.removeEventListener('click', this.sendHandler);
       }
-      // 确保移除所有其他可能存在的点击处理函数
+      // Ensure removal of all other possible click handlers
       elements.sendButton.replaceWith(elements.sendButton.cloneNode(true));
-      // 更新引用，因为cloneNode后原引用无效
+      // Update reference, because cloneNode invalidates original reference
       this.sendButton = document.getElementById('send-button');
-      console.log(`[DEBUG ${debugId}] 已清除发送按钮事件监听器`);
+      console.log(`[DEBUG ${debugId}] Removed send button event listeners`);
     }
     
     // Input field
@@ -807,12 +796,12 @@ class ChatUI {
       if (this.inputHandler) {
         elements.inputField.removeEventListener('input', this.inputHandler);
       }
-      // 克隆并替换确保所有事件处理器被移除
+      // Clone and replace to ensure all event handlers are removed
       const newInput = elements.inputField.cloneNode(true);
       elements.inputField.parentNode.replaceChild(newInput, elements.inputField);
-      // 更新引用
+      // Update reference
       this.inputField = document.getElementById('chat-input');
-      console.log(`[DEBUG ${debugId}] 已清除输入框事件监听器`);
+      console.log(`[DEBUG ${debugId}] Removed input field event listeners`);
     }
     
     // Clear chat button
@@ -821,7 +810,7 @@ class ChatUI {
         elements.clearChatBtn.removeEventListener('click', this.clearChatHandler);
       }
       elements.clearChatBtn.replaceWith(elements.clearChatBtn.cloneNode(true));
-      console.log(`[DEBUG ${debugId}] 已清除清除聊天按钮事件监听器`);
+      console.log(`[DEBUG ${debugId}] Removed clear chat button event listeners`);
     }
     
     // Dark mode toggle
@@ -830,7 +819,7 @@ class ChatUI {
         elements.darkModeToggle.removeEventListener('click', this.darkModeHandler);
       }
       elements.darkModeToggle.replaceWith(elements.darkModeToggle.cloneNode(true));
-      console.log(`[DEBUG ${debugId}] 已清除暗黑模式按钮事件监听器`);
+      console.log(`[DEBUG ${debugId}] Removed dark mode toggle event listeners`);
     }
     
     // Logout button
@@ -839,16 +828,16 @@ class ChatUI {
         elements.logoutBtn.removeEventListener('click', this.logoutHandler);
       }
       elements.logoutBtn.replaceWith(elements.logoutBtn.cloneNode(true));
-      console.log(`[DEBUG ${debugId}] 已清除登出按钮事件监听器`);
+      console.log(`[DEBUG ${debugId}] Removed logout button event listeners`);
     }
     
     // Remove resize event listener
     if (this.resizeHandler) {
       window.removeEventListener('resize', this.resizeHandler);
-      console.log(`[DEBUG ${debugId}] 已清除窗口大小调整事件监听器`);
+      console.log(`[DEBUG ${debugId}] Removed window resize event listener`);
     }
     
-    // 清除所有处理函数引用
+    // Clear all handler references
     this.sendHandler = null;
     this.keydownHandler = null;
     this.inputHandler = null;
@@ -858,7 +847,7 @@ class ChatUI {
     this.exportNotesHandler = null;
     this.resizeHandler = null;
     
-    console.log(`[DEBUG ${debugId}] 已完成移除所有事件监听器`);
+    console.log(`[DEBUG ${debugId}] Removed all event listeners`);
   }
 
   /**
@@ -904,20 +893,19 @@ class ChatUI {
     });
     
     try {
-      // 始终直接从浏览器存储获取最新的字幕数据 - 不依赖于上次获取的结果
-      // 这确保我们总是使用当前视频的最新字幕，无论视频何时更改
+      // Always directly fetch the latest subtitle data from browser storage - do not depend on previous results
+      // This ensures we always use the latest subtitles for the current video, regardless of when the video changes
       let currentSubtitles = [];
       let currentVideoTitle = '';
       let currentVideoId = '';
       let videoChanged = false;
       
-      // 从浏览器存储中获取当前视频信息和字幕
+      // Fetch current video info and subtitles from browser storage
       console.log('[INFO] Fetching latest video info and subtitles from browser storage');
       const storageData = await browser.storage.local.get(['currentSubtitles', 'currentVideoInfo']);
       
-      // 处理字幕数据
+      // Process subtitle data
       if (storageData.currentSubtitles && Array.isArray(storageData.currentSubtitles)) {
-        // 筛选和格式化字幕
         currentSubtitles = storageData.currentSubtitles
           .filter(subtitle => subtitle && (typeof subtitle === 'object' || typeof subtitle === 'string'))
           .map(subtitle => {
@@ -938,35 +926,35 @@ class ChatUI {
         console.log('[WARN] No subtitles found in storage or invalid format');
       }
       
-      // 处理视频信息
+      // Process video info
       if (storageData.currentVideoInfo) {
         currentVideoTitle = storageData.currentVideoInfo.title || '';
         currentVideoId = storageData.currentVideoInfo.videoId || '';
         console.log('[INFO] Current video info:', currentVideoId, currentVideoTitle);
         
-        // 检测视频是否变化
+        // Check if video has changed
         if (this.lastVideoId && this.lastVideoId !== currentVideoId && currentVideoId) {
           console.log('[INFO] Video changed from', this.lastVideoId, 'to', currentVideoId);
           videoChanged = true;
           
-          // 当视频变化时，添加一条系统消息告知用户
+          // When video changes, add a system message to inform user
           this.addMessageToChat({
             role: 'system',
-            content: `您已切换到新视频: ${currentVideoTitle}`
+            content: `You have switched to a new video: ${currentVideoTitle}`
           });
         } else if (!this.lastVideoId && currentVideoId) {
-          // 首次设置视频ID
+          // First time setting video ID
           console.log('[INFO] First video detected:', currentVideoId);
           videoChanged = true;
           
-          // 首次检测到视频时也添加系统消息
+          // Also add system message when first video is detected
           this.addMessageToChat({
             role: 'system',
-            content: `您已切换到新视频: ${currentVideoTitle}`
+            content: `You have switched to a new video: ${currentVideoTitle}`
           });
         }
         
-        // 更新上次视频ID - 确保始终更新，即使视频没有变化
+        // Update lastVideoId - ensure always updated, even if video doesn't change
         if (currentVideoId) {
           this.lastVideoId = currentVideoId;
           console.log('[INFO] Updated lastVideoId to:', currentVideoId);
@@ -985,10 +973,10 @@ class ChatUI {
         throw new Error('API connection not configured, please check backend settings');
       }
       
-      // 记录视频切换状态
+      // Log video change status
       console.log('[INFO] Video change detected:', videoChanged ? 'YES' : 'NO');
       
-      // 根据当前聊天模式选择API端点
+      // Select API endpoint based on current chat mode
       let endpoint;
       if (this.chatModeManager && this.chatModeManager.getCurrentMode() === 'accumulate') {
         endpoint = `${baseUrl}/ai/chat-completion/`;
@@ -997,31 +985,31 @@ class ChatUI {
         endpoint = `${baseUrl}/ai/chat-completion-default/`;
         console.log('[INFO] Using default mode endpoint:', endpoint);
         
-        // 如果不是累积模式，清除聊天历史但保留系统消息
+        // If not accumulate mode, clear chat history but keep system messages
         if (videoChanged) {
           console.log('[INFO] Video changed in default mode, clearing chat history except system messages');
           this.chatHistory = this.chatHistory.filter(msg => msg.role === 'system');
         }
       }
       
-      // 记录当前使用的端点
+      // Log current endpoint
       const currentMode = this.chatModeManager ? this.chatModeManager.getCurrentMode() : 'default';
       console.log('[INFO] Using endpoint for mode:', currentMode, endpoint);
       
-      // 检查是否应该发送字幕数据 - 现在我们总是发送
+      // Check if subtitles should be sent - we always send now
       console.log('[INFO] Will send subtitles, count:', currentSubtitles.length);
       
-      // 准备请求体 - 确保始终包含最新的字幕数据
+      // Prepare request body - always include latest subtitles
       const requestBody = {
         message: userMessage,
         history: this.chatHistory.slice(-10), // Only send last 10 chat messages
-        subtitles: currentSubtitles, // 始终发送当前字幕，无论是否有变化
+        subtitles: currentSubtitles, // Always send current subtitles
         videoTitle: currentVideoTitle,
         videoId: currentVideoId,
-        userId: this.userId || 'anonymous' // 确保发送用户ID
+        userId: this.userId || 'anonymous' // Ensure sending user ID
       };
       
-      // 记录请求信息
+      // Log request information
       console.log('[INFO] Sending request with:', {
         videoId: currentVideoId,
         subtitlesCount: currentSubtitles.length,
@@ -1061,11 +1049,11 @@ class ChatUI {
       const contentElement = document.createElement('div');
       contentElement.className = 'message-content message-appear';
       
-      // 创建加载动画
+      // Create loading animation
       const dotsContainer = document.createElement('div');
       dotsContainer.className = 'message-dots';
       
-      // 创建三个动画点
+      // Create three animation dots
       for (let i = 0; i < 3; i++) {
         const dot = document.createElement('div');
         dot.className = 'message-dot';
@@ -1086,7 +1074,7 @@ class ChatUI {
 
       // Stream reading loop
       let chunkBuffer = '';
-      let updateInterval = 50; // 更新间隔减少到50ms，使显示更平滑
+      let updateInterval = 50; // Update interval reduced to 50ms for smoother display
       let lastUpdateTime = 0;
       
       let fullContent = '';
@@ -1122,17 +1110,17 @@ class ChatUI {
                   // Throttle UI updates to prevent flickering
                   const now = Date.now();
                   if (now - lastUpdateTime > updateInterval) {
-                    // 移除加载动画
+                    // Remove loading animation
                     const dotsContainer = contentElement.querySelector('.message-dots');
                     if (dotsContainer) {
                       dotsContainer.remove();
                     }
                     
-                    // 替换为真实内容
+                    // Replace with actual content
                     contentElement.innerHTML = this.renderMarkdown(fullContent);
                     lastUpdateTime = now;
                     
-                    // 始终保持较小的更新间隔，使得流式效果更明显
+                    // Always keep a small update interval to make the streaming effect more visible
                     updateInterval = fullContent.length > 2000 ? 100 : 50;
                     
                     // Only add message to DOM once we have actual content
@@ -1164,9 +1152,9 @@ class ChatUI {
                   // Save chat history
                   this.saveChatHistory();
                   
-                  // 触发API请求完成事件，用于更新视频列表
+                  // Trigger API request completed event, used to update video list
                   document.dispatchEvent(new CustomEvent('apiRequestCompleted'));
-                  console.log('[INFO] API请求完成事件已触发');
+                  console.log('[INFO] API request completed event triggered');
                 }
               } catch (error) {
                 console.error('[ERROR] Error parsing server data:', error);
@@ -1211,7 +1199,7 @@ class ChatUI {
     const messageElement = document.createElement('div');
     messageElement.className = `message ${message.role}-message message-appear`;
     
-    // 只有在不是系统消息时添加头像
+    // Only add avatar for non-system messages
     if (message.role !== 'system') {
       const avatarElement = document.createElement('div');
       avatarElement.className = 'message-avatar';
@@ -1253,15 +1241,15 @@ class ChatUI {
     avatarElement.className = 'message-avatar';
     avatarElement.textContent = 'D';
     
-    // 创建聊天气泡元素
+    // Create chat bubble element
     const bubbleElement = document.createElement('div');
     bubbleElement.className = 'message-content typing-bubble';
     
-    // 创建动画容器
+    // Create animation container
     const dotsContainer = document.createElement('div');
     dotsContainer.className = 'bubble-dots';
     
-    // 创建三个动画点
+    // Create three animation dots
     for (let i = 0; i < 3; i++) {
       const dot = document.createElement('div');
       dot.className = 'bubble-dot';
@@ -1333,17 +1321,17 @@ class ChatUI {
     try {
       this.isConfirmingClear = true;
       
-      // 检查是否可以使用通知系统
+      // Check if notification system is available
       if (window.NotificationSystem) {
         const notificationSystem = window.NotificationSystem.getInstance();
         
-        // 使用通知系统显示确认对话框，使用多按钮支持
+        // Use notification system to show confirmation dialog with multiple buttons
         notificationSystem.show({
           type: 'warning',
           title: '删除聊天会话',
           message: '确定要删除当前聊天会话吗？此操作将彻底删除服务器上的会话数据。',
           icon: 'trash',
-          // 使用新的多按钮API
+          // Use new multi-button API
           buttons: [
             {
               text: '删除',
@@ -1352,7 +1340,6 @@ class ChatUI {
                 color: 'white'
               },
               onClick: () => {
-                // 执行彻底删除操作
                 this._executeClearChat(true);
               }
             },
@@ -1363,18 +1350,18 @@ class ChatUI {
                 color: 'white'
               },
               onClick: () => {
-                // 什么都不做，只关闭通知
+                // Do nothing, only close notification
                 this.isConfirmingClear = false;
               }
             }
           ],
           onClose: () => {
-            // 重置标记
+            // Reset flag
             this.isConfirmingClear = false;
           }
         });
       } else {
-        // 使用原始方式作为后备
+        // Use original way as fallback
         if (confirm('确定要删除当前聊天会话吗？此操作将彻底删除服务器上的会话数据。')) {
           this._executeClearChat(true);
         } else {
@@ -1382,8 +1369,8 @@ class ChatUI {
         }
       }
     } catch (error) {
-      console.error('[ERROR] 确认清空聊天失败:', error);
-      // 使用原始方式作为后备
+      console.error('[ERROR] Confirm clear chat failed:', error);
+      // Use original way as fallback
       if (confirm('确定要删除当前聊天会话吗？此操作将彻底删除服务器上的会话数据。')) {
         this._executeClearChat(true);
       } else {
@@ -1393,26 +1380,26 @@ class ChatUI {
   }
   
   /**
-   * 执行清空聊天操作（不需要确认）
-   * @param {boolean} deleteServerSession - 是否同时删除服务器端会话
+   * Execute clear chat operation (no confirmation required)
+   * @param {boolean} deleteServerSession - Whether to delete server session
    * @private
    */
   async _executeClearChat(deleteServerSession = false) {
     try {
-      // 如果需要删除服务器端会话
+      // If need to delete server session
       if (deleteServerSession) {
-        console.log('[INFO] 正在删除服务器端会话...');
+        console.log('[INFO] Deleting server session...');
         
-        // 获取基础URL
+        // Get base URL
         const baseUrl = this.getApiBaseUrl();
         if (!baseUrl) {
-          console.error('[ERROR] 无法确定API基础URL');
-          throw new Error('无法确定API基础URL');
+          console.error('[ERROR] Unable to determine API base URL');
+          throw new Error('Unable to determine API base URL');
         }
         
-        // 发送API请求删除会话
+        // Send API request to delete session
         try {
-          // 使用完整的基础URL
+          // Use complete base URL
           const response = await fetch(`${baseUrl}/chat/session/delete/`, {
             method: 'POST',
             headers: {
@@ -1424,44 +1411,44 @@ class ChatUI {
           const data = await response.json();
           
           if (response.ok) {
-            console.log('[INFO] 服务器端会话已删除:', data);
+            console.log('[INFO] Server session deleted:', data);
             
-            // 显示成功通知
+            // Show success notification
             if (window.NotificationSystem) {
               const notificationSystem = window.NotificationSystem.getInstance();
               notificationSystem.show({
                 type: 'success',
-                title: '删除成功',
-                message: '服务器端会话已彻底删除',
+                title: 'Delete Success',
+                message: 'Server session deleted successfully',
                 icon: 'check-circle',
                 autoClose: true
               });
             }
           } else {
-            console.error('[ERROR] 删除服务器端会话失败:', data);
+            console.error('[ERROR] Delete server session failed:', data);
             
-            // 显示错误通知
+            // Show error notification
             if (window.NotificationSystem) {
               const notificationSystem = window.NotificationSystem.getInstance();
               notificationSystem.show({
                 type: 'error',
-                title: '删除失败',
-                message: data.error || '删除服务器端会话时发生错误',
+                title: 'Delete Failed',
+                message: data.error || 'Delete server session failed',
                 icon: 'exclamation-triangle',
                 autoClose: true
               });
             }
           }
         } catch (error) {
-          console.error('[ERROR] 删除服务器端会话请求失败:', error);
+          console.error('[ERROR] Delete server session request failed:', error);
           
-          // 显示错误通知
+          // Show error notification
           if (window.NotificationSystem) {
             const notificationSystem = window.NotificationSystem.getInstance();
             notificationSystem.show({
               type: 'error',
-              title: '连接错误',
-              message: '无法连接到服务器，请检查网络连接',
+              title: 'Connection Error',
+              message: 'Unable to connect to server, please check your network connection',
               icon: 'wifi-off',
               autoClose: true
             });
@@ -1469,7 +1456,6 @@ class ChatUI {
         }
       }
       
-      // 无论服务器请求成功与否，都清除本地聊天记录
       // Clear chat container
       if (this.messagesContainer) {
         this.messagesContainer.innerHTML = '';
@@ -1500,15 +1486,15 @@ class ChatUI {
       
       console.log('[INFO] Chat history cleared');
     } catch (error) {
-      console.error('[ERROR] 执行清空聊天失败:', error);
+      console.error('[ERROR] Execute clear chat failed:', error);
       
-      // 显示错误通知
+      // Show error notification
       if (window.NotificationSystem) {
         const notificationSystem = window.NotificationSystem.getInstance();
         notificationSystem.show({
           type: 'error',
-          title: '操作失败',
-          message: '清空聊天记录时发生错误',
+          title: 'Operation Failed',
+          message: 'Failed to clear chat history',
           icon: 'exclamation-triangle',
           autoClose: true
         });
@@ -1524,7 +1510,7 @@ class ChatUI {
    */
   async loadChatHistory() {
     try {
-      // 所有模式都从本地存储加载聊天历史
+      // Load chat history from local storage
       console.log('[INFO] Loading chat history from local storage');
       
       const browser = window.browser || window.chrome;
@@ -1594,39 +1580,39 @@ class ChatUI {
    * 加载设置
    */
   async loadSettings() {
-    // 加载深色模式设置
+    // Load dark mode setting
     await this.loadDarkModeSetting();
     
-    // 初始化聊天模式管理器 - 使用单例模式
+    // Initialize chat mode manager - use singleton pattern
     this.chatModeManager = ChatModeManager.getInstance({
-      // 提供回调函数
+      // Provide callback function
       onModeChange: (mode) => {
         console.log('[INFO] Chat mode changed to:', mode);
       },
-      // 提供添加系统消息的方法
+      // Provide add system message method
       addSystemMessage: (content) => {
         this.addMessageToChat({
           role: 'system',
           content: content
         });
       },
-      // 提供清空聊天历史的方法
+      // Provide clear chat history method
       clearChatHistory: () => {
-        // 保留最新一条系统消息（如果有）
+        // Keep the latest system message (if any)
         const systemMessages = this.chatHistory.filter(msg => msg.role === 'system');
         const latestSystemMessage = systemMessages.length > 0 ? systemMessages[systemMessages.length - 1] : null;
         
-        // 清空历史
+        // Clear history
         this.chatHistory = [];
         
-        // 如有必要，保留最新的系统消息
+        // If necessary, keep the latest system message
         if (latestSystemMessage) {
           this.chatHistory.push(latestSystemMessage);
         }
         
-        // 清空聊天界面
+        // Clear chat interface
         if (this.messagesContainer) {
-          // 保留任何正在进行的打字动画
+          // Keep any ongoing typing animation
           const typingIndicator = this.messagesContainer.querySelector('.typing-indicator');
           this.messagesContainer.innerHTML = '';
           if (typingIndicator) {
@@ -1636,59 +1622,59 @@ class ChatUI {
         
         console.log('[INFO] Chat history cleared for default mode');
       },
-      // 提供导出会话的方法
+      // Provide export session method
       exportChatSession: async () => {
-        console.log('[INFO] 自动触发导出会话');
-        // 使用ChatUI的导出方法
+        console.log('[INFO] Automatically triggered export session');
+        // Use ChatUI's export method
         return this.exportChatSession();
       }
     });
     
-    // 设置检查聊天记录的回调函数
+    // Set check chat history callback
     this.chatModeManager.setCheckChatHistoryCallback(async () => {
-      // 检查是否有有效的聊天记录
-      // 过滤掉系统消息，只计算用户和AI的对话消息
+      // Check if there is valid chat history
+      // Filter out system messages, only count user and AI messages
       const meaningfulMessages = this.chatHistory.filter(msg => 
         msg.role === 'user' || msg.role === 'ai'
       );
       
-      // 如果有意义的消息数量大于0，则认为有聊天记录
+      // If there are meaningful messages, consider it as having chat history
       const hasChatHistory = meaningfulMessages.length > 0;
-      console.log('[INFO] 检查聊天记录状态:', 
-        hasChatHistory ? '有聊天记录，可以导出' : '没有聊天记录，将跳过导出'
+      console.log('[INFO] Checking chat history status:', 
+        hasChatHistory ? 'has chat history, can export' : 'no chat history, will skip export'
       );
       
       return hasChatHistory;
     });
     
-    // 初始化模式管理器
+    // Initialize mode manager
     await this.chatModeManager.initialize();
   }
 
   /**
-   * 渲染聊天历史到界面上
+   * Render chat history to the interface
    */
   renderChatHistory() {
     if (!this.messagesContainer || !this.chatHistory || this.chatHistory.length === 0) {
       return;
     }
     
-    // 清空消息容器
+    // Clear message container
     this.messagesContainer.innerHTML = '';
     
-    // 添加所有消息到界面
+    // Add all messages to interface
     this.chatHistory.forEach(msg => {
-      // 创建消息元素
+      // Create message element
       const messageEl = document.createElement('div');
       
-      // 设置类名，确保系统消息使用与addMessageToChat相同的类名
+      // Set class name, ensure system messages use the same class name as addMessageToChat
       if (msg.role === 'system') {
         messageEl.className = 'message system-message message-appear';
       } else {
         messageEl.className = `message ${msg.role}-message message-appear`;
       }
       
-      // 添加头像元素（与addMessageToChat相同）
+      // Add avatar element (same as addMessageToChat)
       if (msg.role !== 'system') {
         const avatarEl = document.createElement('div');
         avatarEl.className = 'message-avatar';
@@ -1696,24 +1682,24 @@ class ChatUI {
         messageEl.appendChild(avatarEl);
       }
       
-      // 创建内容元素
+      // Create content element
       const contentEl = document.createElement('div');
       contentEl.className = 'message-content';
       
-      // 渲染Markdown内容
+      // Render Markdown content
       contentEl.innerHTML = this.renderMarkdown(msg.content);
       
-      // 添加到消息元素
+      // Add to message element
       messageEl.appendChild(contentEl);
       
-      // 添加到消息容器
+      // Add to message container
       this.messagesContainer.appendChild(messageEl);
     });
     
-    // 滚动到底部
+    // Scroll to bottom
     this.scrollToBottom(false);
     
-    // 隐藏引导提示（如果有）
+    // Hide chat intro if there is chat history
     const chatIntro = document.getElementById('chat-intro');
     if (chatIntro && this.chatHistory.length > 0) {
       chatIntro.style.display = 'none';
@@ -1723,7 +1709,7 @@ class ChatUI {
   }
 
   /**
-   * 处理视频信息更新事件
+   * Handle video info update event
    */
   async handleVideoInfoUpdated(event) {
     console.log('[INFO] Detected video info update event');
@@ -1740,28 +1726,28 @@ class ChatUI {
       console.log('[INFO] Video changed in event handler from', oldVideoId, 'to', newVideoId);
       this.lastVideoId = newVideoId;
       
-      // 添加系统消息通知用户视频已更改
+      // Add system message to notify user about video change
       if (newVideoInfo.title) {
         this.addMessageToChat({
           role: 'system',
-          content: `您已切换到新视频: ${newVideoInfo.title}`
+          content: `You have switched to the new video: ${newVideoInfo.title}`
         });
       }
       
-      // 等待一小段时间，确保字幕已经存储到 local storage
+      // Wait for a short period to ensure subtitles are stored in local storage
       setTimeout(async () => {
         try {
-          // 立即从存储中获取最新字幕
+          // Immediately retrieve latest subtitles from storage
           const subtitlesData = await browser.storage.local.get(['currentSubtitles']);
           if (subtitlesData.currentSubtitles && Array.isArray(subtitlesData.currentSubtitles)) {
             console.log('[INFO] Retrieved updated subtitles after video change, count:', subtitlesData.currentSubtitles.length);
             
-            // 发送一个空消息到后端更新上下文
+            // Send an empty message to backend to update context
             if (this.authToken && this.apiUrl) {
               const baseUrl = this.apiUrl.endsWith('/') ? this.apiUrl.slice(0, -1) : this.apiUrl;
               const endpoint = `${baseUrl}/ai/chat-completion-default/`;
               
-              // 过滤有效的字幕
+              // Filter valid subtitles
               const validSubtitles = subtitlesData.currentSubtitles.filter(s => s && typeof s === 'object' && s.text);
               
               try {
@@ -1772,12 +1758,12 @@ class ChatUI {
                     'Authorization': `Token ${this.authToken}`
                   },
                   body: JSON.stringify({
-                    message: "",  // 空消息，只是为了更新上下文
+                    message: "",  // Empty message, just to update context
                     videoId: newVideoId,
                     videoTitle: newVideoInfo.title || '',
                     subtitles: validSubtitles,
                     userId: this.userId || 'anonymous',
-                    updateContextOnly: true  // 告诉后端这只是一个上下文更新请求
+                    updateContextOnly: true  // Tell backend this is just a context update request
                   })
                 });
                 
@@ -1796,7 +1782,7 @@ class ChatUI {
         } catch (error) {
           console.error('[ERROR] Error retrieving updated subtitles:', error);
         }
-      }, 1000); // 等待1秒确保字幕已经存储
+      }, 1000); // Wait for 1 second to ensure subtitles are stored
     }
   }
 
@@ -1804,42 +1790,32 @@ class ChatUI {
    * Initialize chat UI
    */
   async initialize() {
-    // 防止多次初始化
+    // Prevent multiple initializations
     if (this.initialized) {
       console.warn('[WARN] ChatUI already initialized, skipping');
       return;
     }
     
-    // 设置初始化标志
+    // Set initialization flag
     this.initialized = true;
     
-    // 增加视频变化检测监听
+    // Add video change detection listener
     document.addEventListener('youtube-video-info-updated', this.handleVideoInfoUpdated.bind(this));
     
     console.log('[INFO] ChatUI initialized with API URL:', this.apiUrl);
   }
   
   /**
-   * 获取API基础URL
-   * @returns {string|null} API基础URL
+   * Get API base URL
+   * @returns {string} API base URL
    */
   getApiBaseUrl() {
     try {
-      // 尝试从存储中获取API基础URL
-      const environment = localStorage.getItem('environment') || 'production';
-      
-      // 根据环境返回相应的基础URL
-      if (environment === 'localhost') {
-        return 'http://localhost:8000/api';
-      } else if (environment === 'production') {
-        return 'https://dejavocab.com/api';
-      }
-      
-      // 默认返回生产环境URL
-      return 'https://dejavocab.com/api';
+      // Only return local development environment URL
+      return 'http://localhost:8000/api';
     } catch (error) {
-      console.error('[ERROR] 获取API基础URL失败:', error);
-      return null;
+      console.error('[ERROR] Failed to get API base URL:', error);
+      return 'http://localhost:8000/api'; // Even if it fails, return the local URL
     }
   }
 
@@ -1849,7 +1825,7 @@ class ChatUI {
    */
   async collectSubtitlesInBackground() {
     try {
-      // 检查当前视频信息和字幕状态
+      // Check current video info and subtitles status
       const storageData = await browser.storage.local.get([
         'currentVideoInfo', 
         'currentSubtitles', 
@@ -1859,77 +1835,77 @@ class ChatUI {
       const currentVideoId = storageData.currentVideoInfo?.videoId;
       const lastSubtitlesVideoId = storageData.lastSubtitlesVideoId;
       
-      // 检查是否有有效的字幕
+      // Check if there are valid subtitles
       const hasValidSubtitles = storageData.currentSubtitles && 
         Array.isArray(storageData.currentSubtitles) && 
         storageData.currentSubtitles.length > 0;
       
-      // 检查视频是否变化或是否需要重新收集字幕
+      // Check if the video has changed or if subtitles need to be re-collected
       const videoChanged = currentVideoId && lastSubtitlesVideoId !== currentVideoId;
       
-      console.log('[INFO] 字幕状态检查:', {
+      console.log('[INFO] Subtitle status check:', {
         currentVideoId,
         lastSubtitlesVideoId,
         hasValidSubtitles,
         videoChanged
       });
       
-      // 仅在需要收集字幕时触发收集操作
+      // Trigger subtitle collection only when needed
       if (currentVideoId && (!hasValidSubtitles || videoChanged)) {
-        console.log('[INFO] 需要收集字幕，正在查找YouTube标签页...');
+        console.log('[INFO] Need to collect subtitles, looking for YouTube tab...');
         
-        // 异步查询包含YouTube的标签页
+        // Asynchronously query tabs containing YouTube
         const tabs = await browser.tabs.query({ url: '*://*.youtube.com/*' });
         
         if (tabs && tabs.length > 0) {
-          console.log('[INFO] 找到', tabs.length, '个YouTube标签页');
+          console.log('[INFO] Found', tabs.length, 'YouTube tabs');
           let collectionTriggered = false;
           
           for (const tab of tabs) {
             try {
-              console.log('[DEBUG] 尝试向标签页发送收集请求:', tab.id, tab.url);
+              console.log('[DEBUG] Trying to send collect request to tab:', tab.id, tab.url);
               
-              // 发送消息触发字幕收集
+              // Send message to trigger subtitle collection
               const response = await browser.tabs.sendMessage(tab.id, {
                 action: 'collectSubtitles',
                 videoId: currentVideoId
               });
               
-              console.log('[INFO] 字幕收集触发响应:', response);
+              console.log('[INFO] Subtitle collection trigger response:', response);
               
-              // 如果任何一个标签页成功触发了字幕收集，就跳出循环
+              // If any tab successfully triggers subtitle collection, exit loop
               if (response && response.success) {
-                console.log('[INFO] 字幕收集已在标签页', tab.id, '触发');
+                console.log('[INFO] Subtitle collection triggered in tab', tab.id);
                 
-                // 收集成功后，更新lastSubtitlesVideoId
+                // Update lastSubtitlesVideoId after successful collection
                 await browser.storage.local.set({ lastSubtitlesVideoId: currentVideoId });
-                console.log('[INFO] 已更新最后字幕视频ID:', currentVideoId);
+                console.log('[INFO] Updated last subtitles video ID:', currentVideoId);
                 
                 collectionTriggered = true;
                 break;
               }
             } catch (error) {
-              console.log('[WARN] 无法在标签页上触发字幕收集:', tab.id, error.message || '未知错误');
+              console.log('[WARN] Failed to trigger subtitle collection in tab:', tab.id, error.message || 'Unknown error');
             }
           }
           
           if (!collectionTriggered) {
-            console.log('[WARN] 所有标签页尝试失败，未能触发字幕收集');
+            console.log('[WARN] All tabs failed to trigger subtitle collection');
           }
         } else {
-          console.log('[WARN] 未找到YouTube标签页，无法触发字幕收集');
+          console.log('[WARN] No YouTube tabs found, unable to trigger subtitle collection');
         }
       } else if (hasValidSubtitles && !videoChanged) {
-        console.log('[INFO] 当前视频已有字幕，且视频未变化，跳过收集');
+        console.log('[INFO] Current video already has subtitles, and video has not changed, skipping collection');
       } else {
-        console.log('[WARN] 无法确定是否需要收集字幕:', {
+        console.log('[WARN] Unable to determine if subtitle collection is needed:', {
           currentVideoId,
           hasValidSubtitles,
           videoChanged
         });
       }
     } catch (error) {
-      console.error('[ERROR] 检查字幕状态失败:', error);
+      console.error('[ERROR] Failed to check subtitle status:', error);
     }
   }
 }
@@ -1986,29 +1962,29 @@ window.getChatUI = () => {
   const chatUI = ChatUI.getInstance();
   
   // Check if the current page is a YouTube page
-  // 注意：这个函数在侧边面板环境中不可靠，因为侧边面板的URL始终是side-panel.html
-  // 我们需要使用background.js检查当前标签页的实际URL
+  // Note: This function is unreliable in the side panel environment, because the side panel's URL is always side-panel.html
+  // We need to use background.js to check the actual URL of the current tab
   const isYouTubePage = async () => {
     try {
-      // 如果我们在内容脚本环境中，可以直接检查URL
+      // If we are in a content script environment, we can directly check the URL
       if (window.location.href.includes('youtube.com')) {
         return true;
       }
       
-      // 如果我们在侧边面板环境中，需要请求background代码检查
+      // If we are in a side panel environment, need to request background code to check
       if (window.location.href.includes('side-panel.html')) {
         try {
           const response = await browser.runtime.sendMessage({ action: 'checkIfYouTube' });
           return response?.isYouTube || false;
         } catch (err) {
-          console.error('[ERROR] 与背景脚本通信时出错:', err);
+          console.error('[ERROR] Error communicating with background script:', err);
           return false;
         }
       }
       
       return false;
     } catch (e) {
-      console.error('[ERROR] 检查页面类型出错:', e);
+      console.error('[ERROR] Error checking page type:', e);
       return false;
     }
   };
@@ -2025,79 +2001,79 @@ window.getChatUI = () => {
     }
   };
   
-  // 重新实现URL监测功能，确保聊天界面只在支持的网站上显示（YouTube和dejavocab.com）
-  // 注意：即使在侧边面板环境中，我们也需要检测当前浏览的页面是否为支持的网站
+  // Re-implement URL monitoring functionality to ensure the chat interface only appears on supported websites (YouTube and dejavocab.com)
+  // Note: Even in the side panel environment, we need to check if the current page is a supported website
   if (!window.URL_MONITOR_INITIALIZED && chatUI) {
     window.URL_MONITOR_INITIALIZED = true;
     
-    // 使用background.js请求浏览器当前活跃标签页的URL
+    // Use background.js to request the current active tab's URL
     const checkCurrentTab = async () => {
       try {
-        // 请求background.js检查当前标签页是否为支持的网站
+        // Request background.js to check if the current tab is a supported website
         const response = await browser.runtime.sendMessage({ action: 'checkIfYouTube' });
-        console.log('[DEBUG] 检查当前标签页是否为支持的网站:', response);
+        console.log('[DEBUG] Checking if current tab is a supported website:', response);
         
         if (response && response.isYouTube) {
-          // 如果是支持的网站且用户已登录，显示聊天界面
+          // If it's a supported website and the user is logged in, show the chat interface
           if (chatUI.authToken) {
-            console.log('[INFO] 在支持的网站上且用户已登录，显示聊天界面');
+            console.log('[INFO] User is logged in and on a supported website, showing chat interface');
             chatUI.activateChatView();
           }
         } else {
-          // 如果不是支持的网站，隐藏聊天界面
-          console.log('[INFO] 不在支持的网站上，隐藏聊天界面');
+          // If it's not a supported website, hide the chat interface
+          console.log('[INFO] User is not on a supported website, hiding chat interface');
           chatUI.deactivateChatView();
         }
       } catch (error) {
-        console.error('[ERROR] 检查当前标签页时出错:', error);
+        console.error('[ERROR] Error checking current tab:', error);
       }
     };
     
-    // 首次检查
+    // First check
     checkCurrentTab();
     
-    // 定期检查浏览器当前标签页（每秒检查一次）
+    // Periodically check the current tab (every second)
     const tabCheckInterval = setInterval(checkCurrentTab, 1000);
     
-    // 存储interval ID以便清除
+    // Store interval ID for cleanup
     window.URL_MONITOR_INTERVAL = tabCheckInterval;
     
-    console.log('[INFO] 已启用增强版URL监测功能');
+    console.log('[INFO] Enabled enhanced URL monitoring');
   }
   
   // If not initialized and the container exists, initialize it only on YouTube pages
   if (!window.CHAT_UI_INITIALIZED && document.getElementById('chat-container')) {
-    console.log('[INFO] 检查是否在支持的网站上');
+    console.log('[INFO] Checking if on a supported website');
     // Check if we're on a YouTube page using various methods
     let onYouTube = isYouTubePage();
     
     if (onYouTube) {
-      console.log('[INFO] 在支持的网站上初始化聊天界面');
+      console.log('[INFO] Initializing chat interface on a supported website');
       try {
         window.CHAT_UI_INITIALIZED = true;
         chatUI.init();
         
-        // 直接显示聊天界面
+        // Directly show chat interface
         setTimeout(async () => {
           try {
-            // 检查用户是否已登录
+            // Check if user is logged in
             const result = await browser.storage.local.get(['authToken']);
             if (result.authToken) {
-              console.log('[INFO] 用户已登录，显示聊天界面');
+              console.log('[INFO] User is logged in, showing chat interface');
               chatUI.activateChatView();
             } else {
-              console.log('[INFO] 用户未登录，保持登录界面');
+              console.log('[INFO] User is not logged in, keeping login interface');
             }
           } catch (err) {
-            console.error('[ERROR] 检查用户登录状态时出错:', err);
+            console.error('[ERROR] Error checking user login status:', err);
           }
         }, 500);
         
       } catch (error) {
-        console.error('[ERROR] 聊天界面初始化失败:', error);
+        console.error('[ERROR] Chat interface initialization failed:', error);
       }
     } else {
-      console.log('[INFO] 不在支持的网站上，不初始化聊天界面');
+      console.log('[INFO] Not on a supported website, not initializing chat interface');
       // Hide the chat container if we're not on YouTube
       const chatContainer = document.getElementById('chat-container');
       if (chatContainer) {

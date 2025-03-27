@@ -1,4 +1,4 @@
-/* 可悬停单词样式 */
+/* Hoverable word style */
 .hoverable-word {
   display: inline-block;
   position: relative;
@@ -9,10 +9,10 @@
 }
 
 .hoverable-word:hover {
-  color: #777; /* 改为更柔和的灰色 */
+  color: #777; /* Change to a softer gray */
 }
 
-/* 收藏的单词样式 */
+/* Favorite word style */
 .hoverable-word.favorite-word {
   color: #ffcc00;
   text-shadow: 0 0 5px rgba(255, 198, 11, 0.3);
@@ -23,30 +23,30 @@
   text-shadow: 0 0 5px rgba(255, 198, 11, 0.3);
 }
 
-/* 收藏UI隐藏时的样式 */
+/* Hide UI when favorite */
 .hoverable-word.favorite-ui-hidden.favorite-word {
-  color: inherit; /* 使用默认文本颜色 */
-  text-shadow: none; /* 移除文字阴影 */
+  color: inherit; /* Use default text color */
+  text-shadow: none; /* Remove text shadow */
 }
 
 .hoverable-word.favorite-ui-hidden.favorite-word:hover {
-  color: #777; /* 与普通单词悬停时颜色相同 */
+  color: #777; /* Same color as normal word on hover */
   text-shadow: none;
 }
 
-/* 确保tooltip内容不受单词收藏状态的影响 */
+/* Ensure tooltip content is not affected by word favorite status */
 .hoverable-word.favorite-word .word-tooltip {
-  color: #fff; /* 保持tooltip文本颜色不变 */
-  text-shadow: none; /* 移除文字阴影 */
+  color: #fff; /* Keep tooltip text color unchanged */
+  text-shadow: none; /* Remove text shadow */
 }
 
-/* 确保tooltip内容的样式一致 */
+/* Ensure tooltip content has consistent style */
 .word-tooltip * {
   color: inherit;
   text-shadow: none;
 }
 
-/* 全局玻璃拟态tooltip */
+/* Global glassy tooltip */
 .global-word-tooltip {
   position: fixed;
   left: 0;
@@ -79,7 +79,7 @@
   display: block;
 }
 
-/* 三角形指示器（默认向右的） */
+/* Arrow indicator (default pointing right) */
 .global-word-tooltip::after, 
 .global-word-tooltip.tooltip-left::after {
   content: '';
@@ -93,7 +93,7 @@
   filter: drop-shadow(1px 0 2px rgba(0, 0, 0, 0.1));
 }
 
-/* 向下的三角形指示器（用于当前字幕区域） */
+/* Arrow pointing down (for current subtitle area) */
 .global-word-tooltip.tooltip-bottom::after {
   top: 100%;
   left: 50%;
@@ -102,13 +102,13 @@
   border-color: rgba(22, 24, 29, 0.95) transparent transparent transparent;
 }
 
-/* 原有玻璃拟态弹窗样式（保留作为备用） */
+/* Original glassy tooltip style (retained as backup) */
 .word-tooltip {
   position: absolute;
   bottom: 100%;
   left: 50%;
   transform: translateX(-50%);
-  display: none; /* 隐藏原有tooltip */
+  display: none; /* Hide original tooltip */
   background: rgba(22, 24, 29, 0.95);
   backdrop-filter: blur(15px);
   -webkit-backdrop-filter: blur(15px);
@@ -119,7 +119,7 @@
   font-size: 14px;
   font-weight: 500;
   white-space: nowrap;
-  pointer-events: none; /* 允许鼠标事件穿透，防止触发mouseout */
+  pointer-events: none; /* Allow mouse events to pass through, prevent mouseout trigger */
   opacity: 0;
   transition: opacity 0.2s cubic-bezier(0.16, 1, 0.3, 1), transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
   margin-bottom: 10px;
@@ -133,12 +133,12 @@
   z-index: 10000;
 }
 
-/* 加载指示器 */
+/* Loading indicator */
 .word-tooltip:empty {
   padding: 10px 15px;
 }
 
-/* 弹窗收藏状态指示 */
+/* Popup favorite status indicator */
 .word-tooltip .favorite-status {
   display: inline-block;
   margin-left: 6px;
@@ -162,7 +162,7 @@
   transform: translateX(-50%) translateY(0);
 }
 
-/* 查词功能禁用时的样式 */
+/* Style when lookup is disabled */
 .hoverable-word:not(.lookup-enabled):hover .word-tooltip {
   opacity: 0;
   transform: translateX(-50%) translateY(5px);
@@ -170,7 +170,7 @@
   transition: opacity 0.1s ease, transform 0.1s ease;
 }
 
-/* 小三角形指示器（改为半透明效果） */
+/* Arrow indicator (change to semi-transparent effect) */
 .word-tooltip::after {
   content: '';
   position: absolute;
@@ -182,14 +182,13 @@
   border-color: rgba(22, 24, 29, 0.95) transparent transparent transparent;
 }
 
-/* 确保单词间距保持一致，不影响整体布局 */
 .subtitle-text .hoverable-word,
 .current-subtitle-text .hoverable-word {
   margin: 0;
   padding: 0;
 }
 
-/* 单词工具提示内容样式 */
+/* Word tooltip content style */
 .word-tooltip-content {
   display: flex;
   flex-direction: column;
@@ -216,7 +215,7 @@
 }
 
 
-/* 错误信息样式 */
+/* Error message style */
 .word-tooltip-error {
   color: #ff6b6b;
   font-style: italic;
@@ -224,7 +223,7 @@
   font-size: 13px;
 }
 
-/* 收藏单词区域样式 */
+/* Favorite words section style */
 .favorite-words-section {
   position: fixed;
   bottom: 20px;

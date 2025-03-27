@@ -1,5 +1,4 @@
 <template>
-  <!-- 只保留 Inter 字体，使用本地 Material Icons 字体 -->
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   
   <div v-if="isFullscreen" :class="['fullscreen-container', darkMode ? 'dark-mode' : '']">
@@ -121,7 +120,6 @@
               resetAutoPauseState();
               seekToSubtitle(subtitle.startTime);
               
-              // 禁止滚动事件传播，防止在窄屏模式下上移
               if (isNarrowScreen) {
                 event.stopPropagation();
                 event.preventDefault();
@@ -165,7 +163,6 @@
       
       <!-- Control buttons -->
       <div class="controls-row">
-        <!-- DejaVocab Logo 放在最左侧 -->
         <a href="https://dejavocab.com" target="_blank" class="dejavocab-logo controls-logo" title="Visit DejaVocab">
           <div class="logo-container">
             <div class="logo-icon">
@@ -179,7 +176,7 @@
           </div>
         </a>
         
-        <!-- 占位元素，确保其他按钮位置不变 -->
+        <!-- Spacer to maintain button positions -->
         <div class="flex-spacer"></div>
         <button @click="(e) => toggleFavoriteSection(e)" class="control-btn" :class="{ 'active': favoriteSectionVisible }" aria-label="显示/隐藏收藏单词">
           <span class="material-icon">{{ favoriteSectionVisible ? 'visibility' : 'visibility_off' }}</span>
@@ -267,8 +264,7 @@ import { useVideoControl } from './useVideoControl';
 import { useFullscreenControl } from './useFullscreenControl';
 import { useFavoriteSentence } from './useFavoriteSentence';
 import { useAutoPause } from './useAutoPause';
-// import { useAISummary } from './useAISummary';
-// 移除了useHidePanel导入
+
 import { useVideoNavigation } from './useVideoNavigation';
 import { useFullscreenIcon } from './useFullscreenIcon'; 
 import { useWordProcessing } from './useWordProcessing';
@@ -279,72 +275,71 @@ import { useVideoFavoriteWords } from './useVideoFavoriteWords';
 // Dark mode toggle state - this can be connected to system preference or user setting
 const darkMode = ref(window.matchMedia('(prefers-color-scheme: dark)').matches);
 
-// 窗口宽度监听，用于响应式布局调整
+
 const isNarrowScreen = ref(false);
 
-// 保存收藏区域的原始状态
 const originalFavSectionState = ref(false);
 
-// 自定义切换收藏区域函数，考虑屏幕宽度
+// Custom toggle collection area function, considering screen width
 const toggleFavSectionWithScreenCheck = (show = null) => {
-  // 如果是窄屏模式，直接禁止显示收藏区域
+  // If narrow screen mode, directly prevent showing the collection area
   if (isNarrowScreen.value) {
     if (favoriteSectionVisible.value && show !== true) {
-      // 只有当尝试隐藏时才更新状态
+      // Only update state when trying to hide
       originalFavSectionState.value = true;
       favoriteSectionVisible.value = false;
     }
   } else {
-    // 宽屏模式下正常切换
+    // In wide screen mode, normal toggle
     if (show !== null) {
       favoriteSectionVisible.value = show;
     } else {
       favoriteSectionVisible.value = !favoriteSectionVisible.value;
     }
-    // 记录当前状态
+    // Record current state
     originalFavSectionState.value = favoriteSectionVisible.value;
   }
 };
 
-// 初始化窗口宽度状态
+// Initialize window width state
 const updateScreenWidth = () => {
   const wasNarrow = isNarrowScreen.value;
   const isNowNarrow = window.innerWidth <= 991.98;
   
-  // 如果屏幕状态发生变化
+  // If screen state changes
   if (wasNarrow !== isNowNarrow) {
-    // 从宽屏变为窄屏
+    // From wide screen to narrow screen
     if (isNowNarrow) {
-      // 保存当前收藏区域的状态
+      // Save current collection area state
       originalFavSectionState.value = favoriteSectionVisible.value;
-      // 在窄屏模式下隐藏收藏区域
+      // In narrow screen mode, hide the collection area
       if (favoriteSectionVisible.value) {
         favoriteSectionVisible.value = false;
       }
-    } else { // 从窄屏变为宽屏
-      // 恢复原来的收藏区域状态
-      // 延迟恢复，避免可能的闪烁
+    } else { // From narrow screen to wide screen
+      // Restore the original collection area state
+      // Delay recovery to avoid possible flickering
       setTimeout(() => {
         favoriteSectionVisible.value = originalFavSectionState.value;
       }, 200);
     }
   }
   
-  // 更新屏幕状态
+  // Update screen state
   isNarrowScreen.value = isNowNarrow;
 };
 
-// 设置窗口大小调整监听器
+// Set window size change listener
 onMounted(() => {
-  // 初始化窗口宽度状态
+  // Initialize window width state
   originalFavSectionState.value = favoriteSectionVisible.value;
   updateScreenWidth();
   
-  // 添加窗口大小变化监听
+  // Add window size change listener
   window.addEventListener('resize', updateScreenWidth);
 });
 
-// 移除窗口大小调整监听器
+// Remove window size change listener
 onUnmounted(() => {
   window.removeEventListener('resize', updateScreenWidth);
   
@@ -361,9 +356,9 @@ const {
   toggleFavoriteSection: originalToggleFavoriteSection,
 } = useFavoriteWord();
 
-// 重写切换收藏区函数，使其能够考虑屏幕宽度
+// Rewrite toggle favorite section function to consider screen width
 const toggleFavoriteSection = (e?: MouseEvent | null) => {
-  // 如果收到事件对象，如按钮点击时，则无参数切换
+  // If event object is received, such as button click, then switch without parameters
   toggleFavSectionWithScreenCheck(null);
 };
 
@@ -415,7 +410,7 @@ const {
   seekToPosition,
   initVideoState,
   handlePlayPauseClick: videoControlPlayPauseHandler,
-  cleanup: cleanupVideoControl // 获取清理函数
+  cleanup: cleanupVideoControl // Get cleanup function
 } = useVideoControl(videoElement);
 
 // Subtitle control
@@ -528,12 +523,12 @@ const lookupWord = () => {
 const toggleFullscreen = createEnhancedToggleFullscreen(
   fetchSubtitles, 
   (updateFn) => {
-    // 首先保存字幕到本地存储
+    // First save subtitles to local storage
     saveSubtitlesToLocalStorage().then(() => {
     }).catch(error => {
     });
     
-    // 然后调用原始的captureYouTubeVideo函数，并返回其结果
+    // Then call original captureYouTubeVideo function and return its result
     return captureYouTubeVideo(updateFn);
   }
 );
@@ -560,7 +555,7 @@ const {
 //   // closeSummaryModal 
 // } = useAISummary();
 
-// 删除了控制面板隐藏相关功能
+// Removed control panel hide functionality
 
 // Auto-pause functionality
 const { 
@@ -585,7 +580,7 @@ onMounted(() => {
   if (currentVideoId.value && currentVideoTitle.value) {
     updateVideoInfoStorage(currentVideoId.value, currentVideoTitle.value);
   } else {
-    // 尝试获取当前视频信息
+    // Try to get current video info
     const videoId = extractYouTubeVideoId();
     const title = getVideoTitle();
     if (videoId && title) {
@@ -593,7 +588,7 @@ onMounted(() => {
     }
   }
   
-  // 定义自定义事件的接口
+  // Define custom event interface
   interface VideoInfoEvent {
     detail: {
       videoId: string;
@@ -604,11 +599,11 @@ onMounted(() => {
   
   // Listen for video changes that happen outside our component
   const handleVideoInfoUpdated = (event: Event) => {
-    // 类型转换为自定义事件
+    // Type conversion to custom event
     const customEvent = event as CustomEvent<VideoInfoEvent['detail']>;
     console.log('[INFO] Video info update event received');
     
-    // 只处理事件数据，但不再触发新的存储更新，避免无限循环
+    // Only process event data, no longer trigger new storage updates to avoid infinite loop
     if (customEvent.detail && customEvent.detail.videoId) {
       console.log('[INFO] Video from event:', customEvent.detail.title);
     }
@@ -629,8 +624,8 @@ useFullscreenIcon(hasVideoOnPage, toggleFullscreen);
 </script>
 
 <style>
-/* 导入本地Material Icons字体 */
+/* Import local Material Icons font */
 @import '/assets/fonts/material-icons.css';
-/* 导入主样式文件 */
+/* Import main style file */
 @import './Modern-FullscreenView.css';
 </style>

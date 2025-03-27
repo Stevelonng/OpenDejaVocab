@@ -2,9 +2,9 @@ import { ref, onUnmounted } from 'vue';
 import browser from 'webextension-polyfill';
 
 export function useYouTubePlayer() {
-  // 检测页面上是否有YouTube视频
+  // Check if there is a YouTube video on the page
   const hasVideoOnPage = ref(false);
-  // 状态变量
+  // State variables
   const videoElement = ref<HTMLVideoElement | null>(null);
   const originalVideoContainer = ref<HTMLElement | null>(null);
   const currentVideoTime = ref(0);
@@ -16,51 +16,51 @@ export function useYouTubePlayer() {
   const lastVideoDuration = ref<number>(0);
   const lastDetectedVideoId = ref<string | null>(null);
   
-  // 视频切换事件
+  // Video switch event
   const videoSwitchEvent = new CustomEvent('youtube-video-switched', {
     detail: { timestamp: Date.now() }
   });
 
-  // 查找YouTube播放器完整容器
+  // Find the complete YouTube player container
   const findYouTubePlayerContainer = (element: HTMLElement): HTMLElement | null => {
-    // 先尝试查找直接的播放器容器
+    // First try to find the direct player container
     let container = element.closest('.html5-video-player') as HTMLElement;
     if (container) return container;
     
-    // 如果没找到，尝试寻找更大的容器
+    // If not found, try to find a larger container
     container = document.querySelector('#player-container') as HTMLElement;
     if (container) return container;
     
-    // 继续尝试其他可能的容器
+    // Continue trying other possible containers
     container = document.querySelector('#player') as HTMLElement;
     if (container) return container;
     
-    // 如果实在找不到，返回原始元素
+    // If still can't find, return the original element
     return element;
   };
   
-  // 创建画中画效果（备选方案）
+  // Create picture-in-picture effect (fallback solution)
   const createPictureInPicture = (originalVideo: HTMLVideoElement, container: HTMLElement) => {
     
-    // 创建一个新的视频元素
+    // Create a new video element
     const pipVideo = document.createElement('video');
     pipVideo.style.width = '100%';
     pipVideo.style.maxHeight = '80vh';
     pipVideo.style.borderRadius = '8px';
-    pipVideo.controls = false; // 关闭原生控制栏
+    pipVideo.controls = false; // Turn off native controls
     pipVideo.autoplay = true;
     
-    // 尝试通过canvas截取原始视频每一帧
+    // Try to capture each frame of the original video through canvas
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d');
     
-    // 设置canvas大小与视频相同
+    // Set canvas size to match the video
     canvas.width = originalVideo.videoWidth;
     canvas.height = originalVideo.videoHeight;
     
-    // 方法1：尝试使用captureStream（不是所有浏览器都支持）
+    // Method 1: Try to use captureStream (not supported by all browsers)
     if ('captureStream' in originalVideo) {
-      // @ts-ignore: captureStream可能不在所有TypeScript类型定义中
+      // @ts-ignore: captureStream may not be in all TypeScript type definitions
       const stream = originalVideo.captureStream();
       pipVideo.srcObject = stream;
       container.appendChild(pipVideo);
@@ -68,7 +68,7 @@ export function useYouTubePlayer() {
     }
 
     
-    // 备选方案：创建模拟视频
+    // Fallback: Create a mock video
     const mockVideoContainer = document.createElement('div');
     mockVideoContainer.className = 'mock-video';
     mockVideoContainer.style.width = '100%';
@@ -81,7 +81,7 @@ export function useYouTubePlayer() {
     mockVideoContainer.style.justifyContent = 'center';
     
     const mockMessage = document.createElement('div');
-    mockMessage.textContent = '由于浏览器安全限制，无法直接显示视频。请使用YouTube原始播放器观看视频。';
+    mockMessage.textContent = 'Due to browser security restrictions, the video cannot be displayed directly. Please use the original YouTube player to watch the video.';
     mockMessage.style.color = 'white';
     mockMessage.style.padding = '20px';
     mockMessage.style.textAlign = 'center';
@@ -90,20 +90,20 @@ export function useYouTubePlayer() {
     container.appendChild(mockVideoContainer);
   };
 
-  // 捕获原始YouTube视频
+  // Capture the original YouTube video
   const captureYouTubeVideo = (updateSubtitleCallback: (time: number) => void) => {
-    // 查找YouTube视频播放器
+    // Find the YouTube video player
     const ytPlayer = document.querySelector('#movie_player') as HTMLElement;
 
-    // 尝试多种选择器来找到视频元素
+    // Try multiple selectors to find the video element
     let video = document.querySelector('video.video-stream.html5-main-video') as HTMLVideoElement;
     
-    // 如果第一种选择器没找到，尝试其他可能的选择器
+    // If the first selector doesn't find it, try other possible selectors
     if (!video) {
       video = document.querySelector('#movie_player video') as HTMLVideoElement;
     }
     
-    // 最后尝试更通用的选择器
+    // Finally try a more generic selector
     if (!video) {
       video = document.querySelector('video') as HTMLVideoElement;
     }
@@ -113,23 +113,23 @@ export function useYouTubePlayer() {
       videoElement.value = video;
       originalVideoContainer.value = video.parentElement;
       
-      // 判断当前视频是否正在播放
+      // Determine if the current video is playing
       wasPlaying.value = !video.paused;
       
-      // 立即更新视频时间
+      // Immediately update video time
       if (video.currentTime) {
         currentVideoTime.value = video.currentTime;
       }
       
-      // 视频处理逻辑
+      // Video processing logic
       setTimeout(() => {
-        // 获取视频容器元素
+        // Get the video container element
         const videoContainer = document.getElementById('yt-fullscreen-dejavocab-video-container');
         if (videoContainer) {
-          // 只移动视频元素而不是整个播放器
+          // Only move the video element, not the entire player
           try {
             
-            // 创建占位元素以便稍后可以恢复
+            // Create a placeholder element for later restoration
             const placeholder = document.createElement('div');
             placeholder.id = 'yt-video-placeholder';
             placeholder.style.width = video.offsetWidth + 'px';
@@ -137,37 +137,37 @@ export function useYouTubePlayer() {
             placeholder.style.display = 'none';
             videoPlaceholder.value = placeholder;
             
-            // 只处理视频元素
+            // Only process the video element
             if (video.parentElement) {
-              // 在原始位置放置占位元素
+              // Place the placeholder element in the original position
               video.parentElement.insertBefore(placeholder, video);
               
-              // 显式移除YouTube设置的宽度和高度内联样式
-              video.style.removeProperty('width'); // 移除宽度限制
-              video.style.removeProperty('height'); // 移除高度限制
+              // Explicitly remove width and height inline styles set by YouTube
+              video.style.removeProperty('width'); // Remove width restriction
+              video.style.removeProperty('height'); // Remove height restriction
               
-              // 添加通过JavaScript重设属性的MutationObserver，以防YouTube重新应用这些样式
+              // Add a MutationObserver to reset properties through JavaScript, in case YouTube reapplies these styles
               const observer = new MutationObserver((mutations) => {
                 mutations.forEach((mutation) => {
                   if (mutation.attributeName === 'style') {
-                    // 当样式变化时再次强制移除宽度和高度
+                    // Force remove width and height again when styles change
                     video.style.removeProperty('width');
                     video.style.removeProperty('height');
                   }
                 });
               });
               
-              // 开始监测样式变化
+              // Start monitoring style changes
               observer.observe(video, { attributes: true, attributeFilter: ['style'] });
               
-              // 保留控制属性
+              // Maintain control properties
               video.controls = false;
               
-              // 直接将视频添加到容器中
+              // Add the video directly to the container
               videoContainer.appendChild(video);
             }
             
-            // 确保视频保持原来的播放状态
+            // Ensure the video maintains its original playback state
             if (wasPlaying.value) {
               video.play();
             }            
@@ -175,9 +175,9 @@ export function useYouTubePlayer() {
             createPictureInPicture(video, videoContainer);
           }
         }
-      }, 100); // 缩短延迟以提高响应速度
+      }, 100); // Reduce delay to improve responsiveness
       
-      // 开始监听视频时间更新
+      // Start listening for video time updates
       video.addEventListener('timeupdate', () => {
         currentVideoTime.value = video.currentTime;
         updateSubtitleCallback(video.currentTime);
@@ -188,10 +188,10 @@ export function useYouTubePlayer() {
     return false;
   };
   
-  // 恢复视频到原始位置
+  // Restore video to original position
   const restoreYouTubeVideo = () => {
     try {      
-      // 检查是否正在播放
+      // Check if it's playing
       if (videoElement.value) {
         wasPlaying.value = !videoElement.value.paused;
       } else {
@@ -200,14 +200,14 @@ export function useYouTubePlayer() {
       
       const currentContainer = document.getElementById('yt-fullscreen-dejavocab-video-container');
       
-      // 检查视频是否在全屏容器中
+      // Check if the video is in the fullscreen container
       if (currentContainer && currentContainer.contains(videoElement.value)) {
         currentContainer.removeChild(videoElement.value);
       }
       
-      // 重置诸多视频参数，以确保其可见
+      // Reset various video parameters to ensure visibility
       if (videoElement.value) {
-        // 重置任何可能导致不可见的样式
+        // Reset any styles that may cause invisibility
         videoElement.value.style.display = 'block';
         videoElement.value.style.visibility = 'visible';
         videoElement.value.style.opacity = '1';
@@ -220,28 +220,28 @@ export function useYouTubePlayer() {
         videoElement.value.style.transform = 'none';
       }
       
-      // 使用多种方法尝试恢复视频
+      // Try multiple methods to restore the video
       
-      // 方法 1: 使用占位符
+      // Method 1: Use placeholder
       if (videoPlaceholder.value && videoPlaceholder.value.parentElement) {
-        // 查找应该恢复的元素 - 可能是播放器容器或视频元素
+        // Find the element that should be restored - could be the player container or video element
         const elementToRestore = videoElement.value;
         
         if (elementToRestore) {
           videoPlaceholder.value.parentElement.replaceChild(elementToRestore, videoPlaceholder.value);
         }
       }
-      // 方法 2: 返回原始容器
+      // Method 2: Return to original container
       else if (originalVideoContainer.value) {
         originalVideoContainer.value.appendChild(videoElement.value);
       }
-      // 方法 3: 尝试找到YouTube的视频容器
+      // Method 3: Try to find YouTube's video container
       else {
         const ytVideoContainer = document.querySelector('.html5-video-container');
         if (ytVideoContainer) {
           ytVideoContainer.appendChild(videoElement.value);
         } else {
-          // 最后的尝试，将其添加到任何可见的容器
+          // Last attempt, add it to any visible container
           const anyContainer = document.querySelector('#movie_player') || document.querySelector('#player') || document.body;
           if (anyContainer) {
             anyContainer.appendChild(videoElement.value);
@@ -249,12 +249,12 @@ export function useYouTubePlayer() {
         }
       }
       
-      // 确保视频保持原来的播放状态
+      // Ensure the video maintains its original playback state
       if (videoElement.value) {        
-        // 尝试触发视频重绘
+        // Try to trigger video redraw
         setTimeout(() => {
           if (videoElement.value) {
-            // 触发元素尺寸计算以促使元素可见
+            // Trigger element size calculation to make element visible
             const currWidth = videoElement.value.offsetWidth;
             videoElement.value.style.width = (currWidth + 1) + 'px';
             setTimeout(() => {
@@ -263,7 +263,7 @@ export function useYouTubePlayer() {
               }
             }, 50);
             
-            // 还原播放状态
+            // Restore playback state
             if (wasPlaying.value) {
               videoElement.value.play().catch(() => {});
             }
@@ -271,11 +271,11 @@ export function useYouTubePlayer() {
         }, 100);
       }
       
-      // 清除引用
+      // Clear references
       videoPlaceholder.value = null;
     } catch (e) {
       
-      // 如果出错，仍然尝试继续播放
+      // If an error occurs, still try to continue playback
       if (videoElement.value && wasPlaying.value) {
         videoElement.value.style.display = 'block';
         videoElement.value.style.visibility = 'visible';
@@ -285,25 +285,25 @@ export function useYouTubePlayer() {
   };
 
   /**
-   * 检查页面上是否有YouTube视频
-   * @returns 检测结果 (true/false)
+   * Check if there is a YouTube video on the page
+   * @returns Detection result (true/false)
    */
   const checkForYouTubeVideo = () => {
-    // 检查是否是视频页面 - 使用URL路径判断
+    // Check if it's a video page - determine by URL path
     const isVideoPage = window.location.href.includes('/watch?v=');
     
-    // 检查是否有视频元素
+    // Check if there's a video element
     const videoElement = document.querySelector('video.html5-main-video');
     
-    // 只有在视频页面且有视频元素时才返回true
+    // Only return true if it's a video page and has a video element
     hasVideoOnPage.value = isVideoPage && !!videoElement;
     
     return hasVideoOnPage.value;
   };
   
   /**
-   * 从URL中提取YouTube视频ID
-   * @returns 视频ID或null
+   * Extract YouTube video ID from URL
+   * @returns Video ID or null
    */
   const extractYouTubeVideoId = () => {
     const match = window.location.href.match(/(?:youtube\.com\/watch\?v=|\/videos\/|youtu\.be\/|embed\/|\?v=)([^&?\n]+)/);
@@ -311,27 +311,27 @@ export function useYouTubePlayer() {
   };
   
   /**
-   * 获取当前视频标题
-   * @returns 视频标题
+   * Get current video title
+   * @returns Video title
    */
   const getVideoTitle = () => {
     return typeof document !== 'undefined' ? document.title.replace(' - YouTube', '') : '';
   };
 
   /**
-   * 设置视频检测定时器
-   * 定期检测页面上的YouTube视频并更新状态
+   * Set up video detection timer
+   * Periodically detect YouTube videos on the page and update status
    */
   const setupVideoDetectionInterval = (intervalTime = 1000) => {
-    // 初始执行检测
+    // Initial detection
     checkForYouTubeVideo();
     
-    // 定时检测，以应对YouTube动态加载视频
+    // Periodic detection to handle YouTube dynamically loading videos
     const checkVideoInterval = setInterval(() => {
       checkForYouTubeVideo();
     }, intervalTime);
     
-    // 返回清理函数
+    // Return cleanup function
     return () => {
       clearInterval(checkVideoInterval);
     };

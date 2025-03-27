@@ -5,33 +5,32 @@ export default defineConfig({
   extensionApi: 'chrome',
   modules: ['@wxt-dev/module-vue'],
   manifest: {
-    // 添加Chrome扩展权限
+    // Add Chrome extension permissions
     permissions: [
       'sidePanel',
-      'storage',      // 存储API令牌和设置
-      'activeTab',    // 访问当前标签页信息
-      'tabs',         // 添加tabs权限以支持标签页访问
-      'scripting'     // 添加scripting权限以支持在网页中执行脚本
+      'storage',      // Storage API for tokens and settings
+      'activeTab',    // Access current tab information
+      'tabs',         // Add tabs permission to support tab access
+      'scripting'     // Add scripting permission to support script execution in web pages
     ],
-    // 添加外部资源访问权限
+    // Add external resource access permissions
     host_permissions: [
-      "https://dejavocab.com/*",  // 生产环境API
-      "http://localhost:8000/*",    // 本地开发环境API
-      "*://*.youtube.com/*"         // 添加YouTube权限
+      "http://localhost:8000/*",    // Local development environment API
+      "*://*.youtube.com/*"         // YouTube permission
     ],
-    // 内容安全策略
+    // Content security policy
     content_security_policy: {
       extension_pages: "script-src 'self'; object-src 'self'"
     },
-    // 添加Action图标配置
+    // Add Action icon configuration
     action: {
-      default_title: "Dejavocab 扩展"
+      default_title: "Dejavocab Extension"
     },
-    // 添加侧边栏配置
+    // Add side panel configuration
     side_panel: {
       default_path: "side-panel.html"
     },
-    // 添加内容脚本配置，在YouTube页面上自动运行自动字幕收集功能
+    // Add content script configuration, automatically run auto subtitle collection function on YouTube pages
     content_scripts: [
       {
         matches: ["*://*.youtube.com/*"],

@@ -1,4 +1,4 @@
-/* 视频收藏单词样式 */
+/* Video favorite words style */
 .favorite-words-section {
   background-color: rgba(0, 0, 0, 0.2);
   padding: 0;
@@ -36,7 +36,7 @@
   font-weight: normal;
 }
 
-/* 当前视频中的收藏单词 */
+/* Current video favorite words */
 .video-favorite-words {
   margin-bottom: 20px;
 }
@@ -110,12 +110,12 @@
   border-radius: 2px;
 }
 
-/* 所有收藏单词 */
+/* All favorite words */
 .all-favorite-words {
   margin-top: 20px;
 }
 
-/* 简化的单词列表视图 - 字幕容器内 */
+/* Simplified word list view - subtitle container */
 .simplified {
   padding: 8px !important;
   max-height: none !important;
@@ -141,7 +141,7 @@
   padding-bottom: 6px;
 }
 
-/* 收藏单词区域关闭按钮 */
+/* Close button for the favorite words section */
 .simplified-header .close-btn {
   background: transparent;
   border: none;
@@ -248,7 +248,7 @@
   margin-top: 10px;
 }
 
-/* 单词项容器 */
+/* Word item container */
 .favorite-word-container {
   position: relative;
   display: inline-block;
@@ -278,7 +278,7 @@
   -webkit-backdrop-filter: blur(4px);
 }
 
-/* 简化视图中的单词项样式 */
+/* Simplified view word item style */
 .simple-list .favorite-word-item {
   background-color: transparent;
   padding: 2px 5px;
@@ -288,7 +288,7 @@
   align-items: center;
 }
 
-/* 单词标记（标识多次出现） */
+/* Word marker (indicates multiple occurrences) */
 .has-multiple {
   position: relative;
   padding-right: 22px;
@@ -337,7 +337,7 @@
   background-color: rgba(255, 204, 0, 0.15) !important;
 }
 
-/* 脉冲高亮动画 */
+/* Pulse highlight animation */
 @keyframes pulse-highlight {
   0% {
     background-color: rgba(255, 204, 0, 0.08);
@@ -355,7 +355,7 @@
   box-shadow: 0 0 8px rgba(255, 204, 0, 0.5);
 }
 
-/* 副标题样式 */
+/* Subtitle filter title */
 .subtitle-filter-title {
   padding: 5px 10px;
   font-size: 13px;
@@ -371,7 +371,7 @@
   transform: translateY(-2px);
 }
 
-/* 加载和错误状态 */
+/* Loading and error states */
 .loading-state {
   display: flex;
   align-items: center;

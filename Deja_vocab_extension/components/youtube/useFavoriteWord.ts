@@ -1,53 +1,53 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue';
 
-// 存储键名常量
+// Storage key constants
 const STORAGE_KEY = 'favoritedWords';
 const FAVORITE_SECTION_VISIBLE_KEY = 'favoriteSectionVisible';
-// 自定义事件名，用于跨标签页通信
+// Custom event names for cross-tab communication
 const FAVORITE_WORD_UPDATED_EVENT = 'dejavocab-favorite-word-updated';
 const FAVORITE_SECTION_TOGGLE_EVENT = 'dejavocab-favorite-section-toggle';
 
 /**
- * 收藏单词功能
- * 处理单词的收藏和取消收藏，永远以后端服务器为数据源，本地存储仅作为离线缓存
+ * Favorite Word Functionality
+ * Handles favoriting and unfavoriting words, always using the backend server as the data source, local storage only serves as offline cache
  */
 export function useFavoriteWord() {
-  // 收藏的单词集合
+  // Collection of favorited words
   const favoriteWords = ref<Set<string>>(new Set());
-  // 加载状态
+  // Loading state
   const isLoading = ref(false);
-  // API基础URL - 在运行时动态获取
+  // API base URL - dynamically retrieved at runtime
   const apiBaseUrl = ref<string>('');
-  // 是否已经从后端加载
+  // Whether already loaded from backend
   const loadedFromBackend = ref(false);
-  // 是否启用收藏UI (始终为true，保留变量以兼容现有代码)
+  // Whether favorite UI is enabled (always true, variable kept for compatibility with existing code)
   const favoriteUIEnabled = ref(true);
-  // 是否显示收藏单词区域
+  // Whether to show favorite words section
   const favoriteSectionVisible = ref(true);
 
   /**
-   * 从后端加载收藏的单词
+   * Load favorited words from backend
    */
   const loadFavoriteWords = async (): Promise<void> => {
     isLoading.value = true;
 
     try {
-      // 获取API设置和认证令牌
+      // Get API settings and authentication token
       const { apiUrl, authToken } = await chrome.storage.local.get(['apiUrl', 'authToken']);
 
-      // 设置API URL
+      // Set API URL
       if (!apiUrl) {
-        throw new Error('未配置 API URL，请在扩展设置中配置');
+        throw new Error('API URL not configured, please configure in extension settings');
       }
       apiBaseUrl.value = apiUrl.endsWith('/') ? apiUrl : `${apiUrl}/`;
 
-      // 如果没有认证令牌，尝试从本地缓存加载
+      // If no authentication token, try loading from local cache
       if (!authToken) {
         await loadFromLocalCache();
         return;
       }
 
-      // 从后端API获取所有收藏单词
+      // Get all favorite words from backend API
       const response = await fetch(`${apiBaseUrl.value}favorite-words/`, {
         method: 'GET',
         headers: {
@@ -59,32 +59,32 @@ export function useFavoriteWord() {
       if (response.ok) {
         const data = await response.json();
         if (data.status === 'success' && Array.isArray(data.words)) {
-          // 清空现有集合
+          // Clear existing collection
           favoriteWords.value.clear();
 
-          // 添加从后端获取的单词
+          // Add words retrieved from backend
           data.words.forEach((wordObj: { text: string }) => {
             favoriteWords.value.add(wordObj.text.toLowerCase());
           });
 
-          // 更新加载状态
+          // Update loading state
           loadedFromBackend.value = true;
 
-          // 将加载的单词保存到本地缓存
+          // Save loaded words to local cache
           await updateLocalCache();
         }
       } else {
-        // 处理未认证或其他错误        
+        // Handle unauthenticated or other errors        
         if (response.status === 401) {
-          // 标记为已尝试加载 - 避免重复请求
+          // Mark as attempted to load - avoid repeated requests
           loadedFromBackend.value = true;
         }
         
-        // 从本地缓存加载
+        // Load from local cache
         await loadFromLocalCache();
       }
     } catch (error) {
-      // 如果发生错误，尝试从本地缓存加载
+      // If an error occurs, try loading from local cache
       await loadFromLocalCache();
     } finally {
       isLoading.value = false;
@@ -92,13 +92,13 @@ export function useFavoriteWord() {
   };
 
   /**
-   * 从本地缓存加载收藏单词（仅用于离线或加载失败时）
+   * Load favorite words from local cache (only used for offline or when loading fails)
    */
   const loadFromLocalCache = async (): Promise<void> => {
       const result = await chrome.storage.local.get([STORAGE_KEY]);
       const storedWords = result[STORAGE_KEY] || [];
 
-      // 清空现有集合并添加存储的单词
+      // Clear existing collection and add stored words
       favoriteWords.value.clear();
       storedWords.forEach((word: string) => {
         favoriteWords.value.add(word.toLowerCase());
@@ -106,7 +106,7 @@ export function useFavoriteWord() {
   };
 
   /**
-   * 更新本地缓存，与当前收藏单词集合保持一致
+   * Update local cache to stay consistent with current favorite words collection
    */
   const updateLocalCache = async (): Promise<void> => {
       const wordsArray = Array.from(favoriteWords.value);
@@ -114,7 +114,7 @@ export function useFavoriteWord() {
   };
 
   /**
-   * 从本地存储加载UI显示设置
+   * Load UI display settings from local storage
    */
   const loadUISettings = async (): Promise<void> => {
     try {
@@ -122,18 +122,18 @@ export function useFavoriteWord() {
         FAVORITE_SECTION_VISIBLE_KEY
       ]);
       
-      // 如果设置存在，则使用它；否则默认为启用（true）
+      // If setting exists, use it; otherwise default to enabled (true)
       favoriteSectionVisible.value = result[FAVORITE_SECTION_VISIBLE_KEY] !== false;  
-      // 根据设置更新所有单词元素的样式
+      // Update style of all word elements based on settings
       updateAllWordElementsStyle();
     } catch (error) {
-      // 出错时默认启用
+      // Default to enabled if error occurs
       favoriteSectionVisible.value = true;
     }
   };
 
   /**
-   * 保存UI显示设置到本地存储
+   * Save UI display settings to local storage
    */
   const saveUISettings = async (): Promise<void> => {
       await chrome.storage.local.set({ 
@@ -142,120 +142,120 @@ export function useFavoriteWord() {
   };
 
   /**
-   * 切换收藏单词区域的显示状态
+   * Toggle visibility of favorite words section
    */
   const toggleFavoriteSection = async (): Promise<boolean> => {
-    // 切换状态
+    // Toggle state
     favoriteSectionVisible.value = !favoriteSectionVisible.value;
     
-    // 保存设置
+    // Save settings
     await saveUISettings();
     
-    // 广播状态变更
+    // Broadcast state change
     broadcastFavoriteSectionToggle(favoriteSectionVisible.value);
     
     return favoriteSectionVisible.value;
   };
 
   /**
-   * 广播收藏单词区域状态变更
-   * @param visible 是否可见
+   * Broadcast favorite section state change
+   * @param visible Whether visible
    */
   const broadcastFavoriteSectionToggle = (visible: boolean): void => {
-      // 创建自定义事件
+      // Create custom event
       const event = new CustomEvent(FAVORITE_SECTION_TOGGLE_EVENT, {
         detail: { visible }
       });
       
-      // 分发事件
+      // Dispatch event
       document.dispatchEvent(event);    
   };
 
   /**
-   * 处理收藏单词区域状态变更事件
-   * @param event 自定义事件对象
+   * Handle favorite section state change event
+   * @param event Custom event object
    */
   const handleFavoriteSectionToggle = (event: CustomEvent): void => {
     const { visible } = event.detail;
     
-    // 更新状态
+    // Update state
     favoriteSectionVisible.value = visible;
   };
 
   /**
-   * 更新页面上所有单词的样式
+   * Update style of all word elements on the page
    */
   const updateAllWordElementsStyle = (): void => {
-      // 查找页面上所有单词元素
+      // Find all word elements on the page
       const wordElements = document.querySelectorAll('.hoverable-word');
       
-      // 遍历并更新样式
+      // Iterate and update styles
       wordElements.forEach(element => {
-        // 获取单词内容
+        // Get word content
         const word = element.textContent?.trim().toLowerCase();
         
         if (!word) return;
         
-        // 无条件应用收藏样式，不再使用favoriteUIEnabled
+        // Unconditionally apply favorite style, no longer using favoriteUIEnabled
         if (favoriteWords.value.has(word)) {
           element.classList.add('favorite-word');
           element.classList.remove('favorite-ui-hidden');
         } else {
-          // 不是收藏单词，移除相关样式
+          // Not a favorite word, remove related styles
           element.classList.remove('favorite-word', 'favorite-ui-hidden');
         }
       });
   };
 
   /**
-   * 广播收藏单词状态变更
-   * 通过自定义事件通知所有页面和标签页更新收藏状态
-   * @param word 变更的单词
-   * @param isFavorite 是否收藏
+   * Broadcast favorite word state change
+   * Notify all pages and tabs to update favorite status via custom event
+   * @param word Changed word
+   * @param isFavorite Whether favorited
    */
   const broadcastFavoriteWordChange = (word: string, isFavorite: boolean): void => {
-      // 创建自定义事件以通知其他内容脚本
+      // Create custom event to notify other content scripts
       const event = new CustomEvent(FAVORITE_WORD_UPDATED_EVENT, {
         detail: { word: word.toLowerCase(), isFavorite }
       });
 
-      // 分发事件到当前文档
+      // Dispatch event to current document
       document.dispatchEvent(event);
   };
 
   /**
-   * 处理收藏单词状态变更事件
-   * @param event 自定义事件对象
+   * Handle favorite word state change event
+   * @param event Custom event object
    */
   const handleFavoriteWordChange = (event: CustomEvent): void => {
     const { word, isFavorite } = event.detail;
 
     if (!word) return;
 
-    // 根据事件更新本地状态
+    // Update local state based on event
     if (isFavorite) {
       favoriteWords.value.add(word.toLowerCase());
 
-      // 更新页面上所有匹配的单词元素
+      // Update all matching word elements on the page
       updateWordElementsStyle(word, true);
     } else {
       favoriteWords.value.delete(word.toLowerCase());
 
-      // 更新页面上所有匹配的单词元素
+      // Update all matching word elements on the page
       updateWordElementsStyle(word, false);
     }
   };
 
   /**
-   * 更新页面上所有匹配单词的样式
-   * @param word 单词
-   * @param isFavorite 是否收藏
+   * Update style of all matching word elements on the page
+   * @param word Word
+   * @param isFavorite Whether favorited
    */
   const updateWordElementsStyle = (word: string, isFavorite: boolean): void => {
-      // 查找页面上所有匹配的单词元素
+      // Find all matching word elements on the page
       const elements = document.querySelectorAll(`.hoverable-word[data-word="${word.toLowerCase()}"]`);
 
-      // 更新样式
+      // Update styles
       elements.forEach(el => {
         if (isFavorite) {
           el.classList.add('favorite-word');
@@ -266,33 +266,33 @@ export function useFavoriteWord() {
   };
 
   /**
-   * 向后端API同步单词收藏状态
-   * @param word 要同步的单词
-   * @param isFavorite 是否收藏
+   * Sync word favorite status with backend API
+   * @param word Word to sync
+   * @param isFavorite Whether favorited
    */
   const syncFavoriteWordWithBackend = async (word: string, isFavorite: boolean): Promise<boolean> => {
     try {
-      // 从存储中获取API URL和认证令牌
+      // Get API URL and authentication token from storage
       const { apiUrl, authToken } = await chrome.storage.local.get(['apiUrl', 'authToken']);
 
-      // 如果没有认证令牌，不能同步到后端
+      // Cannot sync to backend without authentication token
       if (!authToken) {
-        return false;  // 没有认证令牌时，默认操作失败
+        return false;  // Default to failed operation when no token
       }
 
-      // 构建API URL
+      // Build API URL
       if (!apiUrl) {
-        throw new Error('未配置 API URL，请在扩展设置中配置');
+        throw new Error('API URL not configured, please configure in extension settings');
       }
       const finalUrl = apiUrl.endsWith('/') ? apiUrl : `${apiUrl}/`;
       const toggleUrl = `${finalUrl}api/web/toggle-favorite/`;
 
-      // 构建请求主体
+      // Build request body
       const formData = new FormData();
       formData.append('word', word);
       formData.append('action', isFavorite ? 'add-favorite' : 'remove-favorite');
 
-      // 发送请求
+      // Send request
       const response = await fetch(toggleUrl, {
         method: 'POST',
         headers: {
@@ -304,7 +304,7 @@ export function useFavoriteWord() {
       if (response.ok) {
         const data = await response.json();
         if (data.status === 'success') {
-          // 立即广播变更，确保所有页面实时更新
+          // Immediately broadcast change to ensure all pages update in real-time
           broadcastFavoriteWordChange(word, data.is_favorite);
 
           return data.is_favorite;
@@ -320,25 +320,25 @@ export function useFavoriteWord() {
   };
 
   /**
-   * 检查单词是否已收藏
-   * @param word 要检查的单词
-   * @returns 是否已收藏
+   * Check if a word is favorited
+   * @param word Word to check
+   * @returns Whether favorited
    */
   const isFavoriteWord = (word: string): boolean => {
     return favoriteWords.value.has(word.toLowerCase());
   };
 
   /**
-   * 切换单词的收藏状态
-   * @param word 要切换的单词
-   * @returns 切换后的收藏状态
+   * Toggle favorite status of a word
+   * @param word Word to toggle
+   * @returns Favorite status after toggle
    */
   const toggleFavoriteWord = async (word: string): Promise<boolean> => {
     const lowerWord = word.toLowerCase();
     const isCurrentlyFavorited = favoriteWords.value.has(lowerWord);
 
     try {
-      // 立即更新UI，提供即时反馈（乐观更新）
+      // Immediately update UI for instant feedback (optimistic update)
       if (isCurrentlyFavorited) {
         favoriteWords.value.delete(lowerWord);
         updateWordElementsStyle(lowerWord, false);
@@ -347,10 +347,10 @@ export function useFavoriteWord() {
         updateWordElementsStyle(lowerWord, true);
       }
 
-      // 尝试在后端切换收藏状态
+      // Try to toggle favorite status in backend
       const backendResult = await syncFavoriteWordWithBackend(word, !isCurrentlyFavorited);
 
-      // 如果后端结果与本地预期不一致，恢复为后端状态
+      // If backend result is inconsistent with local expectation, revert to backend state
       if (backendResult !== !isCurrentlyFavorited) {
         if (backendResult) {
           favoriteWords.value.add(lowerWord);
@@ -361,12 +361,12 @@ export function useFavoriteWord() {
         }
       }
 
-      // 更新本地缓存
+      // Update local cache
       await updateLocalCache();
 
       return backendResult;
     } catch (error) {
-      // 恢复为原始状态
+      // Revert to original state
       if (isCurrentlyFavorited) {
         favoriteWords.value.add(lowerWord);
         updateWordElementsStyle(lowerWord, true);
@@ -380,61 +380,61 @@ export function useFavoriteWord() {
   };
 
   /**
-   * 获取所有收藏的单词列表
+   * Get list of all favorite words
    */
   const allFavoriteWords = computed(() => {
     return Array.from(favoriteWords.value);
   });
 
   /**
-   * 添加单词到收藏
-   * @param word 要收藏的单词
+   * Add word to favorites
+   * @param word Word to favorite
    */
   const addFavoriteWord = async (word: string): Promise<boolean> => {
     const lowerWord = word.toLowerCase();
 
     if (favoriteWords.value.has(lowerWord)) {
-      return true; // 已经收藏了，不需要再操作
+      return true; // Already favorited, no need to operate
     }
 
-    // 乐观更新UI
+    // Optimistic UI update
     favoriteWords.value.add(lowerWord);
     updateWordElementsStyle(lowerWord, true);
 
-    // 尝试在后端添加收藏
+    // Try to add favorite in backend
     const backendResult = await syncFavoriteWordWithBackend(word, true);
 
-    // 如果后端操作失败，恢复UI状态
+    // If backend operation fails, restore UI state
     if (!backendResult) {
       favoriteWords.value.delete(lowerWord);
       updateWordElementsStyle(lowerWord, false);
     }
 
-    // 更新本地缓存
+    // Update local cache
     await updateLocalCache();
 
     return backendResult;
   };
 
   /**
-   * 从收藏中移除单词
-   * @param word 要移除的单词
+   * Remove word from favorites
+   * @param word Word to remove
    */
   const removeFavoriteWord = async (word: string): Promise<boolean> => {
     const lowerWord = word.toLowerCase();
 
     if (!favoriteWords.value.has(lowerWord)) {
-      return true; // 已经不在收藏中，不需要再操作
+      return true; // Already not in favorites, no need to operate
     }
 
-    // 乐观更新UI
+    // Optimistic UI update
     favoriteWords.value.delete(lowerWord);
     updateWordElementsStyle(lowerWord, false);
 
-    // 尝试在后端移除收藏
+    // Try to remove favorite in backend
     const backendResult = await syncFavoriteWordWithBackend(word, false);
 
-    // 如果后端操作失败（返回true表示仍在收藏中），恢复UI状态
+    // If backend operation fails (returns true means still in favorites), restore UI state
     if (backendResult) {
       favoriteWords.value.add(lowerWord);
       updateWordElementsStyle(lowerWord, true);
@@ -442,41 +442,41 @@ export function useFavoriteWord() {
       return false;
     }
 
-    // 更新本地缓存
+    // Update local cache
     await updateLocalCache();
     return true;
   };
 
   /**
-   * 清空所有收藏的单词
+   * Clear all favorite words
    */
   const clearFavoriteWords = async (): Promise<void> => {
-    // 保存当前收藏单词的副本，以便逐个从后端移除
+    // Save copy of current favorite words to remove from backend one by one
     const wordsToRemove = Array.from(favoriteWords.value);
 
-    // 清空本地集合
+    // Clear local collection
     favoriteWords.value.clear();
 
-    // 更新本地缓存
+    // Update local cache
     await updateLocalCache();
 
-    // 逐个从后端移除
+    // Remove from backend one by one
     for (const word of wordsToRemove) {
       await syncFavoriteWordWithBackend(word, false);
     }
 
-    // 重新从后端加载，确保状态一致
+    // Reload from backend to ensure consistency
     await loadFavoriteWords();
   };
 
   /**
-   * 批量导入收藏单词
-   * @param words 单词数组
+   * Batch import favorite words
+   * @param words Array of words
    */
   const importFavoriteWords = async (words: string[]): Promise<void> => {
     let successCount = 0;
 
-    // 逐个在后端添加单词
+    // Add words to backend one by one
     for (const word of words) {
       if (word) {
         const result = await syncFavoriteWordWithBackend(word, true);
@@ -485,51 +485,51 @@ export function useFavoriteWord() {
         }
       }
     }
-    // 重新从后端加载，确保状态一致
+    // Reload from backend to ensure consistency
     await loadFavoriteWords();
   };
 
   /**
-   * 导出收藏单词为数组
+   * Export favorite words as array
    */
   const exportFavoriteWords = (): string[] => {
     return Array.from(favoriteWords.value);
   };
 
-  // 组件挂载时自动加载收藏单词并设置事件监听
+  // Automatically load favorite words and set up event listeners when component mounts
   onMounted(() => {
-    // 加载UI设置
+    // Load UI settings
     loadUISettings();
     
-    // 加载收藏单词
+    // Load favorite words
     loadFavoriteWords();
     
-    // 监听认证令牌变化
+    // Listen for authentication token changes
     chrome.storage.onChanged.addListener((changes, area) => {
       if (area === 'local' && changes['authToken']) {
-        // 认证令牌变化时，重新加载收藏单词
+        // Reload favorite words when authentication token changes
         loadFavoriteWords();
       }
-      // 监听收藏单词区域设置变化
+      // Listen for favorite section setting changes
       if (area === 'local' && changes[FAVORITE_SECTION_VISIBLE_KEY]) {
         favoriteSectionVisible.value = changes[FAVORITE_SECTION_VISIBLE_KEY].newValue;
       }
     });
     
-    // 添加自定义事件监听，用于跨页面实时更新
+    // Add custom event listeners for real-time updates across pages
     document.addEventListener(
       FAVORITE_WORD_UPDATED_EVENT,
       ((e: CustomEvent) => handleFavoriteWordChange(e)) as EventListener
     );
     
-    // 添加收藏单词区域设置变更监听
+    // Add favorite section setting change listener
     document.addEventListener(
       FAVORITE_SECTION_TOGGLE_EVENT,
       ((e: CustomEvent) => handleFavoriteSectionToggle(e)) as EventListener
     );
   });
   
-  // 组件卸载时移除事件监听
+  // Remove event listeners when component unmounts
   onUnmounted(() => {
     document.removeEventListener(
       FAVORITE_WORD_UPDATED_EVENT,
@@ -542,7 +542,7 @@ export function useFavoriteWord() {
     );
   });
   
-  // 返回工具函数
+  // Return utility functions
   return {
     favoriteWords,
     isLoading,
@@ -552,10 +552,9 @@ export function useFavoriteWord() {
     addFavoriteWord,
     removeFavoriteWord,
     clearFavoriteWords,
-    loadFavoriteWords,
-    exportFavoriteWords,
     importFavoriteWords,
-    favoriteUIEnabled,
+    exportFavoriteWords,
+    loadFavoriteWords,
     favoriteSectionVisible,
     toggleFavoriteSection
   };

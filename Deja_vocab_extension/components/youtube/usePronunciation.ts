@@ -1,79 +1,79 @@
 import { ref } from 'vue';
 
 /**
- * 用于播放单词发音的组合式函数
- * 提供单词发音功能，与后端API交互获取发音音频
+ * Used to play the pronunciation of a word
+ * Provides word pronunciation functionality, interacting with backend API to get pronunciation audio
  */
 export function usePronunciation() {
-  // 音频播放器实例
+  // Audio player instance
   const audioPlayer = ref<HTMLAudioElement | null>(null);
-  // 发音加载状态
+  // Pronunciation loading state
   const isLoading = ref(false);
-  // 发音错误信息
+  // Pronunciation error message
   const error = ref<string | null>(null);
-  // 是否正在播放发音
+  // Whether pronunciation is currently playing
   const isPlaying = ref(false);
-  // 是否启用自动发音（默认启用）
+  // Whether auto-play is enabled (default enabled)
   const autoPlayEnabled = ref(true);
 
   /**
-   * 播放单词发音
-   * @param word 要播放发音的单词
-   * @returns 是否成功播放发音
+   * Play the pronunciation of a word
+   * @param word The word to play the pronunciation
+   * @returns Whether the pronunciation was successfully played
    */
   const playPronunciation = async (word: string): Promise<boolean> => {
     if (!word) return false;
     
-    // 清除之前的错误
+    // Clear previous errors
     error.value = null;
     
     try {
       isLoading.value = true;
       
-      // 获取API配置
+      // Get API configuration
       const result = await chrome.storage.local.get(['apiUrl', 'authToken']);
       const apiUrl = result.apiUrl as string;
       const authToken = result.authToken as string;
       const baseUrl = apiUrl?.endsWith('/') ? apiUrl : `${apiUrl}/`;
       
       if (!baseUrl || !authToken) {
-        throw new Error('缺少 API URL 或认证信息');
+        throw new Error('Missing API URL or authentication information');
       }
       
-      // 构建发音API URL
+      // Build pronunciation API URL
       const pronunciationUrl = `${baseUrl}web/word-pronunciation/${encodeURIComponent(word.toLowerCase())}/`;
       
-      // 创建或获取音频播放器
+      // Create or get audio player
       if (!audioPlayer.value) {
         audioPlayer.value = new Audio();
         
-        // 添加事件监听器
+        // Add event listeners
         audioPlayer.value.addEventListener('ended', () => {
           isPlaying.value = false;
         });
         
         audioPlayer.value.addEventListener('error', (e) => {
           isPlaying.value = false;
-          error.value = '无法播放发音';
+          error.value = 'Failed to play pronunciation';
         });
       }
       
-      // 停止当前正在播放的音频
+      // Stop current playing audio
       if (isPlaying.value && audioPlayer.value) {
         audioPlayer.value.pause();
         audioPlayer.value.currentTime = 0;
       }
       
-      // 设置音频源为发音API URL，并添加认证令牌
+      // Set audio source to pronunciation API URL and add authentication token
       const audioSrc = pronunciationUrl;
       
-      // 设置请求头（通过URL参数传递token，因为Audio元素不支持设置headers）
+      // Set request headers (pass token through URL parameters, because Audio element does not support setting headers)
       const audioUrlWithToken = `${audioSrc}?token=${encodeURIComponent(authToken)}`;
       
-      // 设置音频源
+      // Set audio source
       audioPlayer.value.src = audioUrlWithToken;
       
-      // 播放音频
+      // Play audio
       isPlaying.value = true;
       try {
         await audioPlayer.value.play();
@@ -83,7 +83,7 @@ export function usePronunciation() {
       
       return true;
     } catch (err) {
-      error.value = err instanceof Error ? err.message : '播放发音失败';
+      error.value = err instanceof Error ? err.message : 'Failed to play pronunciation';
       isPlaying.value = false;
       return false;
     } finally {
@@ -92,7 +92,7 @@ export function usePronunciation() {
   };
 
   /**
-   * 停止当前播放的发音
+   * Stop current playing pronunciation
    */
   const stopPronunciation = (): void => {
     if (audioPlayer.value && isPlaying.value) {
@@ -103,33 +103,33 @@ export function usePronunciation() {
   };
 
   /**
-   * 切换自动发音功能
-   * @returns 切换后的状态
+   * Toggle auto-play pronunciation
+   * @returns The new state
    */
   const toggleAutoPlay = (): boolean => {
     autoPlayEnabled.value = !autoPlayEnabled.value;
     
-    // 保存到本地存储
+    // Save to local storage
     chrome.storage.local.set({ 'pronunciationAutoPlay': autoPlayEnabled.value });
     
     return autoPlayEnabled.value;
   };
 
   /**
-   * 从本地存储加载自动发音设置
+   * Load auto-play pronunciation setting from local storage
    */
   const loadSettings = async (): Promise<void> => {
     try {
       const result = await chrome.storage.local.get(['pronunciationAutoPlay']);
-      // 如果设置存在，则使用它；否则默认为启用
+      // If setting exists, use it; otherwise default to enabled
       autoPlayEnabled.value = result.pronunciationAutoPlay !== false;
     } catch (error) {
-      // 出错时默认启用
+      // If error, default to enabled
       autoPlayEnabled.value = true;
     }
   };
 
-  // 初始化时加载设置
+  // Initialize by loading settings
   loadSettings();
 
   return {

@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from .models import Video, Subtitle, Sentence
-from .word_models import WordDefinition, UserWord, WordReference
+from .word_models import WordReference
 
 class SubtitleSerializer(serializers.ModelSerializer):
     class Meta:
@@ -15,7 +15,7 @@ class VideoSerializer(serializers.ModelSerializer):
         fields = ['id', 'url', 'title', 'platform', 'created_at', 'subtitles']
         read_only_fields = ['created_at']
 
-# 不再需要 SentenceReferenceSerializer，因为 Sentence 已经直接关联了视频和时间戳
+# SentenceSerializer has replaced SentenceReferenceSerializer, because Sentence is now directly associated with video and timestamp
 
 class SentenceSerializer(serializers.ModelSerializer):
     video_title = serializers.SerializerMethodField()
@@ -36,7 +36,7 @@ class SentenceSerializer(serializers.ModelSerializer):
     def get_timestamp_url(self, obj):
         return obj.get_timestamp_url()
 
-# 添加 WordReference 的序列化器
+# Add WordReference serializer
 class WordReferenceSerializer(serializers.ModelSerializer):
     word_text = serializers.SerializerMethodField()
     video_title = serializers.SerializerMethodField()

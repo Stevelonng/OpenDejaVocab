@@ -10,20 +10,20 @@ logger = logging.getLogger(__name__)
 
 def merge_english_subtitles(subtitles, max_gap=1.0, max_duration=10.0, max_chars=200):
     """
-    合并英语字幕片段为更有意义的单位，不会拆分任何原始字幕
+    Merge English subtitle segments into more meaningful units without splitting any original subtitles
     
-    参数:
-    - subtitles: 原始字幕列表，每项包含 start, end, text
-    - max_gap: 允许合并的最大时间间隔(秒)
-    - max_duration: 合并后的最大总持续时间(秒)
-    - max_chars: 合并后的最大字符数
+    Parameters:
+    - subtitles: Original subtitle list, each item contains start, end, text
+    - max_gap: Maximum time gap allowed for merging (seconds)
+    - max_duration: Maximum total duration after merging (seconds)
+    - max_chars: Maximum number of characters after merging
     
-    返回: 合并后的字幕列表
+    Returns: List of merged subtitles
     """
     if not subtitles or len(subtitles) <= 1:
         return subtitles
     
-    # 懒加载spaCy模型，只有在需要时才加载
+    # Lazy load spaCy model, only when needed
     import spacy
     nlp = None
     
@@ -34,72 +34,72 @@ def merge_english_subtitles(subtitles, max_gap=1.0, max_duration=10.0, max_chars
         next_sub = subtitles[i]
         prev_sub = current_group[-1]
         
-        # 计算时间间隔
+        # Calculate time gap
         time_gap = next_sub["start"] - prev_sub["end"]
         
-        # 计算合并后的总持续时间
+        # Calculate total duration after merging
         merged_duration = next_sub["end"] - current_group[0]["start"]
         
-        # 计算合并后的文本
+        # Calculate merged text
         current_text = " ".join([s["text"] for s in current_group])
         merged_text = current_text + " " + next_sub["text"]
         
-        # 决定是否应该合并
+        # Decide whether to merge
         should_merge = True
         
-        # 检查时间限制
+        # Check time limits
         if time_gap > max_gap or merged_duration > max_duration or len(merged_text) > max_chars:
             should_merge = False
         
-        # 检查语义完整性（只对一定长度以上的文本进行检查）
+        # Check semantic completeness (only for text above a certain length)
         if should_merge and len(current_text) > 10:
-            if nlp is None:  # 懒加载spaCy模型
+            if nlp is None:  # Lazy load spaCy model
                 try:
                     nlp = spacy.load("en_core_web_sm")
                 except:
-                    # 如果模型未安装，尝试下载
+                    # If model is not installed, try downloading
                     import subprocess
                     subprocess.call([sys.executable, "-m", "spacy", "download", "en_core_web_sm"])
                     nlp = spacy.load("en_core_web_sm")
             
-            # 检查当前文本是否已经是一个完整句子
+            # Check if current text is already a complete sentence
             if current_text and current_text.strip()[-1] in ['.', '?', '!', ':', ';']:
-                should_merge = False  # 当前已是完整句子，不合并
+                should_merge = False  # Current text is a complete sentence, don't merge
             
-            # 检查是否有连接词表明句子未完成
+            # Check if ending with conjunction indicates incomplete sentence
             ending_with_conjunction = any(current_text.lower().endswith(word) for word in 
                                           [" and", " but", " or", " nor", " so", " yet", " for"])
             if ending_with_conjunction:
-                should_merge = True  # 如果以连接词结尾，强制合并
+                should_merge = True  # If ending with conjunction, force merge
                 
-            # 检查下一个字幕是否以小写字母开头（可能表示句子延续）
+            # Check if next subtitle begins with lowercase (may indicate sentence continuation)
             next_text = next_sub["text"].strip()
             if next_text and next_text[0].islower():
-                should_merge = True  # 如果下一句以小写开头，可能是当前句子的延续
+                should_merge = True  # If next sentence starts with lowercase, it may be continuation of current sentence
             elif next_text and next_text[0].isupper() and not current_text.endswith(','):
-                # 如果下一句以大写开头且当前句不以逗号结尾，可能是新句子
-                # 检查更深层的语义
+                # If next sentence starts with uppercase and current doesn't end with comma, it may be a new sentence
+                # Check deeper semantics
                 first_word = next_text.split()[0].lower() if next_text.split() else ""
                 connecting_words = ["and", "but", "or", "so", "because", "however", "though", "although", "yet", "still"]
                 if first_word in connecting_words:
-                    should_merge = True  # 连接词开头，合并
+                    should_merge = True  # Starts with connecting word, merge
                 else:
-                    should_merge = False  # 可能是新句子
+                    should_merge = False  # May be a new sentence
         
         if should_merge:
-            # 将字幕添加到当前组
+            # Add subtitle to current group
             current_group.append(next_sub)
         else:
-            # 保存当前组并开始新组
-            # 保持原始字幕的时间逻辑：第一个字幕的start作为开始，最后一个字幕的end作为结束
+            # Save current group and start a new one
+            # Maintain original subtitle timing logic: first subtitle's start as beginning, last subtitle's end as ending
             merged_subtitles.append({
                 "start": current_group[0]["start"],
                 "end": current_group[-1]["end"],
                 "text": " ".join([s["text"] for s in current_group])
             })
-            current_group = [next_sub]  # 开始新组
+            current_group = [next_sub]  # Start new group
     
-    # 处理最后一组
+    # Process the last group
     if current_group:
         merged_subtitles.append({
             "start": current_group[0]["start"],
@@ -110,7 +110,7 @@ def merge_english_subtitles(subtitles, max_gap=1.0, max_duration=10.0, max_chars
     return merged_subtitles
 
 def extract_youtube_id(url):
-    """从YouTube URL中提取视频ID"""
+    """Extract video ID from YouTube URL"""
     youtube_regex = r'(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})'
     match = re.search(youtube_regex, url)
     return match.group(1) if match else None
@@ -119,8 +119,8 @@ def extract_youtube_id(url):
 @permission_classes([IsAuthenticated])
 def auto_fetch_subtitles(request):
     """
-    自动获取YouTube视频字幕的API端点
-    不保存到数据库，只返回合并后的字幕数据
+    API endpoint for automatically fetching YouTube video subtitles
+    Does not save to database, only returns merged subtitle data
     """
     url = request.query_params.get('url', '')
     if not url:
@@ -133,19 +133,19 @@ def auto_fetch_subtitles(request):
     try:
         logger.info(f"Starting auto fetch subtitles for video {video_id}")
         
-        # 尝试获取字幕
+        # Try to get subtitles
         try:
-            # 尝试获取英文字幕
+            # Try to get English subtitles
             transcript_list = YouTubeTranscriptApi.list_transcripts(video_id)
             
-            # 优先尝试获取英文字幕
+            # Prioritize English subtitles
             try:
                 transcript = transcript_list.find_transcript(['en'])
                 raw_subtitles = transcript.fetch()
                 language = 'en'
                 logger.info(f"Successfully fetched English subtitles, count: {len(raw_subtitles)}")
             except:
-                # 如果找不到英文字幕，获取任意可用的字幕
+                # If English subtitles not found, get any available subtitles
                 transcript = transcript_list.find_transcript(['zh-Hans', 'zh', 'ja', 'ko'])
                 raw_subtitles = transcript.fetch()
                 language = transcript.language_code
@@ -155,65 +155,80 @@ def auto_fetch_subtitles(request):
             logger.error(f"Failed to fetch subtitles: {str(e)}")
             return Response({"error": f"Video has no available subtitles: {str(e)}"}, status=404)
         
-        # 标准化格式
+        # Standardize format
         subtitles = []
         for i, item in enumerate(raw_subtitles):
+            # Convert the transcript object to a dictionary to ensure we can access attributes uniformly
+            # The youtube_transcript_api might return objects or dictionaries depending on version
+            if not isinstance(item, dict):
+                # If it's not a dictionary, access attributes as object properties
+                item_dict = {
+                    "start": getattr(item, "start", 0),
+                    "duration": getattr(item, "duration", 0),
+                    "text": getattr(item, "text", "")
+                }
+            else:
+                item_dict = item
+                
             if i < len(raw_subtitles) - 1:
-                # 非最后一条，结束时间为下一条的开始时间
+                # Not the last entry, end time is the start time of the next entry
+                next_item = raw_subtitles[i+1]
+                next_start = next_item["start"] if isinstance(next_item, dict) else getattr(next_item, "start", 0)
+                
                 subtitles.append({
-                    "start": item["start"],
-                    "end": raw_subtitles[i+1]["start"],
-                    "text": item["text"]
+                    "start": item_dict["start"],
+                    "end": next_start,
+                    "text": item_dict["text"]
                 })
             else:
-                # 最后一条，使用duration
+                # Last entry, use duration
                 subtitles.append({
-                    "start": item["start"],
-                    "end": item["start"] + item["duration"],
-                    "text": item["text"]
+                    "start": item_dict["start"],
+                    "end": item_dict["start"] + item_dict["duration"],
+                    "text": item_dict["text"]
                 })
         logger.info(f"Processed timestamps for {len(subtitles)} subtitles")
         
-        # 预处理字幕：过滤掉自动生成的噪音标记和单字符字幕
+        # Preprocess subtitles: filter out auto-generated noise markers and single character subtitles
         filtered_subtitles = []
         for sub in subtitles:
-            # 获取原文本
+            # Get original text
             text = sub["text"]
             
-            # 1. 过滤YouTube自动生成的噪音标记：[Applause], [Music]等
-            # 移除方括号内的内容
+            # 1. Filter YouTube auto-generated noise markers: [Applause], [Music], etc.
+            # Remove content inside brackets
             text = re.sub(r'\[.*?\]', '', text)
             
-            # 2. 过滤单字符字幕 (排除标点符号后只有一个字母的情况)
-            # 删除标点符号和空格后检查长度
+            # 2. Filter single character subtitles (excluding cases where only one letter remains after removing punctuation)
+            # Delete punctuation and spaces then check length
             clean_text = re.sub(r'[^\w]', '', text)
             
-            # 如果处理后的文本非空且不只是单个字符，则保留
+            # If processed text is not empty and not just a single character, keep it
             if clean_text and len(clean_text) > 1:
                 sub["text"] = text.strip()
                 filtered_subtitles.append(sub)
         
         logger.info(f"Subtitle filtering completed, before: {len(subtitles)}, after: {len(filtered_subtitles)}")
         
-        # 对英文字幕进行合并处理
+        # Merge English subtitles
         if language == 'en':
             try:
                 logger.info(f"Starting subtitle merging, original count: {len(filtered_subtitles)}")
                 merged_subtitles = merge_english_subtitles(
                     filtered_subtitles,
-                    max_gap=2.0,      # 允许2秒的间隔
-                    max_duration=10.0, # 最长10秒
-                    max_chars=300      # 最多300字符
+                    max_gap=2.0,      # Allow 2 second gap
+                    max_duration=10.0, # Maximum 10 seconds
+                    max_chars=300      # Maximum 300 characters
                 )
                 logger.info(f"Subtitle merging completed, merged count: {len(merged_subtitles)}")
             except Exception as e:
                 logger.error(f"Subtitle merging failed: {str(e)}")
                 merged_subtitles = filtered_subtitles
         else:
-            # 非英文字幕不进行合并
+            # Don't merge non-English subtitles
             merged_subtitles = filtered_subtitles
         
-        # 标准化响应格式
+        # Standardize response format
         formatted_subtitles = []
         for sub in merged_subtitles:
             formatted_subtitles.append({

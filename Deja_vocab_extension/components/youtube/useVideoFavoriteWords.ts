@@ -1,7 +1,7 @@
 import { ref, Ref, computed, watch } from 'vue';
 import { browser } from 'wxt/browser';
 
-// 单词在视频中的引用信息
+// Word reference in video
 export interface WordReferenceInVideo {
   word: string;
   subtitle: {
@@ -16,8 +16,8 @@ export interface WordReferenceInVideo {
 }
 
 /**
- * 视频收藏单词功能
- * 提取当前视频中收藏过的单词
+ * Video favorite words functionality
+ * Extracts words from the current video that are in the user's favorites
  */
 export function useVideoFavoriteWords(
   currentVideoTime: Ref<number>,
@@ -25,28 +25,28 @@ export function useVideoFavoriteWords(
   subtitles: Ref<any[]>,
   favoriteWords: Ref<Set<string>>
 ) {
-  // 状态
+  // State
   const loading = ref(false);
   const error = ref<string | null>(null);
   const videoWordReferences = ref<WordReferenceInVideo[]>([]);
   
-  // 计算属性：当前视频中收藏的单词
+  // Computed property: words in the current video that are in the user's favorites
   const favoriteWordsInVideo = computed(() => {
     return videoWordReferences.value.filter(ref => 
       favoriteWords.value.has(ref.word.toLowerCase())
     );
   });
   
-  // 计算属性：从收藏单词列表中提取唯一的单词，用于简化显示
+  // Computed property: unique words from the user's favorites that appear in the current video
   const uniqueFavoriteWords = computed(() => {
-    // 提取所有单词
+    // Extract all words
     const words = favoriteWordsInVideo.value.map(ref => ref.word);
-    // 去重
+    // Remove duplicates
     return [...new Set(words)];
   });
   
   /**
-   * 当后端API不存在时，从字幕中提取单词并创建引用
+   * When backend API is not available, extract words from subtitles and create references
    */
   const createReferencesFromSubtitles = () => {
     
@@ -58,31 +58,31 @@ export function useVideoFavoriteWords(
       return;
     }
     
-    // 存储所有找到的单词引用
+    // Store all found word references
     const references: WordReferenceInVideo[] = [];
     
-    // 从所有收藏单词中过滤出出现在字幕中的单词
+    // Filter out words from the user's favorites that appear in the current video
     const favWords = Array.from(favoriteWords.value);
     
-    // 遍历所有字幕
+    // Iterate through all subtitles
     for (const subtitle of subtitles.value) {
       const text = subtitle.text;
       
-      // 查找每个收藏单词是否出现在当前字幕中
+      // Find if any of the user's favorite words appear in the current subtitle
       for (const word of favWords) {
         try {
-          // 使用正则表达式匹配整个单词，避免部分匹配
-          // 使用单词边界\b确保匹配完整单词，忽略大小写
+          // Use regex to match entire word, avoid partial matches
+          // Use word boundary \b to ensure complete word matching, ignoring case
           const regex = new RegExp(`\\b${word.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&')}\\b`, 'i');
           const match = text.match(regex);
           
-          // 如果找到匹配
+          // If match found
           if (match) {
-            const matchedWord = match[0]; // 实际匹配到的单词（保留原始大小写）
+            const matchedWord = match[0]; // Actual matched word (preserves original case)
             const index = text.indexOf(matchedWord);
             
             references.push({
-              word: word, // 保存原始收藏的单词
+              word: word, // Save original favorited word
               subtitle: {
                 id: subtitle.id || 0,
                 text: subtitle.text,
@@ -101,21 +101,21 @@ export function useVideoFavoriteWords(
     
     videoWordReferences.value = references;
     
-    // 如果没有找到引用，清除错误状态
+    // If no references found, clear error state
     if (references.length === 0) {
     } else {
-      // 已成功提取，清除错误
+      // Successfully extracted, clear error
       error.value = null;
     }
   };
   
   /**
-   * 从后端获取视频中的单词引用
+   * Fetch word references in video from backend
    */
   const fetchVideoWordReferences = async (): Promise<void> => {
     if (!currentVideoInfo.value) {
-      error.value = '当前没有视频信息';
-      // 如果有字幕信息，尝试从字幕中提取
+      error.value = 'No current video information';
+      // If subtitle information exists, try to extract from subtitles
       if (subtitles.value && subtitles.value.length > 0 && favoriteWords.value.size > 0) {
         createReferencesFromSubtitles();
       }
@@ -126,24 +126,24 @@ export function useVideoFavoriteWords(
       loading.value = true;
       error.value = null;
       
-      // 如果已经有字幕且有收藏单词，先从字幕中提取以快速显示
+      // If subtitles exist and there are favorited words, extract from subtitles first for quick display
       if (subtitles.value && subtitles.value.length > 0 && favoriteWords.value.size > 0) {
         createReferencesFromSubtitles();
       }
       
-      // 从存储中获取API设置和认证令牌
+      // Get API settings and authentication token from storage
       const result = await browser.storage.local.get(['apiUrl', 'authToken']);
       const apiUrl = result.apiUrl as string;
       const authToken = result.authToken as string;
       
       if (!authToken) {
-        throw new Error('未找到认证令牌，无法从后端获取数据');
+        throw new Error('Authentication token not found, cannot fetch data from backend');
       }
       
-      // 构建API URL
+      // Build API URL
       const baseUrl = apiUrl?.endsWith('/') ? apiUrl : `${apiUrl}/`;
       
-      // 获取视频详情以获取视频ID
+      // Get video details to obtain video ID
       const videoUrl = `https://www.youtube.com/watch?v=${currentVideoInfo.value.videoId}`;
       const videoResponse = await fetch(`${baseUrl}videos/?url=${encodeURIComponent(videoUrl)}`, {
         headers: {
@@ -152,17 +152,17 @@ export function useVideoFavoriteWords(
       });
       
       if (!videoResponse.ok) {
-        throw new Error('获取视频信息失败');
+        throw new Error('Failed to get video information');
       }
       
       const videoData = await videoResponse.json();
       
-      // 检查是否有视频数据
+      // Check if video data exists
       if (!videoData.results || videoData.results.length === 0) {
-        throw new Error('未找到视频数据');
+        throw new Error('Video data not found');
       }
       
-      // 查找匹配的视频
+      // Find matching video
       let videoId = null;
       for (const video of videoData.results) {
         const urlVideoId = video.url.match(/(?:youtube\.com\/watch\?v=|\/videos\/|youtu\.be\/|embed\/|\?v=)([^&?\n]+)/)?.[1];
@@ -173,10 +173,10 @@ export function useVideoFavoriteWords(
       }
       
       if (!videoId) {
-        throw new Error('无法找到匹配的视频ID');
+        throw new Error('Could not find matching video ID');
       }      
       
-      // 获取视频中的所有单词引用
+      // Get all word references in the video
       const wordReferencesResponse = await fetch(`${baseUrl}video/${videoId}/word-references/`, {
         headers: {
           'Authorization': `Token ${authToken}`
@@ -184,14 +184,14 @@ export function useVideoFavoriteWords(
       });
       
       if (!wordReferencesResponse.ok) {
-        // 如果API端点不存在，尝试从现有字幕中提取出现的单词
+        // If API endpoint doesn't exist, try to extract words from existing subtitles
         createReferencesFromSubtitles();
         return;
       }
       
       const wordReferencesData = await wordReferencesResponse.json();
       
-      // 格式化数据
+      // Format data
       videoWordReferences.value = wordReferencesData.map((ref: any) => ({
         word: ref.user_word.word_definition.text,
         subtitle: {
@@ -205,12 +205,12 @@ export function useVideoFavoriteWords(
         isFavorite: ref.user_word.is_favorite
       }));      
     } catch (error: any) {
-      const errorMessage = error.message || error.toString() || '未知错误';
+      const errorMessage = error.message || error.toString() || 'Unknown error';
       
-      // 设置错误状态
-      error.value = `获取失败: ${errorMessage}`;
+      // Set error state
+      error.value = `Fetch failed: ${errorMessage}`;
       
-      // 如果有字幕信息且有收藏单词，尝试从字幕中提取
+      // If subtitle information exists and there are favorited words, try to extract from subtitles
       if (subtitles.value && subtitles.value.length > 0 && favoriteWords.value.size > 0) {
         createReferencesFromSubtitles();
       }
@@ -220,49 +220,49 @@ export function useVideoFavoriteWords(
   };
   
   /**
-   * 跳转到视频中单词出现的时间点
-   * @param wordReference 单词引用信息
+   * Jump to the time point where the word appears in the video
+   * @param wordReference Word reference information
    */
   const seekToWordInVideo = (wordReference: WordReferenceInVideo): void => {
-    // 获取视频元素并设置当前时间
+    // Get video element and set current time
     const videoElement = document.querySelector('video');
     if (videoElement) {
       videoElement.currentTime = wordReference.subtitle.startTime;
-      videoElement.play().catch(err => console.error('播放失败:', err));
+      videoElement.play().catch(err => console.error('Failed to play:', err));
     }
   };
   
-  // 监听视频变化，自动获取新视频的单词引用
+  // Watch for video changes and automatically fetch word references for new videos
   watch(() => currentVideoInfo.value?.videoId, (newVideoId, oldVideoId) => {
     if (newVideoId) {
-      // 重置状态
+      // Reset states
       videoWordReferences.value = [];
       error.value = null;
-      // 获取新视频的单词引用
+      // Get word references for new video
       fetchVideoWordReferences();
     }
-  }, { immediate: true }); // 添加 immediate: true 以确保初始加载时触发
+  }, { immediate: true }); // Add immediate: true to ensure trigger on initial load
   
-  // 监听收藏单词变化，更新词表
+  // Watch for favorite word changes and update word list
   watch(favoriteWords, () => {
-    // 始终重新从字幕中提取收藏单词，确保数据最新
+    // Always re-extract favorited words from subtitles to ensure data is up-to-date
     if (subtitles.value && subtitles.value.length > 0) {
       createReferencesFromSubtitles();
     }
-  }, { deep: true, immediate: true }); // 添加 immediate: true 以确保初始加载时触发
+  }, { deep: true, immediate: true }); // Add immediate: true to ensure trigger on initial load
   
-  // 监听字幕变化
+  // Watch for subtitle changes
   watch(subtitles, (newSubtitles) => {
-    // 当字幕加载完成后，尝试从字幕提取收藏单词
+    // When subtitles finish loading, try to extract favorited words from subtitles
     if (newSubtitles && newSubtitles.length > 0 && favoriteWords.value.size > 0) {
-      // 如果后端加载失败或者还没有词汇引用，使用字幕提取
+      // If backend loading failed or no word references yet, use subtitle extraction
       if (error.value || videoWordReferences.value.length === 0) {
         createReferencesFromSubtitles();
       }
     }
-  }, { deep: true, immediate: true }); // 添加 immediate: true 以确保初始加载时触发
+  }, { deep: true, immediate: true }); // Add immediate: true to ensure trigger on initial load
   
-  // 初始加载 - 取消这里的调用，因为我们已经在 watch 中使用 immediate: true 来触发
+  // Initial load - cancel this call here since we already use immediate: true in watch to trigger
   
   return {
     loading,

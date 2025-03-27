@@ -1,7 +1,7 @@
 import { ref, computed, Ref, watch } from 'vue';
 
-// 定义模块级变量来存储定时器ID
-// 正确的NodeJS定时器类型
+// Define module-level variables to store timer IDs
+// Correct NodeJS timer type
 let durationCheckIntervalId: ReturnType<typeof setInterval> | null = null;
 
 export function useVideoControl(videoElement: Ref<HTMLVideoElement | null>) {
@@ -9,13 +9,13 @@ export function useVideoControl(videoElement: Ref<HTMLVideoElement | null>) {
   const videoDuration = ref(0);
   const currentVideoTime = ref(0);
   
-  // 进度百分比
+  // Progress percentage
   const progressPercent = computed(() => {
     if (!videoDuration.value || !currentVideoTime.value) return 0;
     return (currentVideoTime.value / videoDuration.value) * 100;
   });
 
-  // 切换播放/暂停
+  // Toggle play/pause
   const togglePlay = () => {
     if (!videoElement.value) return;
     
@@ -28,7 +28,7 @@ export function useVideoControl(videoElement: Ref<HTMLVideoElement | null>) {
     isPlaying.value = !isPlaying.value;
   };
 
-  // 进度条点击跳转
+  // Progress bar click jump
   const seekToPosition = (event: MouseEvent) => {
     if (!videoElement.value || !videoDuration.value) return;
     
@@ -37,17 +37,17 @@ export function useVideoControl(videoElement: Ref<HTMLVideoElement | null>) {
     const clickX = event.clientX - rect.left;
     const percentage = clickX / rect.width;
     
-    // 根据点击位置计算时间
+    // Calculate time based on click position
     const seekTime = percentage * videoDuration.value;
     videoElement.value.currentTime = seekTime;
   };
 
-  // 初始化播放状态和时长
+  // Initialize playback state and duration
   const initVideoState = (video: HTMLVideoElement) => {
-    // 立即同步播放状态
+    // Synchronize playback state immediately
     isPlaying.value = !video.paused;
     
-    // 获取视频时长
+    // Get video duration
     if (video.duration) {
       videoDuration.value = video.duration;
     } else {
@@ -56,45 +56,45 @@ export function useVideoControl(videoElement: Ref<HTMLVideoElement | null>) {
       });
     }
     
-    // 设置时间更新监听
+    // Set time update listener
     video.addEventListener('timeupdate', () => {
       currentVideoTime.value = video.currentTime;
       
-      // 检查是否需要更新视频时长（解决广告结束后时长不更新的问题）
+      // Check if duration needs to be updated (to handle duration changes after ads)
       if (videoDuration.value !== video.duration && video.duration > 0) {
         videoDuration.value = video.duration;
       }
     });
     
-    // 监听视频的时长变化（处理广告结束后的视频）
+    // Listen for duration changes (to handle duration changes after ads)
     video.addEventListener('durationchange', () => {
       if (video.duration > 0) {
         videoDuration.value = video.duration;
       }
     });
     
-    // 监听视频数据加载事件（当视频源切换时触发，如广告结束或更换视频）
+    // Listen for video data loading events (when video source changes, such as after ads or when changing videos)
     video.addEventListener('loadeddata', () => {
       if (video.duration > 0 && video.duration !== videoDuration.value) {
         videoDuration.value = video.duration;
       }
     });
     
-    // 设置定时器定期检查视频时长（额外的安全机制）
-    // 先清除之前的定时器（如果有）
+    // Set timer to periodically check video duration (additional safety mechanism)
+    // First clear previous timer (if any)
     if (durationCheckIntervalId) {
       clearInterval(durationCheckIntervalId);
       durationCheckIntervalId = null;
     }
     
-    // 创建新的定时器
+    // Create new timer
     durationCheckIntervalId = setInterval(() => {
       if (video && video.duration > 0 && Math.abs(video.duration - videoDuration.value) > 1) {
         videoDuration.value = video.duration;
       }
-    }, 3000); // 每3秒检查一次
+    }, 3000); // Check every 3 seconds
     
-    // 添加播放和暂停事件监听器，保持状态同步
+    // Add play and pause event listeners to keep state synchronized
     video.addEventListener('play', () => {
       isPlaying.value = true;
     });
@@ -104,38 +104,38 @@ export function useVideoControl(videoElement: Ref<HTMLVideoElement | null>) {
     });
   };
 
-  // 监听视频元素变化，确保状态同步
+  // Listen for video element changes to ensure state synchronization
   watch(videoElement, (newVideo) => {
     if (newVideo) {
-      // 每当视频元素变化时，立即同步播放状态
+      // Whenever the video element changes, immediately synchronize the playback state
       isPlaying.value = !newVideo.paused;
     }
   });
 
   /**
-   * 处理播放/暂停事件，更新用户暂停状态
-   * @param userPaused 用户是否手动暂停的状态
-   * @param pausedByHover 可选参数，指示是否因悔停而暂停
+   * Handle play/pause events, updating user pause state
+   * @param userPaused User's manual pause state
+   * @param pausedByHover Optional parameter, indicates whether paused due to hover
    */
   const handlePlayPauseClick = (userPaused: Ref<boolean>, pausedByHover?: Ref<boolean>) => {
-    // 如果当前正在播放，则用户即将手动暂停
+    // If currently playing, user is about to manually pause
     if (isPlaying.value) {
       userPaused.value = true;
     } else {
-      // 如果当前已暂停，则用户即将手动播放
+      // If currently paused, user is about to manually play
       userPaused.value = false;
     }
     
-    // 重置悔停暂停状态（如果提供）
+    // Reset hover pause state (if provided)
     if (pausedByHover) {
       pausedByHover.value = false;
     }
     
-    // 调用切换播放状态函数
+    // Call toggle play function
     togglePlay();
   };
 
-  // 清理函数，在组件卸载时调用
+  // Cleanup function, called when component unmounts
   const cleanup = () => {
     if (durationCheckIntervalId) {
       clearInterval(durationCheckIntervalId);
@@ -152,6 +152,6 @@ export function useVideoControl(videoElement: Ref<HTMLVideoElement | null>) {
     seekToPosition,
     initVideoState,
     handlePlayPauseClick,
-    cleanup // 添加清理函数
+    cleanup 
   };
 }

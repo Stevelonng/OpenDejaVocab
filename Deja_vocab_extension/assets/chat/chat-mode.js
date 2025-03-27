@@ -1,24 +1,24 @@
 /**
- * 聊天模式管理器 - 用于处理聊天模式切换
- * 支持两种模式：
- * - default: 默认模式，每次视频变更时重置聊天历史
- * - accumulate: 累积模式，保持聊天历史不变，允许跨视频累积上下文
+ * Chat mode manager - Handles chat mode switching
+ * Supports two modes:
+ * - default: Default mode, resets chat history on video change
+ * - accumulate: Accumulation mode, keeps chat history, allowing cross-video context accumulation
  */
 class ChatModeManager {
-  // 单例实例
+  // Singleton instance
   static instance = null;
   
   /**
-   * 获取聊天模式管理器实例（单例模式）
-   * @param {Object} config - 配置对象
-   * @returns {ChatModeManager} - 聊天模式管理器实例
+   * Get chat mode manager instance (Singleton pattern)
+   * @param {Object} config - Configuration object
+   * @returns {ChatModeManager} - Chat mode manager instance
    */
   static getInstance(config = {}) {
     if (!ChatModeManager.instance) {
       ChatModeManager.instance = new ChatModeManager(config);
       console.log('[INFO] Created new ChatModeManager instance');
     } else if (config && Object.keys(config).length > 0) {
-      // 如果提供了新的配置，更新现有实例
+      // If new configuration provided, update existing instance
       ChatModeManager.instance.updateConfig(config);
       console.log('[INFO] Updated existing ChatModeManager instance');
     }
@@ -26,41 +26,41 @@ class ChatModeManager {
   }
   
   /**
-   * 创建聊天模式管理器实例
-   * @param {Object} config - 配置对象
-   * @param {Function} config.onModeChange - 模式变更回调
-   * @param {Function} config.addSystemMessage - 添加系统消息的方法
-   * @param {Function} config.clearChatHistory - 清空聊天历史的方法
-   * @param {Function} config.exportChatSession - 导出聊天会话的方法
+   * Create chat mode manager instance
+   * @param {Object} config - Configuration object
+   * @param {Function} config.onModeChange - Mode change callback
+   * @param {Function} config.addSystemMessage - Add system message method
+   * @param {Function} config.clearChatHistory - Clear chat history method
+   * @param {Function} config.exportChatSession - Export chat session method
    */
   constructor(config = {}) {
-    // 全局单例检查
+    // Global singleton check
     if (window.CHAT_MODE_MANAGER_INSTANCE) {
-      console.log('[INFO] 返回已有的ChatModeManager实例');
+      console.log('[INFO] Returning existing ChatModeManager instance');
       return window.CHAT_MODE_MANAGER_INSTANCE;
     }
     
-    // 设置为全局单例
+    // Set as global singleton
     window.CHAT_MODE_MANAGER_INSTANCE = this;
     
-    // 配置属性
+    // Configuration properties
     this.onModeChange = config.onModeChange || ((mode) => console.log('Mode changed to:', mode));
     this.addSystemMessage = config.addSystemMessage || ((msg) => console.log('System message:', msg));
     this.clearChatHistory = config.clearChatHistory || (() => console.log('Chat history cleared'));
-    // 添加导出会话功能的回调
+    // Add export session callback
     this.exportChatSession = config.exportChatSession || (() => console.log('Export chat session (not implemented)'));
     
-    // 状态属性
-    this.currentMode = 'default'; // 默认为普通模式
+    // State properties
+    this.currentMode = 'default'; // Default to normal mode
     
-    // 初始化标记
+    // Initialization flags
     this.initialized = false;
     this.eventsInitialized = false;
     
-    // 防抖控制
+    // Debounce control
     this.isToggling = false;
     
-    // 绑定方法到实例 - 确保在事件处理时保持正确的this引用
+    // Bind methods to instance - Ensure correct this reference in event handlers
     this.initialize = this.initialize.bind(this);
     this.onToggleButtonClick = this.onToggleButtonClick.bind(this);
     this.toggle = this.toggle.bind(this);
@@ -80,62 +80,62 @@ class ChatModeManager {
     this.createVideoListPanel = this.createVideoListPanel.bind(this);
     this.toggleVideoListPanel = this.toggleVideoListPanel.bind(this);
     
-    // 检查聊天记录的回调函数
+    // Check chat history callback
     this._checkChatHistoryCallback = null;
     
-    console.log('[INFO] 创建ChatModeManager实例完成');
+    console.log('[INFO] Created ChatModeManager instance');
   }
   
   /**
-   * 更新配置
-   * @param {Object} config - 新的配置对象
+   * Update configuration
+   * @param {Object} config - New configuration object
    */
   updateConfig(config) {
     if (config.onModeChange) this.onModeChange = config.onModeChange;
     if (config.addSystemMessage) this.addSystemMessage = config.addSystemMessage;
     if (config.clearChatHistory) this.clearChatHistory = config.clearChatHistory;
-    // 更新导出会话方法的引用
+    // Update export session callback
     if (config.exportChatSession) this.exportChatSession = config.exportChatSession;
   }
   
   /**
-   * 初始化聊天模式管理器
+   * Initialize chat mode manager
    * @returns {Promise<void>}
    */
   async initialize() {
-    // 防止重复初始化
+    // Prevent duplicate initialization
     if (this.initialized) {
-      console.log('[INFO] ChatModeManager已经初始化，跳过');
+      console.log('[INFO] ChatModeManager already initialized, skipping');
       return;
     }
     
-    console.log('[INFO] 初始化ChatModeManager');
+    console.log('[INFO] Initializing ChatModeManager');
     
-    // 标记为已初始化
+    // Mark as initialized
     this.initialized = true;
     
-    // 加载保存的模式设置
+    // Load saved mode settings
     await this.loadSavedMode();
-    console.log('[INFO] 当前聊天模式:', this.currentMode);
+    console.log('[INFO] Current chat mode:', this.currentMode);
     
-    // 主动检查是否存在活跃会话，如果有则自动激活专注模式
+    // Check for active session
     await this.checkActiveSession();
     
-    // 初始化按钮UI
+    // Initialize button UI
     this.updateButtonUI();
     
-    // 绑定按钮点击事件和事件监听器
+    // Bind button click events and event listeners
     this.bindEvents();
     
-    // 初始化视频列表显示状态
+    // Initialize video list display state
     this.toggleVideoListVisibility();
     
-    console.log('[INFO] ChatModeManager初始化完成');
+    console.log('[INFO] ChatModeManager initialized');
   }
   
   /**
-   * 切换按钮点击事件处理
-   * @param {Event} e - 点击事件
+   * Handle toggle button click event
+   * @param {Event} e - Click event
    */
   onToggleButtonClick(e) {
     e.preventDefault();
@@ -143,20 +143,20 @@ class ChatModeManager {
     
     console.log('[INFO] Chat mode toggle button clicked - DEPRECATED METHOD');
     
-    // 防止重复点击
+    // Prevent duplicate clicks
     if (this.isToggling) {
       console.log('[INFO] Toggle already in progress, ignoring click');
       return;
     }
     
-    // 设置防抖状态
+    // Set debounce state
     this.isToggling = true;
     
-    // 使用setTimeout确保异步执行
+    // Use setTimeout to ensure async execution
     setTimeout(async () => {
       await this.toggle();
       
-      // 添加短暂延迟防止快速连续点击
+      // Add short delay to prevent rapid consecutive clicks
       setTimeout(() => {
         this.isToggling = false;
       }, 200);
@@ -164,73 +164,73 @@ class ChatModeManager {
   }
   
   /**
-   * 切换聊天模式
+   * Toggle chat mode
    * @returns {Promise<void>}
    */
   async toggle() {
-    // 记录之前的模式，用于判断切换方向
+    // Record previous mode, used to determine toggle direction
     const previousMode = this.currentMode;
     
-    // 计算目标模式
+    // Calculate target mode
     const targetMode = this.currentMode === 'accumulate' ? 'default' : 'accumulate';
     
     console.log('[INFO] Switching chat mode from', this.currentMode, 'to', targetMode);
     
-    // 切换模式
+    // Switch mode
     this.currentMode = targetMode;
     
-    // 保存设置
+    // Save settings
     await this.saveMode();
     
-    // 如果从累积模式切换到默认模式，首先导出会话记录再清空历史
+    // If switching from accumulate to default, first export session then clear history
     if (previousMode === 'accumulate' && this.currentMode === 'default') {
-      // 检查是否需要导出会话（是否有聊天记录）
+      // Check if session needs to be exported (has chat history)
       try {
-        // 先检查是否有聊天记录可以导出
+        // Check if there is chat history to export
         const hasChatHistory = await this.checkHasChatHistory();
         
         if (hasChatHistory) {
-          console.log('[INFO] 从累积模式切换到默认模式，自动导出会话');
-          // 导出当前会话
+          console.log('[INFO] Switching from accumulate to default, automatically exporting session');
+          // Export current session
           await this.exportChatSession();
-          console.log('[INFO] 会话导出成功');
+          console.log('[INFO] Session exported successfully');
           
-          // 不再显示会话结束通知，使用模式切换通知代替
-          // 在sendModeChangeMessage()中会显示专注模式已关闭的通知
+          // No longer show session end notification, use mode switch notification instead
+          // The session end notification will be shown in sendModeChangeMessage()
         } else {
-          console.log('[INFO] 没有聊天记录，跳过导出步骤');
+          console.log('[INFO] No chat history, skipping export step');
         }
       } catch (error) {
-        console.error('[ERROR] 自动导出会话失败:', error);
+        console.error('[ERROR] Automatically exporting session failed:', error);
       }
       
-      // 然后清空会话历史
+      // Then clear session history
       this.clearChatHistory();
     } else if (this.currentMode === 'default') {
-      // 如果本来就是默认模式，只清空历史
+      // If already in default mode, only clear history
       this.clearChatHistory();
     }
     
-    // 更新按钮UI
+    // Update button UI
     this.updateButtonUI();
     
-    // 发送模式变更的系统消息
+    // Send mode change system message
     this.sendModeChangeMessage();
     
-    // 触发模式变更回调
+    // Trigger mode change callback
     this.onModeChange(this.currentMode);
     
-    // 切换视频列表的显示状态
+    // Toggle video list visibility
     this.toggleVideoListVisibility();
     
-    // 不再需要这里调用fetchSessionVideos，因为toggleVideoListVisibility已经会调用它
+    // No longer need to call fetchSessionVideos here, because toggleVideoListVisibility already does it
     // if (this.currentMode === 'accumulate') {
     //   this.fetchSessionVideos();
     // }
   }
   
   /**
-   * 向聊天添加模式切换提示消息
+   * Add mode change notification message to chat
    */
   sendModeChangeMessage() {
     if (!this.addSystemMessage) {
@@ -238,7 +238,7 @@ class ChatModeManager {
       return;
     }
     
-    // 针对不同模式准备更生动的描述
+    // Prepare more生动 descriptions for different modes
     let modeTitle, modeDesc;
     
     if (this.currentMode === 'accumulate') {
@@ -256,29 +256,29 @@ class ChatModeManager {
       modeDesc = '对话已保存，学习总结已自动生成';
     }
     
-    // 添加调试标记
-    console.log('[DEBUG] 发送模式切换消息, 当前模式:', this.currentMode);
+    // Add debug message
+    console.log('[DEBUG] Sending mode change message, current mode:', this.currentMode);
     
-    // 只使用一种方式显示消息，避免重复
+    // Only use one way to display message, avoid duplicates
     try {
-      // 优先使用通知系统
+      // Prefer using notification system
       if (window.NotificationSystem) {
         const notificationSystem = window.NotificationSystem.getInstance();
         notificationSystem.showModeChangeNotification(modeTitle, modeDesc);
-        console.log('[INFO] 通过通知系统显示了模式切换消息');
-        // 重要: 不再添加系统消息，避免重复
+        console.log('[INFO] Notification system displayed mode change message');
+        // Important: No longer add system message, avoid duplicates
       } else {
-        // 如果通知系统不可用，使用系统消息
+        // If notification system is not available, use system message
         if (this.currentMode === 'accumulate') {
           this.addSystemMessage(`${modeTitle}\n不同视频上下文将持续保留\n再次点击专注模式按钮退出专注模式\n退出后对话将被保存，并自动生成学习总结`);
         } else {
           this.addSystemMessage(`${modeTitle}\n${modeDesc}`);
         }
-        console.log('[INFO] 通过系统消息显示了模式切换消息');
+        console.log('[INFO] System message displayed mode change message');
       }
     } catch (error) {
-      console.error('[ERROR] 显示模式切换通知失败:', error);
-      // 出错时使用系统消息作为后备方案
+      console.error('[ERROR] Failed to display mode change notification:', error);
+      // When error occurs, use system message as fallback
       if (this.currentMode === 'accumulate') {
         this.addSystemMessage(`专注模式已启用\n不同视频上下文将持续保留\n再次点击专注模式按钮退出专注模式\n退出后对话将被保存，并自动生成学习总结`);
       } else {
@@ -288,7 +288,7 @@ class ChatModeManager {
   }
   
   /**
-   * 从浏览器存储加载保存的模式设置
+   * Load saved mode setting from browser storage
    */
   async loadSavedMode() {
     try {
@@ -297,9 +297,9 @@ class ChatModeManager {
       this.currentMode = settings.chatMode || 'default';
       console.log('[INFO] Loaded chat mode setting:', this.currentMode);
       
-      // 如果加载后是专注模式，立即切换视频列表可见性并获取视频列表
+      // If loaded mode is accumulate, immediately toggle video list visibility and fetch videos
       if (this.currentMode === 'accumulate') {
-        console.log('[INFO] 当前为专注模式，自动获取会话视频列表');
+        console.log('[INFO] Current mode is accumulate, automatically fetching session videos');
         this.toggleVideoListVisibility();
         this.fetchSessionVideos();
       }
@@ -310,46 +310,46 @@ class ChatModeManager {
   }
   
   /**
-   * 获取当前聊天模式
-   * @returns {string} 当前模式
+   * Get current chat mode
+   * @returns {string} Current mode
    */
   getCurrentMode() {
     return this.currentMode;
   }
   
   /**
-   * 获取当前会话的视频列表
-   * 仅在专注模式下使用
+   * Get current session videos
+   * Only used in accumulate mode
    */
   async fetchSessionVideos() {
     if (this.currentMode !== 'accumulate') {
-      console.log('[INFO] 非专注模式，跳过获取视频列表');
+      console.log('[INFO] Not in accumulate mode, skipping video list fetch');
       return [];
     }
     
     try {
-      console.log('[INFO] 正在获取当前会话视频列表...');
-      // 获取当前YouTube视频ID（如果有）
+      console.log('[INFO] Fetching current session videos...');
+      // Get current YouTube video ID (if available)
       let currentVideoId = '';
       try {
         const url = new URL(window.location.href);
         const urlParams = new URLSearchParams(url.search);
         currentVideoId = urlParams.get('v') || '';
       } catch (error) {
-        console.log('[WARN] 无法从URL获取视频ID:', error);
+        console.log('[WARN] Failed to get video ID from URL:', error);
       }
       
-      // 获取认证令牌和基础URL
+      // Get authentication token and base URL
       const chatUI = window.getChatUI ? window.getChatUI() : null;
       const apiUrl = chatUI ? chatUI.apiUrl : '/api';
       const authToken = chatUI ? chatUI.authToken : '';
       
-      // 确保URL格式正确
+      // Ensure URL format is correct
       const baseUrl = apiUrl.endsWith('/') ? apiUrl : apiUrl + '/';
       
-      // 请求后端API获取会话中所有视频
+      // Request backend API to get all videos in the session
       const url = `${baseUrl}chat/session-videos/?current_video_id=${currentVideoId}`;
-      console.log('[INFO] 请求会话视频列表:', url);
+      console.log('[INFO] Fetching session videos:', url);
       
       const response = await fetch(url, {
         method: 'GET',
@@ -362,132 +362,132 @@ class ChatModeManager {
       });
       
       if (!response.ok) {
-        throw new Error(`获取视频列表失败: ${response.status}`);
+        throw new Error(`Failed to fetch session videos: ${response.status}`);
       }
       
       const data = await response.json();
-      console.log('[INFO] 成功获取会话视频列表:', data);
+      console.log('[INFO] Successfully fetched session videos:', data);
       
-      // 更新UI
+      // Update UI
       this.updateVideoListUI(data.videos);
       
       return data.videos;
     } catch (error) {
-      console.error('[ERROR] 获取会话视频列表失败:', error);
+      console.error('[ERROR] Failed to fetch session videos:', error);
       return [];
     }
   }
   
   /**
-   * 更新视频列表UI
-   * @param {Array} videos - 视频列表数据
+   * Update video list UI
+   * @param {Array} videos - Video list data
    */
   updateVideoListUI(videos) {
     if (!videos || videos.length === 0) {
-      console.log('[INFO] 没有会话视频，跳过更新UI');
+      console.log('[INFO] No session videos, skipping UI update');
       return;
     }
     
     try {
-      // 查找视频列表容器和列表元素
+      // Find video list container and list element
       const videoListContainer = document.getElementById('session-videos-container');
       
-      // 如果容器不存在，通过createVideoListPanel方法创建
+      // If container does not exist, create it using createVideoListPanel method
       if (!videoListContainer) {
-        console.log('[INFO] 视频列表容器不存在，创建新容器');
+        console.log('[INFO] Video list container does not exist, creating new container');
         this.createVideoListPanel();
         return;
       }
       
-      // 获取视频列表元素
+      // Get video list element
       let videoList = document.getElementById('session-videos-list');
       
-      // 如果列表元素不存在，创建它
+      // If list element does not exist, create it
       if (!videoList) {
-        console.log('[INFO] 视频列表元素不存在，创建新的列表元素');
+        console.log('[INFO] Video list element does not exist, creating new list element');
         videoList = document.createElement('ul');
         videoList.id = 'session-videos-list';
         videoList.className = 'session-videos-list';
         videoListContainer.appendChild(videoList);
       }
       
-      // 清空现有内容
+      // Clear existing content
       videoList.innerHTML = '';
       
-      // 添加视频项
+      // Add video items
       videos.forEach(video => {
         try {
           const listItem = document.createElement('li');
           listItem.className = 'session-video-item';
           listItem.dataset.videoId = video.video_id;
           
-          // 创建缩略图元素
+          // Create thumbnail container
           const thumbnailContainer = document.createElement('div');
-          thumbnailContainer.className = 'video-thumbnail'; // 修改为与CSS匹配的类名
+          thumbnailContainer.className = 'video-thumbnail'; // Match with CSS class
           
-          // 创建缩略图图片
+          // Create thumbnail image
           const thumbnailImg = document.createElement('img');
           thumbnailImg.src = `https://i.ytimg.com/vi/${video.video_id}/default.jpg`;
-          thumbnailImg.alt = video.title || `视频 ${video.video_id}`;
-          thumbnailImg.loading = 'lazy'; // 延迟加载图片
+          thumbnailImg.alt = video.title || `Video ${video.video_id}`;
+          thumbnailImg.loading = 'lazy'; // Lazy load images
           thumbnailContainer.appendChild(thumbnailImg);
           
-          // 创建视频信息容器
+          // Create video info container
           const videoInfo = document.createElement('div');
-          videoInfo.className = 'video-info'; // 修改为与CSS匹配的类名
+          videoInfo.className = 'video-info'; // Match with CSS class
           
-          // 创建视频标题元素
+          // Create video title element
           const videoTitle = document.createElement('div');
           videoTitle.className = 'session-video-title';
-          videoTitle.textContent = video.title || `视频 ${video.video_id}`;
+          videoTitle.textContent = video.title || `Video ${video.video_id}`;
           videoInfo.appendChild(videoTitle);
           
-          // 添加点击事件，点击后导航到该视频
+          // Add click event, navigate to the video
           listItem.addEventListener('click', () => {
-            // 构建YouTube视频URL
+            // Build YouTube video URL
             const videoUrl = `https://www.youtube.com/watch?v=${video.video_id}`;
             
-            // 使用chrome.tabs API在主标签页中导航
+            // Use chrome.tabs API to navigate in the main tab
             chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
               if (tabs && tabs.length > 0) {
                 chrome.tabs.update(tabs[0].id, {url: videoUrl});
               } else {
-                // 如果找不到活动标签页，则创建一个新标签页
+                // If no active tab is found, create a new tab
                 chrome.tabs.create({url: videoUrl});
               }
             });
           });
           
-          // 将缩略图和标题添加到列表项
+          // Add thumbnail and title to list item
           listItem.appendChild(thumbnailContainer);
           listItem.appendChild(videoInfo);
           
-          // 将列表项添加到列表
+          // Add list item to list
           videoList.appendChild(listItem);
         } catch (err) {
-          console.error('[ERROR] 添加视频项时出错:', err, video);
+          console.error('[ERROR] Adding video item failed:', err, video);
         }
       });
       
-      console.log('[INFO] 视频列表UI更新完成，显示了', videos.length, '个视频');
+      console.log('[INFO] Video list UI updated, showing', videos.length, 'videos');
     } catch (error) {
-      console.error('[ERROR] 更新视频列表UI失败:', error);
+      console.error('[ERROR] Updating video list UI failed:', error);
     }
   }
   
   /**
-   * 根据当前模式切换视频列表的可见性
+   * Toggle visibility of video list based on current mode
    */
   toggleVideoListVisibility() {
     try {
-      // 根据当前模式决定视频列表是否可见
+      // Determine visibility of video list based on current mode
       const shouldBeVisible = this.currentMode === 'accumulate';
-      console.log('[INFO] 视频列表应该显示:', shouldBeVisible, ', 当前模式:', this.currentMode);
+      console.log('[INFO] Video list should be visible:', shouldBeVisible, ', current mode:', this.currentMode);
       
-      // 处理悬浮按钮
+      // Handle floating button
       this.handleFloatingButton(shouldBeVisible);
       
-      // 如果不应该显示，直接隐藏视频列表容器（如果存在）
+      // If should not be visible, directly hide the video list container (if exists)
       if (!shouldBeVisible) {
         const videoListContainer = document.getElementById('session-videos-container');
         if (videoListContainer) {
@@ -495,85 +495,85 @@ class ChatModeManager {
         }
       }
     } catch (error) {
-      console.error('[ERROR] 切换视频列表可见性时出错:', error);
+      console.error('[ERROR] Toggling video list visibility failed:', error);
     }
   }
   
   /**
-   * 处理悬浮按钮的创建和显示
-   * @param {boolean} shouldBeVisible - 按钮是否应该显示
+   * Handle floating button creation and display
+   * @param {boolean} shouldBeVisible - Whether the button should be visible
    */
   handleFloatingButton(shouldBeVisible) {
     try {
-      // 查找按钮元素
+      // Find button element
       let toggleButton = document.getElementById('video-list-toggle-button');
       
-      // 如果按钮不存在且应该显示，则创建按钮
+      // If button does not exist and should be visible, create button
       if (!toggleButton && shouldBeVisible) {
-        // 创建悬浮按钮
+        // Create floating button
         toggleButton = document.createElement('button');
         toggleButton.id = 'video-list-toggle-button';
         toggleButton.className = 'video-list-toggle-button';
         toggleButton.innerHTML = '<i class="bi bi-collection-play"></i>';
-        toggleButton.title = '显示当前会话视频';
+        toggleButton.title = 'Show current session videos';
         
-        // 添加点击事件
+        // Add click event
         toggleButton.addEventListener('click', () => {
           this.toggleVideoListPanel();
         });
         
-        // 将按钮添加到聊天容器
+        // Add button to chat container
         const chatContainer = document.querySelector('.chat-container');
         if (chatContainer) {
           chatContainer.appendChild(toggleButton);
-          console.log('[INFO] 视频列表悬浮按钮已添加');
+          console.log('[INFO] Video list floating button added');
         } else {
-          console.warn('[WARN] 无法找到聊天容器');
+          console.warn('[WARN] Unable to find chat container');
           return;
         }
         
-        // 初次创建按钮时，确保视频列表面板也被创建
+        // First create button, ensure video list panel is also created
         this.createVideoListPanel();
       }
       
-      // 根据模式显示或隐藏按钮
+      // Show or hide button based on mode
       if (toggleButton) {
         toggleButton.style.display = shouldBeVisible ? 'flex' : 'none';
       }
     } catch (error) {
-      console.error('[ERROR] 处理视频列表悬浮按钮时出错:', error);
+      console.error('[ERROR] Handling video list floating button failed:', error);
     }
   }
   
   /**
-   * 创建视频列表面板
+   * Create video list panel
    */
   createVideoListPanel() {
     try {
-      // 查找视频列表容器
+      // Find video list container
       let videoListContainer = document.getElementById('session-videos-container');
       
-      // 如果容器已存在，不需要重新创建
+      // If container already exists, no need to recreate
       if (videoListContainer) {
         return;
       }
       
-      // 创建容器
+      // Create container
       videoListContainer = document.createElement('div');
       videoListContainer.id = 'session-videos-container';
       videoListContainer.className = 'session-videos-container';
       
-      // 创建标题
+      // Create title
       const titleElement = document.createElement('div');
       titleElement.className = 'session-videos-title';
       titleElement.innerHTML = '<i class="bi bi-collection-play"></i> 当前会话视频 <i class="bi bi-x-lg close-icon"></i>';
       
-      // 添加关闭按钮点击事件
+      // Add close button click event
       const closeIcon = titleElement.querySelector('.close-icon');
       if (closeIcon) {
-        // 确保只添加一次事件监听器
+        // Ensure only one event listener is added
         const handleCloseClick = (e) => {
-          this.toggleVideoListPanel(false); // 关闭面板
+          this.toggleVideoListPanel(false); // Close panel
           e.stopPropagation();
         };
         closeIcon.addEventListener('click', handleCloseClick, { once: true });
@@ -581,58 +581,58 @@ class ChatModeManager {
       
       videoListContainer.appendChild(titleElement);
       
-      // 创建列表元素
+      // Create list element
       const videoList = document.createElement('ul');
       videoList.id = 'session-videos-list';
       videoList.className = 'session-videos-list';
       videoListContainer.appendChild(videoList);
       
-      // 将视频列表添加到聊天容器
+      // Add video list to chat container
       const chatContainer = document.querySelector('.chat-container');
       if (chatContainer) {
         chatContainer.appendChild(videoListContainer);
-        console.log('[INFO] 视频列表面板已创建');
+        console.log('[INFO] Video list panel created');
       } else {
-        console.warn('[WARN] 无法找到聊天容器');
+        console.warn('[WARN] Unable to find chat container');
       }
       
-      // 立即获取视频列表数据
+      // Immediately fetch video list data
       this.fetchSessionVideos();
     } catch (error) {
-      console.error('[ERROR] 创建视频列表面板时出错:', error);
+      console.error('[ERROR] Creating video list panel failed:', error);
     }
   }
   
   /**
-   * 切换视频列表面板的显示状态
-   * @param {boolean|undefined} forceState - 如果提供，强制设置为指定状态
+   * Switch the visibility of the video list panel
+   * @param {boolean|undefined} forceState - If provided, force set to specified state
    */
   toggleVideoListPanel(forceState) {
     try {
-      // 查找视频列表容器
+      // Find video list container
       const videoListContainer = document.getElementById('session-videos-container');
       if (!videoListContainer) {
-        console.warn('[WARN] 视频列表容器不存在');
+        console.warn('[WARN] Video list container not found');
         return;
       }
       
-      // 当前是否可见
+      // Current visibility state
       const isVisible = videoListContainer.classList.contains('visible');
       
-      // 根据参数或当前状态决定新状态
+      // Determine new state based on parameter or current state
       const newState = forceState !== undefined ? forceState : !isVisible;
       
       if (newState) {
-        // 显示面板
+        // Show panel
         videoListContainer.style.display = 'flex';
-        // 使用setTimeout确保display更改已应用后再添加visible类
+        // Use setTimeout to ensure display change is applied before adding visible class
         setTimeout(() => {
           videoListContainer.classList.add('visible');
           
-          // 重新绑定关闭按钮事件（可能在DOM更新中丢失）
+          // Rebind close button event (may be lost during DOM update)
           const closeIcon = videoListContainer.querySelector('.close-icon');
           if (closeIcon) {
-            // 确保只添加一次事件监听器
+            // Ensure only one event listener is added
             closeIcon.addEventListener('click', (e) => {
               this.toggleVideoListPanel(false);
               e.stopPropagation();
@@ -640,25 +640,25 @@ class ChatModeManager {
           }
         }, 10);
         
-        // 获取最新视频列表
+        // Get latest video list
         this.fetchSessionVideos();
       } else {
-        // 隐藏面板
+        // Hide panel
         videoListContainer.classList.remove('visible');
-        // 等待过渡动画完成后隐藏元素
+        // Wait for transition animation to complete before hiding element
         setTimeout(() => {
           if (!videoListContainer.classList.contains('visible')) {
             videoListContainer.style.display = 'none';
           }
-        }, 300); // 与CSS过渡时间相匹配
+        }, 300); // Match CSS transition time
       }
     } catch (error) {
-      console.error('[ERROR] 切换视频列表面板显示状态时出错:', error);
+      console.error('[ERROR] Switching video list panel visibility failed:', error);
     }
   }
   
   /**
-   * 将当前模式保存到浏览器存储
+   * Save current mode to browser storage
    */
   async saveMode() {
     try {
@@ -671,24 +671,24 @@ class ChatModeManager {
   }
   
   /**
-   * 检查是否有聊天记录
-   * @returns {Promise<boolean>} 是否有聊天记录
+   * Check if there is chat history
+   * @returns {Promise<boolean>} Whether there is chat history
    */
   async checkHasChatHistory() {
-    // 这里实现检查聊天记录的逻辑
-    // 由于没有直接访问ChatUI的聊天历史数组，我们需要通过回调来获取
-    // 如果回调不存在，我们假定没有聊天记录
+    // Here implement the logic to check chat history
+    // Since there is no direct access to the chat history array of ChatUI, we need to get it through callback
+    // If callback does not exist, we assume there is no chat history
     if (typeof this._checkChatHistoryCallback === 'function') {
       return await this._checkChatHistoryCallback();
     }
     
-    // 默认假设没有聊天记录，以安全为主
+    // Default assume no chat history, safety first
     return false;
   }
   
   /**
-   * 设置检查聊天记录的回调函数
-   * @param {Function} callback - 检查聊天记录的回调函数
+   * Set the callback function to check chat history
+   * @param {Function} callback - Callback function to check chat history
    */
   setCheckChatHistoryCallback(callback) {
     if (typeof callback === 'function') {
@@ -697,25 +697,25 @@ class ChatModeManager {
   }
   
   /**
-   * 检查是否存在活跃会话
-   * 如果存在活跃会话但当前不是专注模式，则自动激活专注模式
+   * Check if there is an active session
+   * If there is an active session but the current mode is not focused mode, automatically activate focused mode
    * @returns {Promise<void>}
    */
   async checkActiveSession() {
     try {
-      console.log('[INFO] 正在检查是否存在活跃会话...');
+      console.log('[INFO] Checking for active session...');
       
-      // 获取认证令牌和基础URL
+      // Get authentication token and base URL
       const chatUI = window.getChatUI ? window.getChatUI() : null;
       const apiUrl = chatUI ? chatUI.apiUrl : '/api';
       const authToken = chatUI ? chatUI.authToken : '';
       
-      // 确保URL格式正确
+      // Ensure URL format is correct
       const baseUrl = apiUrl.endsWith('/') ? apiUrl : apiUrl + '/';
       
-      // 请求后端API获取会话状态
+      // Request backend API to get session status
       const url = `${baseUrl}chat/session-status/`;
-      console.log('[INFO] 请求会话状态:', url);
+      console.log('[INFO] Requesting session status:', url);
       
       const response = await fetch(url, {
         method: 'GET',
@@ -728,41 +728,41 @@ class ChatModeManager {
       });
       
       if (!response.ok) {
-        console.warn(`[WARN] 获取会话状态失败: ${response.status}`);
+        console.warn(`[WARN] Failed to get session status: ${response.status}`);
         return;
       }
       
       const data = await response.json();
-      console.log('[INFO] 会话状态数据:', data);
+      console.log('[INFO] Session status data:', data);
       
-      // 如果有活跃会话但当前不是专注模式，则自动激活专注模式
+      // If there is an active session but the current mode is not focused mode, automatically activate focused mode
       if (data.has_active_session && this.currentMode !== 'accumulate') {
-        console.log('[INFO] 检测到活跃会话，自动激活专注模式');
+        console.log('[INFO] Detected active session, automatically activating focused mode');
         this.currentMode = 'accumulate';
         await this.saveMode();
         
-        // 通知用户专注模式已自动激活
+        // Notify user that focused mode has been automatically activated
         const notificationSystem = window.NotificationSystem;
         if (notificationSystem) {
-          notificationSystem.showNotification('专注模式已自动激活', '检测到活跃的聊天会话', 'info', 5000);
+          notificationSystem.showNotification('Focused mode activated automatically', 'Detected active chat session', 'info', 5000);
         }
         
-        // 更新UI
+        // Update UI
         this.updateButtonUI();
         this.toggleVideoListVisibility();
         this.fetchSessionVideos();
       }
     } catch (error) {
-      console.error('[ERROR] 检查活跃会话状态失败:', error);
+      console.error('[ERROR] Failed to check active session status:', error);
     }
   }
   
   /**
-   * 更新切换按钮UI
+   * Update toggle button UI
    */
   updateButtonUI() {
     if (!this.toggleButton) {
-      // 尝试再次获取按钮（可能在DOM更新后变得可用）
+      // Try again to get the button (it may become available after DOM update)
       this.toggleButton = document.getElementById('chat-mode-toggle');
       if (!this.toggleButton) {
         console.warn('[WARN] Toggle button not found in updateButtonUI');
@@ -773,17 +773,17 @@ class ChatModeManager {
     try {
       console.log('[INFO] Updating button UI for mode:', this.currentMode);
       
-      // 更新按钮外观 - 只修改激活类，不改变内容
+      // Update button appearance - only modify active class, not content
       if (this.currentMode === 'accumulate') {
-        // 专注模式激活状态
+        // Focused mode active state
         this.toggleButton.classList.add('active');
-        // 更新样式以显示激活状态
+        // Update style to show active state
         this.toggleButton.style.backgroundColor = '#4f46e5';
         this.toggleButton.style.color = '#ffffff';
       } else {
-        // 专注模式未激活状态
+        // Focused mode inactive state
         this.toggleButton.classList.remove('active');
-        // 恢复默认样式
+        // Restore default style
         this.toggleButton.style.backgroundColor = '';
         this.toggleButton.style.color = '';
       }
@@ -795,67 +795,67 @@ class ChatModeManager {
   }
   
   /**
-   * 绑定事件
+   * Bind events
    */
   bindEvents() {
-    // 防止重复绑定事件
+    // Prevent duplicate event binding
     if (this.eventsInitialized) {
-      console.log('[INFO] 事件已经绑定，跳过');
+      console.log('[INFO] Events already bound, skipping');
       return;
     }
     
-    // 获取切换按钮
+    // Get toggle button
     this.toggleButton = document.getElementById('chat-mode-toggle');
     
     if (!this.toggleButton) {
-      console.log('[WARN] 找不到聊天模式切换按钮');
+      console.log('[WARN] Toggle button not found');
       return;
     }
     
-    console.log('[INFO] 绑定聊天模式切换按钮事件');
+    console.log('[INFO] Binding toggle button events');
     
-    // 移除可能存在的旧事件监听器
+    // Remove any existing event listeners
     if (this.boundClickHandler) {
-      console.log('[INFO] 移除已有的事件监听器');
+      console.log('[INFO] Removing existing event listeners');
       this.toggleButton.removeEventListener('click', this.boundClickHandler);
     }
     
-    // 创建新的点击处理函数
+    // Create new click handler
     this.boundClickHandler = (e) => {
       e.preventDefault();
       e.stopPropagation();
       
-      console.log('[INFO] 聊天模式切换按钮点击');
+      console.log('[INFO] Toggle button clicked');
       
-      // 防止重复点击
+      // Prevent repeated clicks
       if (this.isToggling) {
-        console.log('[INFO] 切换正在进行中，忽略点击');
+        console.log('[INFO] Switching in progress, ignoring click');
         return;
       }
       
-      // 设置防抖状态
+      // Set debounce state
       this.isToggling = true;
       
-      // 切换模式
+      // Switch mode
       this.toggle().then(() => {
-        // 完成后重置防抖状态
+        // Reset debounce state after completion
         setTimeout(() => {
           this.isToggling = false;
-        }, 300); // 增加时间为300ms
+        }, 300); // Increase time to 300ms
       });
     };
     
-    // 绑定点击事件
+    // Bind click event
     this.toggleButton.addEventListener('click', this.boundClickHandler);
     
-    // 监听视频变化消息
+    // Listen for video change messages
     window.addEventListener('message', (event) => {
-      // 检查是否是视频变化事件
+      // Check if it's a video change event
       if (event.data && event.data.type === 'videoChanged') {
-        console.log('[INFO] 检测到视频变化，刷新视频列表');
-        // 如果当前是专注模式，刷新视频列表
+        console.log('[INFO] Detected video change, refreshing video list');
+        // If current mode is focused, refresh video list
         if (this.currentMode === 'accumulate') {
-          // 延迟刷新以确保后端数据已更新
+          // Delay refresh to ensure backend data is updated
           setTimeout(() => {
             this.fetchSessionVideos();
           }, 1000);
@@ -863,22 +863,22 @@ class ChatModeManager {
       }
     });
     
-    // 监听API请求完成事件
+    // Listen for API request completion events
     document.addEventListener('apiRequestCompleted', (event) => {
-      console.log('[INFO] 检测到API请求完成，检查是否需要刷新视频列表');
-      // 如果当前是专注模式，刷新视频列表
+      console.log('[INFO] Detected API request completion, checking if video list needs refresh');
+      // If current mode is focused, refresh video list
       if (this.currentMode === 'accumulate') {
         this.fetchSessionVideos();
       }
     });
     
-    // 标记为已绑定事件
+    // Mark as events initialized
     this.eventsInitialized = true;
     
-    console.log('[INFO] 聊天模式切换按钮事件监听器设置完成');
+    console.log('[INFO] Chat mode toggle button event listener setup completed');
   }
   
 }
 
-// 导出模式管理器
+// Export mode manager
 export default ChatModeManager;

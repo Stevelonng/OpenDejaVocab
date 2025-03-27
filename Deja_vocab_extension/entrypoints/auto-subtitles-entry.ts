@@ -3,11 +3,11 @@ import { defineContentScript } from 'wxt/sandbox';
 import { useAutoSubtitles } from '../components/youtube/useAutoSubtitles';
 
 /**
- * 自动字幕收集内容脚本 - 入口点
- * 不再自动收集，而是监听消息请求后再执行
+ * Auto Subtitle Collection Content Script - Entry Point
+ * No longer automatically collects, but monitors for message requests before executing
  */
 
-// 定义明确的消息类型
+// Define clear message types
 interface SubtitleMessage {
   action: string;
   videoId?: string;
@@ -16,41 +16,41 @@ interface SubtitleMessage {
 export default defineContentScript({
   matches: ['*://*.youtube.com/*'],
   main() {
-    console.log('[自动字幕收集器] 内容脚本已加载');
+    console.log('[Auto Subtitle Collector] Content script loaded');
     
-    // 使用自动字幕钩子
+    // Use auto subtitle hook
     const autoSubtitles = useAutoSubtitles();
     
-    // 使用@ts-ignore来抑制TypeScript错误
-    // 这是因为虽然类型定义要求返回true，但在实际使用中返回undefined也是有效的
-    // @ts-ignore: Chrome扩展API类型定义与实际行为不一致
+    // Use @ts-ignore to suppress TypeScript errors
+    // This is because although type definitions require returning true, returning undefined is also valid in actual use
+    // @ts-ignore: Chrome extension API type definitions are inconsistent with actual behavior
     browser.runtime.onMessage.addListener((message: any, sender: any, sendResponse: any) => {
-      console.log('[自动字幕收集器] 收到消息:', message);
+      console.log('[Auto Subtitle Collector] Received message:', message);
       
-      // 检查是否为收集字幕的消息
+      // Check if it's a subtitle collection message
       if (message && message.action === 'collectSubtitles') {
-        console.log('[自动字幕收集器] 收到收集请求:', message.videoId);
+        console.log('[Auto Subtitle Collector] Received collection request:', message.videoId);
         
-        // 立即发送初始响应，表示消息已收到
+        // Send initial response immediately, indicating message received
         try {
-          // 执行字幕收集
+          // Execute subtitle collection
           autoSubtitles.autoFetchSubtitles()
             .then((result) => {
-              console.log('[自动字幕收集器] 收集成功:', result);
+              console.log('[Auto Subtitle Collector] Collection successful:', result);
               sendResponse({ success: true, result });
             })
             .catch((error) => {
-              console.error('[自动字幕收集器] 收集失败:', error);
+              console.error('[Auto Subtitle Collector] Collection failed:', error);
               sendResponse({ 
                 success: false, 
                 error: error instanceof Error ? error.message : String(error) 
               });
             });
           
-          // 返回true表示将异步发送响应
+          // Return true to indicate that response will be sent asynchronously
           return true;
         } catch (error) {
-          console.error('[自动字幕收集器] 触发收集时出错:', error);
+          console.error('[Auto Subtitle Collector] Error triggering collection:', error);
           sendResponse({ 
             success: false, 
             error: error instanceof Error ? error.message : String(error) 
@@ -58,7 +58,7 @@ export default defineContentScript({
           return true;
         }
       } else {
-        console.log('[自动字幕收集器] 收到未知消息，忽略');
+        console.log('[Auto Subtitle Collector] Received unknown message, ignoring');
       }
     });
   }

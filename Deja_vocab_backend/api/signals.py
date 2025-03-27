@@ -1,52 +1,48 @@
-from django.db.models.signals import post_save, post_delete, m2m_changed
+from django.db.models.signals import post_save, post_delete
 from django.dispatch import receiver
-from django.contrib.auth.models import User
-from django.contrib.auth.signals import user_logged_in, user_logged_out
-from django.utils import timezone
-from .models import Video, Subtitle, Sentence, UserActivity, UserSession, UserMetrics
-from .word_models import WordDefinition, UserWord
+from .models import Video, Subtitle, UserActivity
+from .word_models import UserWord
 from .word_extractor import WordExtractor
 import threading
 
 def process_video_in_background(video_id, user_id):
-    """在后台处理视频并提取单词"""
-    from django.contrib.auth.models import User
+    """Process video and extract words in the background"""
     from .models import Video
     
     try:
         video = Video.objects.get(id=video_id)
         user = User.objects.get(id=user_id)
         
-        # 初始化单词提取器
+        # Initialize word extractor
         extractor = WordExtractor(user)
-        # 处理视频
+        # Process video
         extractor.process_video(video)
-        print(f"后台处理完成: 已从视频 {video.title} 中提取单词")
+        print(f"Background processing complete: Words extracted from video {video.title}")
     except Exception as e:
-        print(f"处理视频时出错: {str(e)}")
+        print(f"Error processing video: {str(e)}")
 
 @receiver(post_save, sender=Video)
 def extract_words_after_video_save(sender, instance, created, **kwargs):
     """
-    当视频被保存时，在后台启动一个线程来处理字幕并提取单词
-    这会在视频第一次创建时运行
+    When a video is saved, start a background thread to process subtitles and extract words
+    This runs when the video is first created
     """
-    if created:  # 只在视频第一次创建时运行
-        # 获取视频的所有字幕
+    if created:  # Only run when the video is first created
+        # Get all subtitles for the video
         subtitles = Subtitle.objects.filter(video=instance)
         if subtitles.exists():
-            # 启动后台线程处理视频
+            # Start background thread to process video
             thread = threading.Thread(
                 target=process_video_in_background,
                 args=(instance.id, instance.user.id)
             )
-            thread.daemon = True  # 将线程设置为守护线程，这样当主线程退出时它会自动终止
+            thread.daemon = True  # Set thread as daemon so it terminates automatically when main thread exits
             thread.start()
-            print(f"已启动后台任务: 处理视频 {instance.title} 并提取单词")
+            print(f"Background task started: Processing video {instance.title} and extracting words")
 
 
 def process_subtitle_in_background(subtitle_id, user_id):
-    """在后台处理字幕并提取单词"""
+    """Process subtitle and extract words in the background"""
     from django.contrib.auth.models import User
     from .models import Subtitle
     
@@ -54,44 +50,44 @@ def process_subtitle_in_background(subtitle_id, user_id):
         subtitle = Subtitle.objects.get(id=subtitle_id)
         user = User.objects.get(id=user_id)
         
-        # 初始化单词提取器
+        # Initialize word extractor
         extractor = WordExtractor(user)
-        # 处理单个字幕
+        # Process individual subtitle
         extractor.extract_words_from_subtitle(subtitle)
-        print(f"后台处理完成: 已从字幕片段提取单词")
+        print(f"Background processing complete: Words extracted from subtitle segment")
     except Exception as e:
-        print(f"处理字幕时出错: {str(e)}")
+        print(f"Error processing subtitle: {str(e)}")
 
 @receiver(post_save, sender=Subtitle)
 def extract_words_after_subtitle_save(sender, instance, created, **kwargs):
     """
-    当字幕被保存时，在后台启动一个线程来处理该字幕并提取单词
+    When a subtitle is saved, start a background thread to process it and extract words
     """
-    if created:  # 只在字幕第一次创建时运行
-        # 启动后台线程处理字幕
+    if created:  # Only run when subtitle is first created
+        # Start background thread to process subtitle
         thread = threading.Thread(
             target=process_subtitle_in_background,
             args=(instance.id, instance.video.user.id)
         )
-        thread.daemon = True  # 将线程设置为守护线程
+        thread.daemon = True  # Set thread as daemon
         thread.start()
-        # print(f"已启动后台任务: 处理字幕并提取单词")
+        # print(f"Background task started: Processing subtitle and extracting words")
 
 @receiver(post_delete, sender=Video)
 def delete_orphaned_user_words(sender, instance, **kwargs):
     """
-    当视频被删除后，检查并删除没有任何引用的用户单词
+    After a video is deleted, check and delete user words that have no references
     """
     user = instance.user
     
     try:
-        # 从数据库获取最新状态
+        # Get latest state from database
         from django.db import connection
         
-        # 查找该用户所有没有引用的单词
-        # 使用原始SQL执行更精确的查询，确保没有引用的单词被正确识别
+        # Find all words for this user that have no references
+        # Use raw SQL for more precise queries to ensure words without references are correctly identified
         with connection.cursor() as cursor:
-            # 先获取所有无引用单词的ID
+            # First get all IDs of words without references
             cursor.execute("""
                 SELECT uw.id, wd.text
                 FROM api_userword uw
@@ -107,15 +103,15 @@ def delete_orphaned_user_words(sender, instance, **kwargs):
                 orphaned_word_ids.append(row[0])
                 orphaned_word_texts.append(row[1])
         
-        # 如果有无引用单词，删除它们
+        # If there are words without references, delete them
         if orphaned_word_ids:
-            # 使用查询集的删除方法
+            # Use queryset delete method
             deleted_count = UserWord.objects.filter(id__in=orphaned_word_ids).delete()[0]
             
-            # 记录删除情况
-            print(f"删除 {user.username} 的 {deleted_count} 个无引用单词: {', '.join(orphaned_word_texts[:10])}{' 等' if len(orphaned_word_texts) > 10 else ''}")
+            # Log deletion information
+            print(f"Deleted {deleted_count} unreferenced words for {user.username}: {', '.join(orphaned_word_texts[:10])}{' etc.' if len(orphaned_word_texts) > 10 else ''}")
             
-            # 记录用户活动
+            # Record user activity
             if deleted_count > 0:
                 UserActivity.objects.create(
                     user=user,
@@ -129,8 +125,8 @@ def delete_orphaned_user_words(sender, instance, **kwargs):
                     }
                 )
             
-            print(f"成功删除 {deleted_count} 个无引用的单词")
+            print(f"Successfully deleted {deleted_count} unreferenced words")
     except Exception as e:
         import traceback
-        print(f"删除无引用单词时出错: {str(e)}")
+        print(f"Error deleting unreferenced words: {str(e)}")
         print(traceback.format_exc())

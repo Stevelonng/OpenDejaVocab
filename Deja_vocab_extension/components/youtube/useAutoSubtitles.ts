@@ -4,18 +4,18 @@ import { VideoInfo, getCurrentVideoInfo } from './useVideoStorage';
 import { useVideoNavigation } from './useVideoNavigation';
 
 /**
- * 自动字幕收集钩子
- * 在YouTube页面加载时自动获取字幕并保存到localStorage
+ * Auto Subtitle Collection Hook
+ * Automatically collects subtitles and saves them to localStorage when a YouTube page loads
  */
 
-// 定义字幕接口
+// Define subtitle interface
 export interface Subtitle {
   startTime: number;
   endTime: number;
   text: string;
 }
 
-// 定义存储数据接口
+// Define storage data interface
 interface StorageData {
   currentSubtitles?: Subtitle[];
   currentVideoInfo?: VideoInfo;
@@ -32,91 +32,91 @@ interface ApiSubtitle {
   end_time?: number;
 }
 
-// 默认API配置（只保留生产环境）
-const DEFAULT_API_URL = 'https://dejavocab.com/';
+// Default API configuration (production environment only)
+const DEFAULT_API_URL = 'http://localhost:8000/';
 
-// 创建自动字幕钩子
+// Create auto subtitle hook
 export function useAutoSubtitles() {
-  // 状态管理
+  // State management
   const isLoading = ref(false);
   const error = ref<string | null>(null);
   const currentVideo = ref<VideoInfo | null>(null);
   const isAutoCollectEnabled = ref(true);
 
-  // 初始化和设置
+  // Initialization and setup
   onMounted(async () => {
-    // 检查是否启用了自动收集功能
+    // Check if auto collection is enabled
     try {
       const storage = await browser.storage.local.get('autoCollectEnabled') as StorageData;
-      isAutoCollectEnabled.value = storage.autoCollectEnabled !== false; // 默认为启用
+      isAutoCollectEnabled.value = storage.autoCollectEnabled !== false; // Default is enabled
       
-      // 设置视频导航监听
+      // Set up video navigation listener
       const { updateCurrentVideo } = useVideoNavigation((videoId, title) => {
-        // 当视频变化时自动收集字幕
+        // Automatically collect subtitles when video changes
         if (isAutoCollectEnabled.value) {
           autoFetchSubtitles();
         }
       });
       
-      // 初始检查当前视频并尝试收集
+      // Initial check of current video and attempt to collect
       updateCurrentVideo();
       
-      // 同时设置页面导航监听（适用于SPA页面内部导航）
+      // Also set up page navigation listener (for SPA in-page navigation)
       setupNavigationListener();
     } catch (error) {
-      console.error('[自动字幕] 初始化出错:', error);
+      console.error('[Auto Subtitle] Initialization error:', error);
     }
   });
   
-  // 获取API基础URL
+  // Get API base URL
   async function getApiBaseUrl(): Promise<{ baseUrl: string, authToken: string | null }> {
-    // 从本地存储获取API配置
+    // Get API configuration from local storage
     const storage = await browser.storage.local.get(['apiUrl', 'authToken']) as StorageData;
     let apiUrl = storage.apiUrl || '';
     const authToken = storage.authToken || '';
     
-    // 如果没有配置API URL，使用默认生产环境
+    // If API URL is not configured, use default production environment
     if (!apiUrl) {
       apiUrl = DEFAULT_API_URL;
-      console.log('[自动字幕] 使用默认生产环境API:', apiUrl);
+      console.log('[Auto Subtitle] Using default production API:', apiUrl);
     }
     
-    // 确保URL以"/"结尾
+    // Ensure URL ends with "/"
     const baseUrl = apiUrl.endsWith('/') ? apiUrl : `${apiUrl}/`;
     return { baseUrl, authToken };
   }
   
-  // 自动获取字幕
+  // Automatically fetch subtitles
   async function autoFetchSubtitles(): Promise<void> {
-    if (isLoading.value) return; // 防止重复请求
+    if (isLoading.value) return; // Prevent duplicate requests
     
     try {
       isLoading.value = true;
       error.value = null;
       
-      // 检查是否启用了自动收集
+      // Check if auto collection is enabled
       if (!isAutoCollectEnabled.value) {
-        console.log('[自动字幕] 自动收集已禁用');
+        console.log('[Auto Subtitle] Auto collection is disabled');
         isLoading.value = false;
         return;
       }
       
-      // 获取当前视频信息
+      // Get current video information
       const videoInfo = await getCurrentVideoInfo();
       if (!videoInfo) {
-        console.log('[自动字幕] 无法获取视频信息');
-        error.value = '无法获取视频信息';
+        console.log('[Auto Subtitle] Unable to get video information');
+        error.value = 'Unable to get video information';
         isLoading.value = false;
         return;
       }
       
-      // 检查本地存储是否已有字幕
-      console.log('[自动字幕] 检查本地是否已保存字幕:', videoInfo.videoId);
+      // Check if subtitles are already saved in local storage
+      console.log('[Auto Subtitle] Checking if subtitles are already saved locally:', videoInfo.videoId);
       const localData = await browser.storage.local.get(['currentSubtitles', 'currentVideoInfo']);
       const currentSubtitles = localData.currentSubtitles || [];
       const currentVideoInfo = localData.currentVideoInfo as VideoInfo | undefined;
       
-      // 检查本地字幕是否有效
+      // Check if local subtitles are valid
       const isLocalSubtitlesValid = 
         currentSubtitles && 
         Array.isArray(currentSubtitles) && 
@@ -125,30 +125,30 @@ export function useAutoSubtitles() {
         currentVideoInfo.videoId === videoInfo.videoId;
       
       if (isLocalSubtitlesValid) {
-        console.log('[自动字幕] 本地已有字幕，跳过收集，数量:', currentSubtitles.length);
+        console.log('[Auto Subtitle] Subtitles already exist locally, skipping collection, count:', currentSubtitles.length);
         isLoading.value = false;
         return;
       }
       
-      // 获取API配置
+      // Get API configuration
       const { baseUrl, authToken } = await getApiBaseUrl();
       
       if (!baseUrl) {
-        console.log('[自动字幕] 无法确定API URL');
-        error.value = '无法确定API URL';
+        console.log('[Auto Subtitle] Unable to determine API URL');
+        error.value = 'Unable to determine API URL';
         isLoading.value = false;
         return;
       }
       
       if (!authToken) {
-        console.log('[自动字幕] 未找到认证Token，需要登录后才能使用自动字幕功能');
-        error.value = '未登录，请先登录';
+        console.log('[Auto Subtitle] No authentication token found, login required to use auto subtitle feature');
+        error.value = 'Not logged in, please login first';
         isLoading.value = false;
         return;
       }
             
-      // 调用自动字幕API获取字幕
-      console.log('[自动字幕] 开始获取视频字幕:', videoInfo.videoId);
+      // Call auto subtitle API to get subtitles
+      console.log('[Auto Subtitle] Starting subtitle retrieval for video:', videoInfo.videoId);
       const response = await fetch(`${baseUrl}auto-subtitles/?url=${encodeURIComponent(videoInfo.url)}`, {
         headers: {
           'Authorization': `Token ${authToken}`
@@ -157,39 +157,39 @@ export function useAutoSubtitles() {
       
       if (!response.ok) {
         if (response.status === 404) {
-          // 404错误通常表示没有找到字幕或视频不存在
-          console.log('[自动字幕] 该视频没有可用的字幕');
+          // 404 error usually means no subtitles found or video doesn't exist
+          console.log('[Auto Subtitle] No subtitles available for this video');
           
-          // 清空本地存储中的字幕数据，防止错误地保存其他视频的字幕
+          // Clear subtitle data in local storage to prevent incorrectly saving subtitles from other videos
           await browser.storage.local.remove(['currentSubtitles']);
-          console.log('[自动字幕] 已清空本地存储中的字幕数据');
+          console.log('[Auto Subtitle] Cleared subtitle data from local storage');
           
-          // 可选：在页面上显示一个通知
-          showNotification('该视频没有可用的字幕，可能需要手动收集或使用第三方工具。');
+          // Optional: Display a notification on the page
+          showNotification('No subtitles available for this video, you may need to collect manually or use third-party tools.');
           
-          // 记录到本地存储，避免重复尝试
+          // Record to local storage to avoid repeated attempts
           const noSubtitleVideos = await browser.storage.local.get(['noSubtitleVideos']) as { noSubtitleVideos?: string[] };
           const videos = noSubtitleVideos.noSubtitleVideos || [];
           
           if (!videos.includes(videoInfo.videoId)) {
             videos.push(videoInfo.videoId);
             await browser.storage.local.set({ noSubtitleVideos: videos });
-            console.log('[自动字幕] 已将视频标记为无字幕:', videoInfo.videoId);
+            console.log('[Auto Subtitle] Video marked as no subtitles:', videoInfo.videoId);
           }
           
-          error.value = '该视频没有可用的字幕';
+          error.value = 'No subtitles available for this video';
           isLoading.value = false;
           return;
         } else if (response.status === 401 || response.status === 403) {
-          console.log('[自动字幕] 认证失败，请重新登录');
-          showNotification('认证失败，请重新登录您的DejaVocab账号');
-          error.value = '认证失败，请重新登录';
+          console.log('[Auto Subtitle] Authentication failed, please login again');
+          showNotification('Authentication failed, please login to your DejaVocab account again');
+          error.value = 'Authentication failed, please login again';
           isLoading.value = false;
           return;
         } else {
-          console.log(`[自动字幕] 获取失败: ${response.status} ${response.statusText}`);
-          showNotification(`获取字幕失败 (${response.status})，请稍后再试`);
-          error.value = `获取失败: ${response.status}`;
+          console.log(`[Auto Subtitle] Retrieval failed: ${response.status} ${response.statusText}`);
+          showNotification(`Failed to get subtitles (${response.status}), please try again later`);
+          error.value = `Retrieval failed: ${response.status}`;
           isLoading.value = false;
           return;
         }
@@ -198,97 +198,97 @@ export function useAutoSubtitles() {
       const data = await response.json();
       
       if (data.subtitles && Array.isArray(data.subtitles)) {
-        // 转换字幕格式
+        // Convert subtitle format
         const formattedSubtitles: Subtitle[] = data.subtitles.map((sub: any) => ({
           text: sub.text,
           startTime: sub.start || sub.start_time || 0,
           endTime: sub.end || sub.end_time || 0
         }));
         
-        // 保存到本地存储
+        // Save to local storage
         await saveSubtitlesToLocalStorage(formattedSubtitles, videoInfo);
         
-        console.log('[自动字幕] 成功收集:', formattedSubtitles.length, '条字幕');
+        console.log('[Auto Subtitle] Successfully collected:', formattedSubtitles.length, 'subtitles');
       } else {
-        console.log('[自动字幕] 返回数据格式不正确');
-        error.value = '返回数据格式不正确';
+        console.log('[Auto Subtitle] Returned data format is incorrect');
+        error.value = 'Returned data format is incorrect';
       }
       
       isLoading.value = false;
     } catch (err) {
-      console.error('[自动字幕] 错误:', err);
-      error.value = err instanceof Error ? err.message : '未知错误';
+      console.error('[Auto Subtitle] Error:', err);
+      error.value = err instanceof Error ? err.message : 'Unknown error';
       isLoading.value = false;
     }
   }
   
-  // 监听YouTube视频变化
+  // Monitor YouTube video changes
   function setupNavigationListener(): void {
-    // 当前URL
+    // Current URL
     let lastUrl = window.location.href;
     
-    // 创建一个观察器来监视URL变化
+    // Create an observer to monitor URL changes
     const observer = new MutationObserver(() => {
-      // 检查URL是否变化
+      // Check if URL has changed
       if (window.location.href !== lastUrl) {
-        // URL已变化，可能是新视频
-        console.log('[自动字幕] URL变化检测:', lastUrl, '->', window.location.href);
+        // URL has changed, possibly a new video
+        console.log('[Auto Subtitle] URL change detected:', lastUrl, '->', window.location.href);
         lastUrl = window.location.href;
         
-        // 如果是YouTube视频页面，尝试获取新视频的字幕
+        // If it's a YouTube video page, try to get subtitles for the new video
         if (window.location.href.includes('youtube.com/watch')) {
-          // 延迟执行，确保页面加载完成
+          // Delay execution to ensure page is fully loaded
           setTimeout(autoFetchSubtitles, 2000);
         }
       }
     });
     
-    // 开始观察document的子树变化
+    // Start observing document subtree changes
     observer.observe(document, { childList: true, subtree: true });
   }
   
-  // 保存字幕到本地存储
+  // Save subtitles to local storage
   async function saveSubtitlesToLocalStorage(subtitles: Subtitle[], videoInfo: VideoInfo): Promise<void> {
     try {
       if (!subtitles || subtitles.length === 0 || !videoInfo || !videoInfo.videoId) {
-        console.error('[自动字幕] 保存到本地存储失败: 缺少视频信息或字幕数据');
+        console.error('[Auto Subtitle] Save to local storage failed: Missing video info or subtitle data');
         return;
       }
       
-      // 为了防止覆盖来自 useVideoNavigation 的更准确视频信息，先获取当前存储的视频信息
+      // To prevent overwriting more accurate video info from useVideoNavigation, first get current stored video info
       const storage = await browser.storage.local.get(['currentVideoInfo']) as StorageData;
       const existingVideoInfo = storage.currentVideoInfo;
       
-      // 如果存储中已有视频信息，并且视频 ID 匹配，则仅更新字幕数据，不更新视频信息
+      // If video info already exists in storage and video ID matches, only update subtitle data, not video info
       if (existingVideoInfo && existingVideoInfo.videoId === videoInfo.videoId) {
-        // 只更新字幕数据，不修改视频信息
+        // Only update subtitle data, don't modify video info
         await browser.storage.local.set({
           currentSubtitles: subtitles
         });
         
-        console.log(`[自动字幕] 字幕已保存到本地存储，数量: ${subtitles.length}，保留现有视频信息`);
+        console.log(`[Auto Subtitle] Subtitles saved to local storage, count: ${subtitles.length}, keeping existing video info`);
       } else {
-        // 如果没有现有视频信息或视频ID不匹配，则同时更新字幕和视频信息
+        // If no existing video info or video ID doesn't match, update both subtitles and video info
         await browser.storage.local.set({
           currentSubtitles: subtitles,
           currentVideoInfo: videoInfo
         });
         
-        console.log(`[自动字幕] 字幕和视频信息已保存到本地存储，数量: ${subtitles.length}`);
+        console.log(`[Auto Subtitle] Subtitles and video info saved to local storage, count: ${subtitles.length}`);
       }
     } catch (error) {
-      console.error('[自动字幕] 保存字幕到本地存储出错:', error);
+      console.error('[Auto Subtitle] Error saving subtitles to local storage:', error);
     }
   }
   
-  // 显示通知消息
+  // Display notification message
   function showNotification(message: string, duration: number = 5000): void {
     try {
-      // 检查是否已有通知元素
+      // Check if notification element already exists
       let notificationElement = document.getElementById('dejavu-auto-subtitle-notification');
       
       if (!notificationElement) {
-        // 创建通知元素
+        // Create notification element
         notificationElement = document.createElement('div');
         notificationElement.id = 'dejavu-auto-subtitle-notification';
         notificationElement.style.cssText = `
@@ -309,28 +309,28 @@ export function useAutoSubtitles() {
         document.body.appendChild(notificationElement);
       }
       
-      // 更新消息
+      // Update message
       notificationElement.textContent = `DejaVocab: ${message}`;
       notificationElement.style.opacity = '1';
       
-      // 设置自动淡出
+      // Set up automatic fade out
       setTimeout(() => {
         if (notificationElement) {
           notificationElement.style.opacity = '0';
           setTimeout(() => {
-            // 确保元素仍然存在
+            // Ensure element still exists
             if (notificationElement && notificationElement.parentNode) {
               notificationElement.parentNode.removeChild(notificationElement);
             }
-          }, 300); // 淡出动画完成后移除
+          }, 300); // Remove after fade out animation completes
         }
       }, duration);
     } catch (error) {
-      console.error('[自动字幕] 显示通知错误:', error);
+      console.error('[Auto Subtitle] Notification display error:', error);
     }
   }
   
-  // 公开方法
+  // Public methods
   return {
     isLoading,
     error,
@@ -338,16 +338,16 @@ export function useAutoSubtitles() {
     currentVideo,
     autoFetchSubtitles,
     
-    // 设置是否启用自动收集
+    // Set whether auto collection is enabled
     setAutoCollectEnabled: async (enabled: boolean) => {
       await browser.storage.local.set({ autoCollectEnabled: enabled });
       isAutoCollectEnabled.value = enabled;
-      console.log(`[自动字幕] 自动收集已${enabled ? '启用' : '禁用'}`);
+      console.log(`[Auto Subtitle] Auto collection is ${enabled ? 'enabled' : 'disabled'}`);
     }
   };
 }
 
-// 获取YouTube视频ID
+// Get YouTube video ID
 function getYouTubeVideoId(url: string): string | null {
   const urlParams = new URL(url);
   const videoId = urlParams.searchParams.get('v');

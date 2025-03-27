@@ -1,18 +1,17 @@
 import { ref, onMounted, onUnmounted } from 'vue';
-import browser from 'webextension-polyfill';
 import { updateVideoInfoStorage } from './useVideoStorage';
 
 /**
- * 处理YouTube视频导航和URL变化的钩子函数
- * @param onVideoChange 当视频变化时的回调函数
- * @returns 包含当前视频ID和视频标题的响应式对象
+ * Handles YouTube video navigation and URL changes
+ * @param onVideoChange Callback function when video changes
+ * @returns Reactive object containing current video ID and title
  */
 export function useVideoNavigation(onVideoChange?: (videoId: string, videoTitle: string) => void) {
-  // 存储当前视频信息的响应式引用
+  // Store current video information
   const currentVideoId = ref<string>('');
   const currentVideoTitle = ref<string>('');
 
-  // 从URL中提取YouTube视频ID
+  // Extract YouTube video ID from URL
   const extractVideoId = (url: string): string | null => {
     const urlObj = new URL(url);
     if (urlObj.hostname.includes('youtube.com')) {
@@ -21,47 +20,47 @@ export function useVideoNavigation(onVideoChange?: (videoId: string, videoTitle:
     return null;
   };
 
-  // 更新当前视频信息
+  // Update current video information
   const updateCurrentVideo = () => {
       const url = window.location.href;
       const videoId = extractVideoId(url);
       const title = document.title.replace(' - YouTube', '');
 
-      // 修改更新条件：检查视频ID或标题是否有变化
+      // Update condition: check if video ID or title has changed
       if (videoId && (videoId !== currentVideoId.value || title !== currentVideoTitle.value)) {
         currentVideoId.value = videoId;
         currentVideoTitle.value = title;
 
-        // 如果提供了回调函数，则调用
+        // If a callback function is provided, call it
         if (onVideoChange) {
           onVideoChange(videoId, title);
         }
         
-        // 更新存储中的视频信息
-        console.log('检测到视频变化，更新存储信息，ID:', videoId, '标题:', title);
+        // Update video information in storage
+        console.log('Detected video change, updating storage, ID:', videoId, 'Title:', title);
         updateVideoInfoStorage(videoId, title);
       }
   };
 
-  // 观察浏览器历史记录变化
+  // Observe browser history changes
   const handleHistoryChange = () => {
-    console.log('检测到浏览器历史记录变化');
+    console.log('Detected browser history change');
     updateCurrentVideo();
   };
 
-  // 观察URL变化的两种方法
-  // 1. 使用MutationObserver监听document.title变化
+  // Observe URL changes in two ways
+  // 1. Use MutationObserver to listen to document.title changes
   let titleObserver: MutationObserver | null = null;
 
-  // 2. 拦截history API
+  // 2. Intercept history API
   const originalPushState = window.history.pushState;
   const originalReplaceState = window.history.replaceState;
 
-  // 初始化监听器
+  // Initialize observers
   const initObservers = () => {
-    // 监听标题变化
+    // Listen to title changes
     titleObserver = new MutationObserver(() => {
-      console.log('标题变化:', document.title);
+      console.log('Detected title change:', document.title);
       updateCurrentVideo();
     });
 
@@ -71,28 +70,28 @@ export function useVideoNavigation(onVideoChange?: (videoId: string, videoTitle:
       childList: true
     });
 
-    // 监听popstate事件(后退/前进按钮)
+    // Listen to popstate event (back/forward buttons)
     window.addEventListener('popstate', handleHistoryChange);
 
-    // 拦截history.pushState
+    // Intercept history.pushState
     window.history.pushState = function(...args) {
       const result = originalPushState.apply(this, args);
       handleHistoryChange();
       return result;
     };
 
-    // 拦截history.replaceState
+    // Intercept history.replaceState
     window.history.replaceState = function(...args) {
       const result = originalReplaceState.apply(this, args);
       handleHistoryChange();
       return result;
     };
 
-    // 立即更新当前视频信息
+    // Update current video information immediately
     updateCurrentVideo();
   };
 
-  // 清理监听器
+  // Cleanup observers
   const cleanupObservers = () => {
     if (titleObserver) {
       titleObserver.disconnect();
@@ -104,17 +103,17 @@ export function useVideoNavigation(onVideoChange?: (videoId: string, videoTitle:
     window.history.replaceState = originalReplaceState;
   };
 
-  // 挂载组件时初始化
+  // Initialize observers on mount
   onMounted(() => {
     initObservers();
   });
 
-  // 卸载组件时清理
+  // Cleanup observers on unmount
   onUnmounted(() => {
     cleanupObservers();
   });
 
-  // 返回响应式引用和方法
+  // Return reactive references and methods
   return {
     currentVideoId,
     currentVideoTitle,

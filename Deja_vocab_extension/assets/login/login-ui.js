@@ -1,4 +1,4 @@
-// 使用ES模块导入browser API
+// Use ES module to import browser API
 import browser from 'webextension-polyfill';
 import ChatUI from '../chat/chat-ui.js';
 
@@ -7,11 +7,11 @@ import ChatUI from '../chat/chat-ui.js';
  * Modern authentication interface with improved UX and animations
  */
 class LoginUI {
-  // Singleton 实例
+  // Singleton instance
   static instance = null;
   
   /**
-   * 获取LoginUI实例（单例模式）
+   * Get LoginUI instance (singleton pattern)
    */
   static getInstance() {
     if (!LoginUI.instance) {
@@ -21,43 +21,40 @@ class LoginUI {
   }
 
   constructor() {
-    // API URL 设置
-    this.apiUrl = 'https://www.dejavocab.com/api/';
+    // API URL setting
+    this.apiUrl = 'http://localhost:8000/api/';
     this.environment = 'production';
-    this.darkMode = true; // 深色模式状态 - 默认启用
+    this.darkMode = true; // Dark mode state - default enabled
     
-    // 页面元素引用
+    // Page element references
     this.elements = {
-      // 选项卡元素
+      // Tab elements
       loginTab: null,
       registerTab: null,
       tabIndicator: null,
       
-      // 表单容器
+      // Form containers
       loginContent: null,
       registerContent: null,
       
-      // 登录表单元素
+      // Login form elements
       loginButton: null,
       loginEmail: null,
       loginPassword: null,
       loginStatus: null,
       
-      // 注册表单元素
+      // Register form elements
       registerButton: null,
       registerName: null,
       registerEmail: null,
       registerPassword: null,
       registerConfirmPassword: null,
       
-      // 环境选择器
-      environmentSelect: null,
-      
-      // 密码显示切换按钮
+      // Password toggle buttons
       passwordToggles: []
     };
     
-    // 绑定方法
+    // Bind methods
     this.init = this.init.bind(this);
     this.initElements = this.initElements.bind(this);
     this.setupEventListeners = this.setupEventListeners.bind(this);
@@ -73,16 +70,16 @@ class LoginUI {
   }
 
   /**
-   * 初始化登录UI
+   * Initialize login UI
    */
   /**
-   * 切换深色模式开关
+   * Toggle dark mode
    */
   async toggleDarkMode() {
     this.darkMode = !this.darkMode;
     document.documentElement.classList.toggle('dark', this.darkMode);
     
-    // 更新图标
+    // Update icon
     const darkModeToggle = document.getElementById('login-dark-mode-toggle');
     if (darkModeToggle) {
       const icon = darkModeToggle.querySelector('i');
@@ -97,23 +94,23 @@ class LoginUI {
       }
     }
     
-    // 保存设置
+    // Save setting
     await this.saveDarkModeSetting();
   }
 
   /**
-   * 从存储中加载深色模式设置
+   * Load dark mode setting from storage
    */
   async loadDarkModeSetting() {
     try {
       const settings = await browser.storage.local.get(['darkMode']);
-      // 默认为启用（如果未设置）
+      // Default to enabled (if not set)
       this.darkMode = settings.darkMode !== false;
       
-      // 应用深色模式（现在默认启用）
+      // Apply dark mode (now default enabled)
       document.documentElement.classList.toggle('dark', this.darkMode);
       
-      // 更新图标
+      // Update icon
       const darkModeToggle = document.getElementById('login-dark-mode-toggle');
       if (darkModeToggle) {
         const icon = darkModeToggle.querySelector('i');
@@ -128,139 +125,128 @@ class LoginUI {
         }
       }
     } catch (error) {
-      console.error('[ERROR] 加载深色模式设置时出错:', error);
-      // 如果发生错误，仍然默认应用深色模式
+      console.error('[ERROR] Error loading dark mode setting:', error);
+      // If error occurs, still default to dark mode
       this.darkMode = true;
       document.documentElement.classList.add('dark');
     }
   }
 
   /**
-   * 保存深色模式设置到存储
+   * Save dark mode setting to storage
    */
   async saveDarkModeSetting() {
     try {
       await browser.storage.local.set({ darkMode: this.darkMode });
     } catch (error) {
-      console.error('[ERROR] 保存深色模式设置时出错:', error);
+      console.error('[ERROR] Error saving dark mode setting:', error);
     }
   }
 
   async init() {
-    console.log('[INFO] 初始化 Déjà Vocab 登录界面');
+    console.log('[INFO] Initializing Déjà Vocab login interface');
     
     try {
-      // 初始化页面元素引用
+      // Initialize page element references
       this.initElements();
       
-      // 隐藏YouTube引导界面（如果存在）
+      // Hide YouTube guide interface (if exists)
       this.hideYouTubeGuide();
       
-      // 检查用户是否已登录
+      // Check if user is already logged in
       await this.checkLoginStatus();
       
-      // 设置事件监听器
+      // Set up event listeners
       this.setupEventListeners();
       
-      // 从存储中获取API URL和环境设置
-      const settings = await browser.storage.local.get(['apiUrl', 'environment']);
+      // Get API URL and environment settings from storage
+      const settings = await browser.storage.local.get(['apiUrl']);
       if (settings.apiUrl) {
         this.apiUrl = settings.apiUrl;
       }
       
-      if (settings.environment && this.elements.environmentSelect) {
-        this.elements.environmentSelect.value = settings.environment;
-        this.environment = settings.environment;
-      }
-      
-      // 加载深色模式设置
+      // Load dark mode settings
       await this.loadDarkModeSetting();
       
-      console.log('[INFO] 登录界面初始化完成');
+      console.log('[INFO] Login interface initialization complete');
     } catch (error) {
-      console.error('[ERROR] 初始化登录界面时出错:', error);
+      console.error('[ERROR] Error initializing login interface:', error);
     }
   }
 
   /**
-   * 隐藏YouTube引导界面
+   * Hide YouTube guide interface
    */
   hideYouTubeGuide() {
     const guideContainer = document.getElementById('youtube-guide');
     if (guideContainer) {
       guideContainer.style.display = 'none';
-      console.log('[INFO] 登录界面显示，已隐藏YouTube引导界面');
+      console.log('[INFO] Login interface displayed, YouTube guide hidden');
     }
   }
   
   /**
-   * 初始化页面元素引用
+   * Initialize page element references
    */
   initElements() {
-    console.log('[INFO] 初始化页面元素引用');
+    console.log('[INFO] Initializing page element references');
     
-    // 选项卡元素
+    // Tab elements
     this.elements.loginTab = document.getElementById('login-tab');
     this.elements.registerTab = document.getElementById('register-tab');
     this.elements.tabIndicator = document.querySelector('.tab-indicator');
     
-    // 表单容器
+    // Form containers
     this.elements.loginContent = document.getElementById('login-content');
     this.elements.registerContent = document.getElementById('register-content');
     
-    // 登录表单元素
+    // Login form elements
     this.elements.loginButton = document.getElementById('login-button');
     this.elements.loginEmail = document.getElementById('login-email');
     this.elements.loginPassword = document.getElementById('login-password');
     this.elements.loginStatus = document.getElementById('login-status');
     
-    // 注册表单元素
+    // Registration form elements
     this.elements.registerButton = document.getElementById('register-button');
     this.elements.registerName = document.getElementById('register-name');
     this.elements.registerEmail = document.getElementById('register-email');
     this.elements.registerPassword = document.getElementById('register-password');
     this.elements.registerConfirmPassword = document.getElementById('register-confirm-password');
     
-    // 环境选择器
-    this.elements.environmentSelect = document.getElementById('environment-select');
-    
-    // 密码显示切换按钮
+    // Password toggle buttons
     this.elements.passwordToggles = document.querySelectorAll('.toggle-password');
     
-    // 验证重要元素是否存在
+    // Verify important elements exist
     if (!this.elements.loginTab || !this.elements.registerTab) {
-      console.error('[ERROR] 登录/注册选项卡未找到!');
+      console.error('[ERROR] Login/Register tabs not found!');
     }
     
     if (!this.elements.loginButton || !this.elements.registerButton) {
-      console.error('[ERROR] 登录/注册按钮未找到!');
+      console.error('[ERROR] Login/Register buttons not found!');
     }
   }
 
   /**
-   * 设置所有事件监听器
+   * Set up all event listeners
    */
   setupEventListeners() {
-    console.log('[INFO] 设置事件监听器');
+    console.log('[INFO] Setting up event listeners');
     
-    // 选项卡切换
+    // Tab switching
     this.setupTabSwitching();
     
-    // 环境切换
-    this.setupEnvironmentSwitching();
-    
-    // 登录和注册表单提交
+    // Login and registration form submission
     this.setupFormSubmission();
     
-    // 密码显示切换
+    // Password visibility toggle
     this.setupPasswordToggle();
     
-    // 深色模式切换
+    // Dark mode toggle
     this.setupDarkModeToggle();
   }
 
   /**
-   * 设置选项卡切换事件
+   * Set up tab switching event
    */
   setupTabSwitching() {
     const { loginTab, registerTab, loginContent, registerContent, tabIndicator } = this.elements;
@@ -272,7 +258,7 @@ class LoginUI {
       registerTab.classList.remove('active');
       loginContent.classList.add('active');
       registerContent.classList.remove('active');
-      // 重置tab指示器位置
+      // Reset tab indicator position
       tabIndicator.style.transform = 'translateX(0)';
     });
     
@@ -281,42 +267,22 @@ class LoginUI {
       loginTab.classList.remove('active');
       registerContent.classList.add('active');
       loginContent.classList.remove('active');
-      // 移动tab指示器位置
+      // Move tab indicator position
       tabIndicator.style.transform = 'translateX(100%)';
     });
   }
 
   /**
-   * 设置环境切换事件
-   */
-  setupEnvironmentSwitching() {
-    const { environmentSelect } = this.elements;
-    
-    if (!environmentSelect) return;
-    
-    environmentSelect.addEventListener('change', () => {
-      const selectedEnvironment = environmentSelect.value;
-      this.environment = selectedEnvironment;
-      
-      // 保存环境设置
-      browser.storage.local.set({ environment: selectedEnvironment });
-      
-      // 更新API URL
-      this.updateApiUrl(selectedEnvironment);
-    });
-  }
-
-  /**
-   * 设置表单提交事件
+   * Set up form submission event
    */
   setupFormSubmission() {
     const { loginButton, registerButton, loginEmail, loginPassword } = this.elements;
     
     if (loginButton) {
-      // 登录表单提交
+      // Login form submission
       loginButton.addEventListener('click', this.handleLogin);
       
-      // 按回车键提交登录表单
+      // Submit login form on Enter key press
       loginPassword.addEventListener('keydown', (e) => {
         if (e.key === 'Enter') {
           e.preventDefault();
@@ -326,13 +292,13 @@ class LoginUI {
     }
     
     if (registerButton) {
-      // 注册表单提交
+      // Registration form submission
       registerButton.addEventListener('click', this.handleRegister);
     }
   }
 
   /**
-   * 设置深色模式切换事件
+   * Set up dark mode toggle event
    */
   setupDarkModeToggle() {
     const darkModeToggle = document.getElementById('login-dark-mode-toggle');
@@ -342,7 +308,7 @@ class LoginUI {
   }
 
   /**
-   * 设置密码显示切换
+   * Set up password visibility toggle
    */
   setupPasswordToggle() {
     const { passwordToggles } = this.elements;
@@ -352,7 +318,7 @@ class LoginUI {
         const passwordInput = toggle.parentElement.querySelector('input');
         const icon = toggle.querySelector('i');
         
-        // 切换密码可见性
+        // Toggle password visibility
         if (passwordInput.type === 'password') {
           passwordInput.type = 'text';
           icon.classList.remove('bi-eye-slash');
@@ -367,62 +333,62 @@ class LoginUI {
   }
 
   /**
-   * 检查用户登录状态
+   * Check if user is already logged in
    */
   async checkLoginStatus() {
-    console.log('[INFO] 检查用户登录状态');
+    console.log('[INFO] Checking user login status');
     
     try {
       const result = await browser.storage.local.get(['authToken', 'userId', 'username']);
       
       if (result.authToken) {
-        console.log('[INFO] 用户已登录，显示聊天界面');
-        // 用户已登录，显示聊天界面
+        console.log('[INFO] User is already logged in, displaying chat interface');
+        // User is already logged in, display chat interface
         this.showLoggedInState(result.authToken, result.userId, result.username);
       }
     } catch (error) {
-      console.error('[ERROR] 获取登录状态时出错:', error);
+      console.error('[ERROR] Error checking login status:', error);
     }
   }
 
   /**
-   * 处理登录请求
+   * Handle login request
    */
   async handleLogin() {
     const { loginButton, loginEmail, loginPassword, loginStatus } = this.elements;
     
-    // 显示加载状态
+    // Display loading state
     this.setButtonLoading(loginButton, true);
-    this.showStatus('正在登录...', 'info');
+    this.showStatus('Logging in...', 'info');
     
     const username = loginEmail.value.trim();
     const password = loginPassword.value.trim();
     
-    // 验证输入
+    // Validate input
     if (!username || !password) {
       if (window.NotificationSystem) {
         const notificationSystem = window.NotificationSystem.getInstance();
         notificationSystem.show({
           type: 'error',
-          title: '登录失败',
-          message: '请输入用户名和密码',
+          title: 'Login failed',
+          message: 'Please enter username and password',
           icon: 'exclamation-triangle',
-          buttonText: '我明白了',
+          buttonText: 'I understand',
           allowHTML: true
         });
       } else {
-        alert('请输入用户名和密码');
+        alert('Please enter username and password');
       }
       this.setButtonLoading(loginButton, false);
       return;
     }
     
     try {
-      // 确保API URL正确格式
+      // Ensure API URL is in correct format
       const baseUrl = this.apiUrl.endsWith('/') ? this.apiUrl : `${this.apiUrl}/`;
-      const tokenEndpoint = `${baseUrl}token/`; // 与后端的'token/'endpoint匹配
+      const tokenEndpoint = `${baseUrl}token/`; // Matches backend 'token/' endpoint
       
-      console.log('[INFO] 发送登录请求到:', tokenEndpoint);
+      console.log('[INFO] Sending login request to:', tokenEndpoint);
       
       const response = await fetch(tokenEndpoint, {
         method: 'POST',
@@ -436,109 +402,109 @@ class LoginUI {
       });
       
       if (!response.ok) {
-        // 处理错误响应
+        // Handle error response
         if (response.status === 401 || response.status === 400) {
-          // 使用通知系统显示错误
+          // Use notification system to display error
           if (window.NotificationSystem) {
             const notificationSystem = window.NotificationSystem.getInstance();
             notificationSystem.show({
               type: 'error',
-              title: '登录失败',
-              message: '用户名或密码错误',
+              title: 'Login failed',
+              message: 'Invalid username or password',
               icon: 'exclamation-triangle',
-              buttonText: '重试'
+              buttonText: 'Retry'
             });
           } else {
-            this.showStatus('用户名或密码错误', 'error');
+            this.showStatus('Invalid username or password', 'error');
           }
         } else {
-          // 使用通知系统显示服务器错误
+          // Use notification system to display server error
           if (window.NotificationSystem) {
             const notificationSystem = window.NotificationSystem.getInstance();
             notificationSystem.show({
               type: 'error',
-              title: '登录失败',
-              message: `服务器错误 (${response.status})`,
+              title: 'Login failed',
+              message: `Server error (${response.status})`,
               icon: 'exclamation-triangle',
-              buttonText: '关闭'
+              buttonText: 'Close'
             });
           } else {
-            this.showStatus(`登录失败: 服务器错误 (${response.status})`, 'error');
+            this.showStatus(`Login failed: Server error (${response.status})`, 'error');
           }
         }
         this.setButtonLoading(loginButton, false);
         return;
       }
       
-      // 解析响应数据
+      // Parse response data
       const data = await response.json();
       
       if (data && data.token) {
-        // 获取用户ID和用户名
+        // Get user ID and username
         const userId = data.user_id || data.userId || '';
         const username = data.username || '';
         
-        // 使用通知系统显示登录成功
+        // Use notification system to display login success
         if (window.NotificationSystem) {
           const notificationSystem = window.NotificationSystem.getInstance();
           notificationSystem.show({
             type: 'success',
-            title: '登录成功',
+            title: 'Login successful',
             message: `<div style="text-align: center;">
-              <p><strong>欢迎回来, ${username}!</strong></p>
-              <p>正在准备您的个人化学习环境...</p>
+              <p><strong>Welcome back, ${username}!</strong></p>
+              <p>Preparing your personalized learning environment...</p>
             </div>`,
             icon: 'check-circle',
-            buttonText: '开始学习',
+            buttonText: 'Start learning',
             allowHTML: true,
             autoClose: true,
             autoCloseDelay: 2000
           });
         } else {
-          this.showStatus('登录成功!', 'success');
+          this.showStatus('Login successful!', 'success');
         }
         
-        // 延迟显示聊天界面，以便用户看到成功消息
+        // Delay displaying chat interface to allow user to see success message
         setTimeout(() => {
           this.showLoggedInState(data.token, userId, username);
         }, 1000);
       } else {
-        // 使用通知系统显示错误
+        // Use notification system to display error
         if (window.NotificationSystem) {
           const notificationSystem = window.NotificationSystem.getInstance();
           notificationSystem.show({
             type: 'error',
-            title: '登录失败',
-            message: '无效的响应数据',
+            title: 'Login failed',
+            message: 'Invalid response data',
             icon: 'exclamation-triangle',
-            buttonText: '关闭'
+            buttonText: 'Close'
           });
         } else {
-          this.showStatus('登录失败: 无效的响应数据', 'error');
+          this.showStatus('Login failed: Invalid response data', 'error');
         }
         
         this.setButtonLoading(loginButton, false);
       }
     } catch (error) {
-      console.error('[ERROR] 登录请求出错:', error);
+      console.error('[ERROR] Error handling login request:', error);
       if (window.NotificationSystem) {
         const notificationSystem = window.NotificationSystem.getInstance();
         notificationSystem.show({
           type: 'error',
-          title: '登录失败',
-          message: '无法连接到服务器，请检查您的网络连接',
+          title: 'Login failed',
+          message: 'Unable to connect to server, please check your network connection',
           icon: 'exclamation-triangle',
-          buttonText: '关闭'
+          buttonText: 'Close'
         });
       } else {
-        this.showStatus('无法连接到服务器，请检查您的网络连接', 'error');
+        this.showStatus('Unable to connect to server, please check your network connection', 'error');
       }
       this.setButtonLoading(loginButton, false);
     }
   }
 
   /**
-   * 处理注册请求
+   * Handle registration request
    */
   async handleRegister() {
     const { 
@@ -546,7 +512,7 @@ class LoginUI {
       registerPassword, registerConfirmPassword, loginTab 
     } = this.elements;
     
-    // 显示加载状态
+    // Display loading state
     this.setButtonLoading(registerButton, true);
     
     const username = registerName.value.trim();
@@ -554,20 +520,20 @@ class LoginUI {
     const password = registerPassword.value.trim();
     const confirmPassword = registerConfirmPassword.value.trim();
     
-    // 验证输入
+    // Validate input
     if (!username || !password) {
       if (window.NotificationSystem) {
         const notificationSystem = window.NotificationSystem.getInstance();
         notificationSystem.show({
           type: 'error',
-          title: '注册失败',
-          message: '请填写必填字段（用户名和密码）',
+          title: 'Registration failed',
+          message: 'Please fill in required fields (username and password)',
           icon: 'exclamation-triangle',
-          buttonText: '我明白了',
+          buttonText: 'I understand',
           allowHTML: true
         });
       } else {
-        alert('请填写必填字段（用户名和密码）');
+        alert('Please fill in required fields (username and password)');
       }
       this.setButtonLoading(registerButton, false);
       return;
@@ -578,25 +544,25 @@ class LoginUI {
         const notificationSystem = window.NotificationSystem.getInstance();
         notificationSystem.show({
           type: 'error',
-          title: '注册失败',
-          message: '两次输入的密码不一致',
+          title: 'Registration failed',
+          message: 'Passwords do not match',
           icon: 'exclamation-triangle',
-          buttonText: '我明白了',
+          buttonText: 'I understand',
           allowHTML: true
         });
       } else {
-        alert('两次输入的密码不一致');
+        alert('Passwords do not match');
       }
       this.setButtonLoading(registerButton, false);
       return;
     }
     
     try {
-      // 确保API URL正确格式
+      // Ensure API URL is in correct format
       const baseUrl = this.apiUrl.endsWith('/') ? this.apiUrl : `${this.apiUrl}/`;
-      const registerEndpoint = `${baseUrl}register-api/`; // 与后端的'register-api/'endpoint匹配
+      const registerEndpoint = `${baseUrl}register-api/`; // Matches backend 'register-api/' endpoint
       
-      console.log('[INFO] 发送注册请求到:', registerEndpoint);
+      console.log('[INFO] Sending registration request to:', registerEndpoint);
       
       const response = await fetch(registerEndpoint, {
         method: 'POST',
@@ -610,28 +576,28 @@ class LoginUI {
         })
       });
       
-      // 处理响应
+      // Handle response
       if (!response.ok) {
         const errorData = await response.json();
-        let errorMsg = '注册失败\n';
+        let errorMsg = 'Registration failed\n';
         
-        if (errorData.username) errorMsg += `用户名: ${errorData.username.join(', ')}\n`;
-        if (errorData.password) errorMsg += `密码: ${errorData.password.join(', ')}\n`;
-        if (errorData.email) errorMsg += `邮箱: ${errorData.email.join(', ')}`;
+        if (errorData.username) errorMsg += `Username: ${errorData.username.join(', ')}\n`;
+        if (errorData.password) errorMsg += `Password: ${errorData.password.join(', ')}\n`;
+        if (errorData.email) errorMsg += `Email: ${errorData.email.join(', ')}`;
         
-        // 使用通知系统显示错误
+        // Use notification system to display error
         if (window.NotificationSystem) {
           const notificationSystem = window.NotificationSystem.getInstance();
           notificationSystem.show({
             type: 'error',
-            title: '注册失败',
+            title: 'Registration failed',
             message: `<div style="text-align: left; line-height: 1.4;">
-              ${errorData.username ? `<p>• 用户名: ${errorData.username.join(', ')}</p>` : ''}
-              ${errorData.password ? `<p>• 密码: ${errorData.password.join(', ')}</p>` : ''}
-              ${errorData.email ? `<p>• 邮箱: ${errorData.email.join(', ')}</p>` : ''}
+              ${errorData.username ? `<p>• Username: ${errorData.username.join(', ')}</p>` : ''}
+              ${errorData.password ? `<p>• Password: ${errorData.password.join(', ')}</p>` : ''}
+              ${errorData.email ? `<p>• Email: ${errorData.email.join(', ')}</p>` : ''}
             </div>`,
             icon: 'exclamation-triangle',
-            buttonText: '我明白了',
+            buttonText: 'I understand',
             allowHTML: true
           });
         } else {
@@ -641,61 +607,61 @@ class LoginUI {
         return;
       }
       
-      // 注册成功
+      // Registration successful
       if (window.NotificationSystem) {
         const notificationSystem = window.NotificationSystem.getInstance();
         notificationSystem.show({
           type: 'success',
-          title: '注册成功',
+          title: 'Registration successful',
           message: `<div style="text-align: center;">
-            <p><strong>欢迎加入 Déjà Vocab!</strong></p>
-            <p>用户名: ${username}</p>
+            <p><strong>Welcome to Déjà Vocab!</strong></p>
+            <p>Username: ${username}</p>
           </div>`,
           icon: 'person-check',
-          buttonText: '开始使用',
+          buttonText: 'Start using',
           allowHTML: true,
           autoClose: true,
           autoCloseDelay: 5000
         });
       } else {
-        // 后备方案，如果通知系统不可用
-        alert('注册成功\n用户名: ' + username);
+        // Fallback if notification system is not available
+        alert('Registration successful\nUsername: ' + username);
       }
       
-      // 重置注册表单
+      // Reset registration form
       registerName.value = '';
       registerEmail.value = '';
       registerPassword.value = '';
       registerConfirmPassword.value = '';
       
-      // 切换到登录选项卡
+      // Switch to login tab
       loginTab.click();
       
-      // 预填充登录表单
+      // Pre-fill login form
       this.elements.loginEmail.value = username;
       this.elements.loginPassword.focus();
       
       this.setButtonLoading(registerButton, false);
     } catch (error) {
-      console.error('[ERROR] 注册请求出错:', error);
+      console.error('[ERROR] Error handling registration request:', error);
       if (window.NotificationSystem) {
         const notificationSystem = window.NotificationSystem.getInstance();
         notificationSystem.show({
           type: 'error',
-          title: '注册失败',
-          message: '无法连接到服务器，请检查您的网络连接',
+          title: 'Registration failed',
+          message: 'Unable to connect to server, please check your network connection',
           icon: 'exclamation-triangle',
-          buttonText: '关闭'
+          buttonText: 'Close'
         });
       } else {
-        alert('无法连接到服务器，请检查您的网络连接');
+        alert('Unable to connect to server, please check your network connection');
       }
       this.setButtonLoading(registerButton, false);
     }
   }
 
   /**
-   * 设置按钮加载状态
+   * Set button loading state
    */
   setButtonLoading(button, isLoading) {
     if (!button) return;
@@ -715,106 +681,106 @@ class LoginUI {
   }
 
   /**
-   * 显示状态消息
+   * Display status message
    */
   showStatus(message, type = 'info') {
     const { loginStatus } = this.elements;
     if (!loginStatus) return;
     
-    // 移除所有类型类
+    // Remove all type classes
     loginStatus.classList.remove('error', 'success', 'info', 'hidden');
     
-    // 添加新类型类
+    // Add new type class
     loginStatus.classList.add(type);
     loginStatus.textContent = message;
     
-    // 显示状态消息
+    // Display status message
     loginStatus.classList.remove('hidden');
   }
 
   /**
-   * 更新API URL
+   * Update API URL
    */
-  updateApiUrl(environment) {
-    // 根据环境设置API URL
-    this.apiUrl = environment === 'localhost' ? 'http://localhost:8000/api/' : 'https://dejavocab.com/api/';
+  updateApiUrl() {
+    // Always use localhost environment
+    this.apiUrl = 'http://localhost:8000/api/';
     
-    console.log('[INFO] 更新API URL为', this.apiUrl, '基于环境:', environment);
+    console.log('[INFO] Updated API URL to', this.apiUrl);
     
-    // 保存到存储中
+    // Save to storage
     browser.storage.local.set({ apiUrl: this.apiUrl })
-      .then(() => console.log('[INFO] API URL已更新'));
+      .then(() => console.log('[INFO] API URL updated'));
   }
 
   /**
-   * 显示已登录状态（切换到聊天界面）
+   * Display logged in state (switch to chat interface)
    */
   showLoggedInState(token, userId, username) {
-    console.log('[INFO] 显示已登录状态');
+    console.log('[INFO] Displaying logged in state');
     
-    // 存储用户信息到本地存储
+    // Store user information in local storage
     browser.storage.local.set({
       authToken: token,
       userId: userId,
       username: username
     }).then(() => {
-      console.log('[INFO] 用户信息已保存');
+      console.log('[INFO] User information saved');
     }).catch(error => {
-      console.error('[ERROR] 保存用户信息出错:', error);
+      console.error('[ERROR] Error saving user information:', error);
     });
     
-    // 获取登录界面和聊天界面元素
+    // Get login interface and chat interface elements
     const authContainer = document.getElementById('auth-main-content');
     const chatContainer = document.getElementById('main-container');
     
-    // 隐藏登录界面
+    // Hide login interface
     if (authContainer) {
       authContainer.classList.add('hidden');
     }
     
-    // 显示聊天界面
+    // Display chat interface
     if (chatContainer) {
       chatContainer.classList.remove('hidden');
       
-      // 初始化聊天界面
+      // Initialize chat interface
       try {
-        console.log('[INFO] 从登录成功后初始化聊天界面');
+        console.log('[INFO] Initializing chat interface after login');
         
-        // 重置全局初始化标志以解决不响应问题，但不创建新的实例
+        // Reset global initialization flag to fix non-responsive issue, but do not create a new instance
         if (window.CHAT_UI_INITIALIZED) {
-          console.log('[INFO] 发现已初始化的ChatUI，将重置全局标志');
+          console.log('[INFO] Found initialized ChatUI, resetting global flag');
           window.CHAT_UI_INITIALIZED = false;
         }
         
-        // 使用短延迟确保DOM完全就绪和浏览器存储更新
+        // Use a short delay to ensure DOM is fully ready and browser storage is updated
         setTimeout(() => {
-          // 使用合适的全局获取方法而不是直接创建新实例
-          // 这将利用现有的单例模式和初始化检查
+          // Use the proper global getter method instead of creating a new instance
+          // This will utilize the existing singleton pattern and initialization check
           const chatUI = window.getChatUI();
           
-          // 确保未来调用getChatUI()返回这个有效实例
+          // Ensure future calls to getChatUI() return this valid instance
           window.CHAT_UI_INITIALIZED = true;
           
-          // 尝试聚焦输入框
+          // Attempt to focus input box
           const inputBox = document.getElementById('chat-input');
           if (inputBox) {
             inputBox.focus();
           }
-        }, 300); // 300ms延迟，确保DOM和存储更新
+        }, 300); // 300ms delay to ensure DOM and storage updates
       } catch (error) {
-        console.error('[ERROR] 初始化聊天界面出错:', error);
+        console.error('[ERROR] Error initializing chat interface:', error);
         
-        // 显示错误消息
+        // Display error message
         chatContainer.innerHTML = `
           <div class="chat-error-container">
-            <h3>加载聊天界面失败</h3>
-            <p>错误: ${error.message}</p>
-            <button id="retry-chat-btn" class="btn btn-primary">重试</button>
-            <button id="emergency-logout-btn" class="btn btn-secondary">退出登录</button>
+            <h3>Failed to load chat interface</h3>
+            <p>Error: ${error.message}</p>
+            <button id="retry-chat-btn" class="btn btn-primary">Retry</button>
+            <button id="emergency-logout-btn" class="btn btn-secondary">Logout</button>
           </div>
         `;
         
-        // 添加重试和紧急退出登录按钮事件
+        // Add retry and emergency logout button events
         document.getElementById('retry-chat-btn')?.addEventListener('click', () => {
           window.location.reload();
         });
@@ -827,19 +793,19 @@ class LoginUI {
       }
     }
     
-    // 添加登录状态类到body
+    // Add logged in state class to body
     document.body.classList.add('chat-active');
   }
 }
 
-// 当DOM内容加载完成后初始化
+// Initialize when DOM content is loaded
 document.addEventListener('DOMContentLoaded', function() {
-  // 使用单例模式获取实例
+  // Use singleton pattern to get instance
   const loginUI = LoginUI.getInstance();
   loginUI.init();
 });
 
-// 导出LoginUI类和一些有用的函数
+// Export LoginUI class and some useful functions
 export default LoginUI;
 export const checkLoginStatus = LoginUI.getInstance().checkLoginStatus;
 export const showLoggedInState = LoginUI.getInstance().showLoggedInState;

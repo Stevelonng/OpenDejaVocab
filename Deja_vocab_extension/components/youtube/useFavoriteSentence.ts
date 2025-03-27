@@ -2,27 +2,27 @@ import { ref, Ref, computed, watch, onMounted } from 'vue';
 import { browser } from 'wxt/browser';
 
 /**
- * 字幕收藏功能的组合式API
- * 提供添加收藏、取消收藏、检查收藏状态的功能
- * 与后端API集成实现永久保存
+ * Subtitle favorite functionality
+ * Provides add, remove, and check favorite status
+ * Integrates with backend API for permanent storage
  */
 export const useFavoriteSentence = (subtitles: Ref<any[]>) => {
-  // 收藏的字幕索引数组和ID映射
+  // Array of favorited subtitle indices and ID mappings
   const favoritedIndices = ref<number[]>([]);
   const subtitleIdMapping = ref<Record<number, number>>({});
-  const sentenceIdMapping = ref<Record<number, number>>({}); // 新增句子ID映射
+  const sentenceIdMapping = ref<Record<number, number>>({}); // New sentence ID mapping
   const loading = ref<boolean>(false);
   const error = ref<string | null>(null);
 
 
-  // 保存字幕到后端
+  // Save subtitle to backend
   const saveSentenceToBackend = async (text: string, subtitle: any) => {
     const { apiUrl: storedApiUrl, authToken } = await browser.storage.local.get(['apiUrl', 'authToken']);
-    const apiUrl = storedApiUrl || 'https://www.dejavocab.com/';
+    const apiUrl = storedApiUrl || 'http://localhost:8000/';
     
     if (!apiUrl || !authToken) return;
 
-    // 确保API URL以/结尾
+    // Ensure API URL ends with /
     const baseApiUrl = typeof apiUrl === 'string' && apiUrl.endsWith('/') ? apiUrl : `${apiUrl}/`;
     
     const subtitleId = subtitle.id || subtitleIdMapping.value[subtitle.index];
@@ -32,7 +32,7 @@ export const useFavoriteSentence = (subtitles: Ref<any[]>) => {
     
     if (!videoId) return;
     
-    // 先检查视频是否存在，如果不存在则创建
+    // First check whether the video exists. If it does not exist, create it
     try {
       const videoResponse = await fetch(`${baseApiUrl}videos/`, {
         method: 'POST',
@@ -49,12 +49,12 @@ export const useFavoriteSentence = (subtitles: Ref<any[]>) => {
       
       if (!videoResponse.ok) return;
     } catch (error) {
-      // 继续执行，因为视频可能已经存在
+      // Continue execution, because the video may already exist
     }
     
     let finalSubtitleId = subtitleId;
     if (!finalSubtitleId) {
-      // 查找字幕ID
+      // Find subtitle ID
       try {
         const findResponse = await fetch(`${baseApiUrl}subtitles/?video_id=${videoId}&text=${encodeURIComponent(text)}`, {
           headers: {
@@ -71,21 +71,21 @@ export const useFavoriteSentence = (subtitles: Ref<any[]>) => {
           }
         }
       } catch (error) {
-        // 查找字幕ID错误时继续执行
+        // Continue execution, because the subtitle may already exist
       }
     }
     
-    // 构建请求数据
+    // Build request data
     const requestData: any = {
       text,
       subtitle_id: finalSubtitleId,
-      translation: '', // 可以添加翻译API
+      translation: '', // Add translation API
       notes: `From video: ${subtitle.videoTitle || 'YouTube Video'}`
     };
     
-    // 准备发送请求
+    // Prepare request
     
-    // 向后端API发送保存句子的请求
+    // Send save sentence request to backend API
     const sentenceResponse = await fetch(`${baseApiUrl}add-sentence/`, {
       method: 'POST',
       headers: {
@@ -102,7 +102,7 @@ export const useFavoriteSentence = (subtitles: Ref<any[]>) => {
     
     const savedSentence = await sentenceResponse.json();
     
-    // 更新句子ID映射，用于后续取消收藏
+    // Update sentence ID mapping for future unfavoriting
     if (savedSentence && savedSentence.sentence_id) {
       sentenceIdMapping.value[subtitle.index] = savedSentence.sentence_id;
     } else if (savedSentence && savedSentence.id) {
@@ -112,18 +112,18 @@ export const useFavoriteSentence = (subtitles: Ref<any[]>) => {
     return savedSentence;
   };
 
-  // 从后端删除句子
+  // Remove sentence from backend
   const removeSentenceFromBackend = async (sentenceId: number) => {
     const { apiUrl: storedApiUrl, authToken } = await browser.storage.local.get(['apiUrl', 'authToken']);
-    const apiUrl = storedApiUrl || 'https://www.dejavocab.com/';
+    const apiUrl = storedApiUrl || 'http://localhost:8000/';
     
     if (!apiUrl || !authToken) {
       throw new Error('Missing API URL or authentication token');
     }
     
-    // 确保API URL以/结尾
+    // Ensure API URL ends with /
     const baseApiUrl = typeof apiUrl === 'string' && apiUrl.endsWith('/') ? apiUrl : `${apiUrl}/`;
-    // 使用REST API的DELETE方法删除句子
+    // Use REST API DELETE method to delete sentence
     const response = await fetch(`${baseApiUrl}sentences/${sentenceId}/`, {
       method: 'DELETE',
       headers: {
@@ -132,108 +132,108 @@ export const useFavoriteSentence = (subtitles: Ref<any[]>) => {
     });
     
     if (!response.ok) {
-      // 删除失败，获取错误信息
+      // Delete failed, get error message
       const errorText = await response.text();
       throw new Error(`Failed to delete sentence ${sentenceId}: ${response.status} ${errorText}`);
     }
     
-    // 删除成功，返回true
+    // Delete successful, return true
     return true;
   };
 
 
 
   /**
-   * 检查字幕是否已收藏
-   * @param index 字幕索引
-   * @returns 是否已收藏
+   * Check if a subtitle is favorited
+   * @param index subtitle index
+   * @returns true if favorited, false otherwise
    */
   const isFavorited = (index: number): boolean => {
     return favoritedIndices.value.includes(index);
   };
 
   /**
-   * 切换收藏状态
-   * @param index 字幕索引
-   * @param subtitle 字幕对象
+   * Toggle the favorite status of a subtitle
+   * @param index subtitle index
+   * @param subtitle subtitle object
    */
   const toggleFavorite = async (index: number, subtitle: any) => {
     try {
       if (isFavorited(index)) {
-        // 如果已收藏，则取消收藏
+        // If already favorited, then unfavor
         loading.value = true;
         error.value = null;
         
-        // 获取句子ID
+        // Get sentence ID
         const sentenceId = sentenceIdMapping.value[index];
         
         if (!sentenceId) {
-          error.value = '无法找到句子ID';
+          error.value = 'Unable to find sentence ID';
           return;
         }
         
-        // 调用后端API删除句子
+        // Call backend API to delete sentence
         await removeSentenceFromBackend(sentenceId);
         
-        // 从收藏列表中移除
+        // Remove from favorites list
         const indexInFavorites = favoritedIndices.value.indexOf(index);
         if (indexInFavorites !== -1) {
           favoritedIndices.value.splice(indexInFavorites, 1);
         }
         
-        // 从ID映射中删除
+        // Remove from ID mapping
         delete sentenceIdMapping.value[index];
         
       } else {
-        // 如果未收藏，则添加收藏
+        // If not favorited, then favor
         loading.value = true;
         error.value = null;
         
-        // 检查字幕是否有文本
+        // Check if subtitle has text
         if (!subtitle || !subtitle.text) {
-          error.value = '无效的字幕';
+          error.value = 'Invalid subtitle';
           return;
         }
         
-        // 确保字幕对象有视频ID和视频标题
+        // Ensure subtitle object has video ID and title
         if (!subtitle.videoId) {
-          error.value = '缺少视频ID';
+          error.value = 'Missing video ID';
           return;
         }
         
-        // 保存句子到后端
+        // Save sentence to backend
         const result = await saveSentenceToBackend(subtitle.text, subtitle);
         
-        // 如果保存成功，添加到收藏列表
+        // If save successful, add to favorites list
         if (result) {
           favoritedIndices.value.push(index);
         }
       }
     } catch (err) {
-      error.value = err instanceof Error ? err.message : '未知错误';
+      error.value = err instanceof Error ? err.message : 'Unknown error';
     } finally {
       loading.value = false;
     }
   };
 
   /**
-   * 从后端加载收藏的句子
-   * @param videoId 视频ID
-   * @param retryCount 重试次数，默认为0
+   * Load favorited sentences from backend
+   * @param videoId video ID
+   * @param retryCount retry count, default is 0
    */
   const loadFavoritesFromBackend = async (videoId: string, retryCount = 0) => {
     try {
       loading.value = true;
       error.value = null;
       
-      // 重置收藏状态
+      // Reset favorite state
       favoritedIndices.value = [];
       sentenceIdMapping.value = {};
       
-      // 检查字幕数组是否为空
+      // Check if subtitles array is empty
       if (subtitles.value.length === 0) {
         if (retryCount < 5) {
-          // 重试机制
+          // Retry mechanism
           setTimeout(() => {
             loadFavoritesFromBackend(videoId, retryCount + 1);
           }, 1000);
@@ -243,14 +243,14 @@ export const useFavoriteSentence = (subtitles: Ref<any[]>) => {
       }
       
       const { apiUrl: storedApiUrl, authToken } = await browser.storage.local.get(['apiUrl', 'authToken']);
-      const apiUrl = storedApiUrl || 'https://www.dejavocab.com/';
+      const apiUrl = storedApiUrl || 'http://localhost:8000/';
       
       if (!apiUrl || !authToken) return;
       
-      // 确保API URL以/结尾
+      // Ensure API URL ends with /
       const baseApiUrl = typeof apiUrl === 'string' && apiUrl.endsWith('/') ? apiUrl : `${apiUrl}/`;
       
-      // 请求API获取此视频的收藏句子
+      // Request API to get favorited sentences for this video
       const response = await fetch(`${baseApiUrl}sentences/?video_id=${videoId}`, {
         headers: {
           'Authorization': `Token ${authToken}`
@@ -261,44 +261,44 @@ export const useFavoriteSentence = (subtitles: Ref<any[]>) => {
       
       const data = await response.json();
       
-      // 处理收藏的句子数据
+      // Process favorited sentence data
       const favorites = data.results || [];
       
-      // 匹配当前字幕与收藏句子
+      // Match current subtitles with favorited sentences
       for (const favorite of favorites) {
-        // 检查是否有时间戳信息
+        // Check if there is timestamp information
         if (favorite.start_time !== null && favorite.end_time !== null) {
-          // 查找匹配的字幕索引 - 使用时间戳定位
+          // Find matching subtitle index - using timestamp matching
           const matchingSubtitleIndex = subtitles.value.findIndex(subtitle => {
-            // 允许小误差的时间戳匹配（0.5秒内的误差）
+            // Allow small timestamp matching error (0.5 second tolerance)
             const startTimeMatch = Math.abs(subtitle.startTime - favorite.start_time) < 0.5;
             const endTimeMatch = Math.abs(subtitle.endTime - favorite.end_time) < 0.5;
             return startTimeMatch && endTimeMatch;
           });
           
           if (matchingSubtitleIndex !== -1) {
-            // 找到匹配的字幕
+            // Find matching subtitle
             favoritedIndices.value.push(matchingSubtitleIndex);
             sentenceIdMapping.value[matchingSubtitleIndex] = favorite.id;
-            continue; // 已找到匹配，继续下一个
+            continue; // Already found match, continue to next
           }
         }
         
-        // 时间戳匹配失败，尝试文本匹配
+        // Timestamp matching failed, try text matching
         const matchingSubtitleByTextIndex = subtitles.value.findIndex(subtitle => {
           return subtitle.text === favorite.text;
         });
         
         if (matchingSubtitleByTextIndex !== -1) {
-          // 找到匹配的字幕
+          // Find matching subtitle
           favoritedIndices.value.push(matchingSubtitleByTextIndex);
           sentenceIdMapping.value[matchingSubtitleByTextIndex] = favorite.id;
         }
       }
       
-      // 加载完成
+      // Load completed
     } catch (err) {
-      // 错误处理
+      // Error handling
     } finally {
       loading.value = false;
     }

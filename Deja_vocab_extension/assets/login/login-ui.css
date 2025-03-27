@@ -150,12 +150,12 @@ h1, h2, h3, .brand-name {
   position: absolute;
   border-radius: 50%;
   filter: blur(60px);
-  opacity: 0.25; /* 降低白天模式下的不透明度 */
+  opacity: 0.25; /* Lower opacity for light mode */
   transition: all var(--transition-very-slow) ease;
 }
 
 .dark .gradient-sphere {
-  opacity: 0.35; /* 在暗黑模式下恢复不透明度 */
+  opacity: 0.35; /* Restore opacity for dark mode */
 }
 
 .sphere-1 {
@@ -165,11 +165,11 @@ h1, h2, h3, .brand-name {
   top: -30vw;
   right: -20vw;
   animation: float-slow 15s ease-in-out infinite alternate;
-  opacity: 0.25; /* 降低白天模式下的不透明度 */
+  opacity: 0.25; /* Lower opacity for light mode */
 }
 
 .dark .sphere-1 {
-  opacity: 0.35; /* 在暗黑模式下恢复原来的不透明度 */
+  opacity: 0.35; /* Restore opacity for dark mode */
 }
 
 .sphere-2 {
@@ -179,11 +179,11 @@ h1, h2, h3, .brand-name {
   bottom: -25vw;
   left: -15vw;
   animation: float-slow 20s ease-in-out infinite alternate-reverse;
-  opacity: 0.25; /* 降低白天模式下的不透明度 */
+  opacity: 0.25; /* Lower opacity for light mode */
 }
 
 .dark .sphere-2 {
-  opacity: 0.35; /* 在暗黑模式下恢复原来的不透明度 */
+  opacity: 0.35; /* Restore opacity for dark mode */
 }
 
 .sphere-3 {
@@ -193,12 +193,12 @@ h1, h2, h3, .brand-name {
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  opacity: 0.15; /* 降低白天模式下的不透明度 */
+  opacity: 0.15; /* Lower opacity for light mode */
   animation: pulse-slow 10s ease-in-out infinite;
 }
 
 .dark .sphere-3 {
-  opacity: 0.2; /* 在暗黑模式下恢复原来的不透明度 */
+  opacity: 0.2; /* Restore opacity for dark mode */
 }
 
 @keyframes float-slow {
@@ -213,15 +213,15 @@ h1, h2, h3, .brand-name {
 @keyframes pulse-slow {
   0%, 100% {
     transform: translate(-50%, -50%) scale(1);
-    opacity: 0.15; /* 适应白天模式 */
+    opacity: 0.15; 
   }
   50% {
     transform: translate(-50%, -50%) scale(1.1);
-    opacity: 0.2; /* 适应白天模式 */
+    opacity: 0.2;
   }
 }
 
-/* 暗黑模式下的动画效果通过类选择器来处理，而不是通过嵌套@keyframes */
+/* Dark mode animation effects are handled by class selectors, not nested @keyframes */
 .dark .sphere-3 {
   opacity: 0.2;
 }
@@ -373,7 +373,7 @@ h1, h2, h3, .brand-name {
   overflow: hidden;
   transition: all var(--transition-normal) ease;
   animation: card-appear 0.5s ease-out both;
-  /* 为白天模式增加更明显的边缘阴影效果 */
+  /* For light mode, add more visible edge shadow effect */
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.06), 0 2px 8px rgba(0, 0, 0, 0.04);
 }
 

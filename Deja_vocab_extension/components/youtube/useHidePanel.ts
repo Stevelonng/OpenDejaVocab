@@ -4,19 +4,19 @@ export function useHidePanel() {
   const isPanelHidden = ref(false);
   const isMouseNearBottom = ref(false);
 
-  // 切换面板隐藏状态
+  // Toggle panel hidden state
   const toggleHidePanel = () => {
     isPanelHidden.value = !isPanelHidden.value;
   };
 
-  // 检测鼠标是否在屏幕底部附近
+  // Detect if mouse is near the bottom of the screen
   const handleMouseMove = (event: MouseEvent) => {
     if (!isPanelHidden.value) return;
     
     const windowHeight = window.innerHeight;
     const mouseY = event.clientY;
     
-    // 当鼠标在屏幕底部50像素范围内时，视为接近底部
+    // When mouse is within 50 pixels of the bottom of the screen, consider it near the bottom
     isMouseNearBottom.value = mouseY > windowHeight - 50;
   };
 

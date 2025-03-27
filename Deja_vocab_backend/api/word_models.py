@@ -6,7 +6,7 @@ class WordDefinition(models.Model):
     text = models.CharField(max_length=100)  # The word itself
     language = models.CharField(max_length=20, default='en')  # Language code
     translation = models.TextField(blank=True)  # Standard translation
-    web_translation = models.TextField(blank=True)  # 网络释义，常见词组和例句
+    web_translation = models.TextField(blank=True)  # Web definitions, common phrases and examples
     uk_phonetic = models.CharField(max_length=100, blank=True)  # UK phonetic symbol
     us_phonetic = models.CharField(max_length=100, blank=True)  # US phonetic symbol
     phonetic = models.CharField(max_length=100, blank=True)  # General phonetic symbol (if UK/US not available)
@@ -26,7 +26,7 @@ class UserWord(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='user_words')
     word_definition = models.ForeignKey(WordDefinition, on_delete=models.CASCADE, related_name='user_words')
     notes = models.TextField(blank=True)  # User-specific notes
-    is_favorite = models.BooleanField(default=False)  # 替代原来的FavoriteWord模型
+    is_favorite = models.BooleanField(default=False)  # Replaces the original FavoriteWord model
     created_at = models.DateTimeField(auto_now_add=True)
     last_seen_at = models.DateTimeField(auto_now=True)  # Last time this word was seen by this user
     
@@ -67,27 +67,27 @@ class UserWord(models.Model):
         return self.word_definition.has_audio
 
 
-# 添加新的WordReference模型，连接UserWord和Subtitle
+# Add new WordReference model, connecting UserWord and Subtitle
 class WordReference(models.Model):
-    """关联用户单词和字幕，记录单词在视频中的出现情况"""
+    """Associates user words with subtitles, recording word occurrences in videos"""
     user_word = models.ForeignKey(UserWord, on_delete=models.CASCADE, related_name='references')
     subtitle = models.ForeignKey('api.Subtitle', on_delete=models.CASCADE, related_name='word_references') 
-    context_start = models.IntegerField(default=0)  # 单词在字幕中的起始位置
-    context_end = models.IntegerField(default=0)    # 单词在字幕中的结束位置
+    context_start = models.IntegerField(default=0)  # Starting position of the word in the subtitle
+    context_end = models.IntegerField(default=0)    # Ending position of the word in the subtitle
     created_at = models.DateTimeField(auto_now_add=True)
     
     class Meta:
-        unique_together = ('user_word', 'subtitle')  # 一个单词在一个字幕中只记录一次
+        unique_together = ('user_word', 'subtitle')  # A word is recorded only once per subtitle
     
     def __str__(self):
         return f"{self.user_word.word_definition.text} in {self.subtitle.video.title}"
     
     def get_context(self):
-        """获取单词出现的上下文"""
+        """Get the context where the word appears"""
         return self.subtitle.text
     
     def get_highlighted_context(self):
-        """获取带有HTML高亮标记的上下文"""
+        """Get context with HTML highlight markup"""
         text = self.subtitle.text
         before = text[:self.context_start]
         word = text[self.context_start:self.context_end]

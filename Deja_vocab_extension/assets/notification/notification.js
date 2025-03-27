@@ -1,7 +1,4 @@
-/**
- * Déjà Vocab - 高级通知系统
- * 单例模式实现，防止多次初始化
- */
+
 
 // 通知系统类
 class NotificationSystem {
@@ -44,18 +41,18 @@ class NotificationSystem {
   }
   
   /**
-   * 初始化通知系统
+   * Initializes the notification system
    */
   initialize() {
-    // 防止重复初始化
+    // Prevent re-initialization
     if (this.initialized) {
-      console.log('[INFO] 通知系统已经初始化');
+      console.log('[INFO] Notification system already initialized');
       return;
     }
     
-    console.log('[INFO] 初始化通知系统');
+    console.log('[INFO] Initializing notification system');
     
-    // 创建通知容器
+    // Create notification container
     this.container = document.getElementById('notification-container');
     if (!this.container) {
       this.container = document.createElement('div');
@@ -68,10 +65,10 @@ class NotificationSystem {
   }
   
   /**
-   * 创建通知卡片元素
+   * Creates a notification card element
    * @private
-   * @param {Object} options - 通知选项
-   * @returns {HTMLElement} - 通知元素
+   * @param {Object} options - Notification options
+   * @returns {HTMLElement} - Notification element
    */
   createNotificationElement(options) {
     const {
@@ -88,43 +85,43 @@ class NotificationSystem {
       allowHTML = false
     } = options;
     
-    // 创建通知卡片
+    // Create notification card
     const card = document.createElement('div');
     card.className = `notification-card ${type}`;
     card.setAttribute('role', 'alert');
     
-    // 创建图标
+    // Create icon
     const iconContainer = document.createElement('div');
     iconContainer.className = 'notification-icon';
     
-    // 正确处理图标内容
+    // Correctly handle icon content
     const iconElement = document.createElement('i');
     
-    // 确保图标类名正确包含bi前缀
+    // Ensure icon class name contains bi prefix
     if (icon) {
       let iconClass = icon;
-      // 如果没有bi前缀，添加它
+      // Add bi prefix if not present
       if (!iconClass.startsWith('bi-') && !iconClass.startsWith('bi ')) {
         iconClass = `bi-${iconClass}`;
       }
-      // 确保有基础bi类
+      // Ensure base bi class
       if (!iconClass.includes('bi ')) {
         iconClass = `bi ${iconClass}`;
       }
       iconElement.className = iconClass;
     } else {
-      // 默认图标
+      // Default icon
       iconElement.className = 'bi bi-info-circle';
     }
     
     iconContainer.appendChild(iconElement);
     
-    // 创建标题
+    // Create title
     const titleElement = document.createElement('div');
     titleElement.className = 'notification-title';
     titleElement.textContent = title;
     
-    // 创建内容
+    // Create content
     const contentElement = document.createElement('div');
     contentElement.className = 'notification-content';
     if (allowHTML) {
@@ -133,44 +130,44 @@ class NotificationSystem {
       contentElement.textContent = message;
     }
     
-    // 组装通知卡片的基础结构
+    // Assemble the basic structure of the notification card
     card.appendChild(iconContainer);
     card.appendChild(titleElement);
     card.appendChild(contentElement);
     
-    // 处理按钮区域
+    // Handle button area
     if (buttons && Array.isArray(buttons) && buttons.length > 0) {
-      // 多按钮模式
+      // Multi-button mode
       const buttonContainer = document.createElement('div');
       buttonContainer.className = 'notification-button-container';
       buttonContainer.style.display = 'flex';
       buttonContainer.style.gap = '10px';
       buttonContainer.style.marginTop = '10px';
       
-      // 添加每个按钮
+      // Add each button
       buttons.forEach(btn => {
         const button = document.createElement('button');
         button.className = 'notification-button';
         if (btn.className) {
           button.className += ` ${btn.className}`;
         }
-        button.textContent = btn.text || '按钮';
+        button.textContent = btn.text || 'Button';
         
-        // 设置按钮样式
+        // Set button style
         if (btn.style) {
           Object.keys(btn.style).forEach(key => {
             button.style[key] = btn.style[key];
           });
         }
         
-        // 添加点击事件
+        // Add click event
         button.addEventListener('click', () => {
-          // 执行回调
+          // Execute callback
           if (typeof btn.onClick === 'function') {
             btn.onClick();
           }
           
-          // 如果按钮配置了关闭通知的标志，则关闭通知
+          // If the button configures the close notification flag, close the notification
           if (btn.closeNotification !== false) {
             this.dismiss(card);
           }
@@ -181,24 +178,24 @@ class NotificationSystem {
       
       card.appendChild(buttonContainer);
     } else {
-      // 单按钮模式（兼容旧版本）
+      // Single button mode (for backward compatibility)
       const button = document.createElement('button');
       button.className = 'notification-button';
       button.textContent = buttonText;
       button.addEventListener('click', () => {
-        // 执行回调
+        // Execute callback
         if (typeof onButtonClick === 'function') {
           onButtonClick();
         }
         
-        // 关闭通知
+        // Close notification
         this.dismiss(card);
       });
       
       card.appendChild(button);
     }
     
-    // 自动关闭
+    // Auto-close
     if (autoClose) {
       setTimeout(() => {
         if (card.parentNode) {
@@ -211,52 +208,52 @@ class NotificationSystem {
   }
   
   /**
-   * 显示通知
-   * @param {Object} options - 通知选项
+   * Show notification
+   * @param {Object} options - Notification options
    */
   show(options) {
-    // 确保初始化
+    // Ensure initialization
     if (!this.initialized) {
       this.initialize();
     }
     
-    // 创建通知元素
+    // Create notification element
     const notification = {
       element: this.createNotificationElement(options),
       options
     };
     
-    // 如果正在显示通知，则加入队列
+    // If a notification is already showing, add to queue
     if (this.isShowing) {
       this.queue.push(notification);
       return;
     }
     
-    // 显示通知
+    // Show notification
     this.isShowing = true;
     this.currentNotification = notification;
     
-    // 添加到容器
+    // Add to container
     this.container.appendChild(notification.element);
     
-    // 触发重绘
+    // Trigger reflow
     notification.element.offsetHeight;
     
-    // 濬动物画
+    // Animate
     setTimeout(() => {
       notification.element.classList.add('active');
     }, 10);
   }
   
   /**
-   * 关闭通知
-   * @param {HTMLElement} element - 通知元素
+   * Close notification
+   * @param {HTMLElement} element - Notification element
    */
   dismiss(element) {
-    // 移除激活类
+    // Remove active class
     element.classList.remove('active');
     
-    // 等待动画完成后移除元素
+    // Wait for animation to complete and remove element
     setTimeout(() => {
       if (element.parentNode) {
         element.parentNode.removeChild(element);
@@ -265,13 +262,13 @@ class NotificationSystem {
       this.isShowing = false;
       this.currentNotification = null;
       
-      // 处理队列中的下一个通知
+      // Process the next notification in the queue
       this.processQueue();
     }, 300);
   }
   
   /**
-   * 处理队列中的通知
+   * Process queue of notifications
    */
   processQueue() {
     if (this.queue.length > 0) {
@@ -281,9 +278,9 @@ class NotificationSystem {
   }
   
   /**
-   * 快捷方法：显示信息通知
-   * @param {string} message - 通知内容
-   * @param {Object} options - 其他选项
+   * Shortcut method: show info notification
+   * @param {string} message - Notification content
+   * @param {Object} options - Other options
    */
   info(message, options = {}) {
     this.show({
@@ -296,9 +293,9 @@ class NotificationSystem {
   }
   
   /**
-   * 快捷方法：显示成功通知
-   * @param {string} message - 通知内容
-   * @param {Object} options - 其他选项
+   * Shortcut method: show success notification
+   * @param {string} message - Notification content
+   * @param {Object} options - Other options
    */
   success(message, options = {}) {
     this.show({
@@ -311,9 +308,9 @@ class NotificationSystem {
   }
   
   /**
-   * 快捷方法：显示警告通知
-   * @param {string} message - 通知内容
-   * @param {Object} options - 其他选项
+   * Shortcut method: show warning notification
+   * @param {string} message - Notification content
+   * @param {Object} options - Other options
    */
   warning(message, options = {}) {
     this.show({
@@ -326,9 +323,9 @@ class NotificationSystem {
   }
   
   /**
-   * 快捷方法：显示错误通知
-   * @param {string} message - 通知内容
-   * @param {Object} options - 其他选项
+   * Shortcut method: show error notification
+   * @param {string} message - Notification content
+   * @param {Object} options - Other options
    */
   error(message, options = {}) {
     this.show({
@@ -341,19 +338,19 @@ class NotificationSystem {
   }
   
   /**
-   * 显示模式切换通知
-   * @param {string} mode - 切换的模式
-   * @param {string} description - 模式描述
+   * Show mode change notification
+   * @param {string} mode - The mode being changed
+   * @param {string} description - Mode description
    */
   showModeChangeNotification(mode, description) {
     const title = `${mode}`;
-    // 根据标题判断模式类型，使用更合适的图标
+    // Determine mode type and use more appropriate icon
     let icon = 'lightning';
     
     if (mode.includes('专注模式已启用') || mode.includes('已启用')) {
-      icon = 'lightbulb'; // 启用专注模式用灯泡图标
+      icon = 'lightbulb'; // Enable focus mode with bulb icon
     } else if (mode.includes('专注模式已退出') || mode.includes('已关闭') || mode.includes('已退出')) {
-      icon = 'journal-text'; // 退出专注模式用笔记/总结图标
+      icon = 'journal-text'; // Exit focus mode with notes/summary icon
     }
     
     this.show({
@@ -362,12 +359,12 @@ class NotificationSystem {
       message: description,
       icon,
       buttonText: '我知道了',
-      allowHTML: true // 允许HTML内容
+      allowHTML: true // Allow HTML content
     });
   }
   
   /**
-   * 显示会话结束通知
+   * Show session end notification
    */
   showSessionEndNotification() {
     this.show({
@@ -380,8 +377,6 @@ class NotificationSystem {
   }
 }
 
-// 确保全局访问
 window.NotificationSystem = NotificationSystem;
 
-// 导出
 export default NotificationSystem;

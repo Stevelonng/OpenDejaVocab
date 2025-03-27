@@ -1,35 +1,35 @@
 import { ref } from 'vue'
 
 /**
- * AI 摘要功能的可组合函数
- * 提供 AI 摘要的状态管理和方法
+ * AI summary functionality
+ * Provides AI summary state management and methods
  */
 export function useAISummary() {
-  // 模态框显示状态
+  // Modal display state
   const showSummaryModal = ref(false)
-  // 加载状态
+  // Loading state
   const summaryLoading = ref(false)
-  // 摘要内容
+  // Summary content
   const summaryContent = ref('')
 
   /**
-   * 生成内容摘要
-   * 未来将连接到实际的 AI API
+   * Generate content summary
+   * Future implementation will connect to actual AI API
    */
   const summarizeContent = () => {
-    // 显示模态框并设置加载状态
+    // Show modal and set loading state
     showSummaryModal.value = true
     summaryLoading.value = true
     
-    // 模拟加载过程，真实实现中将调用实际的AI API
+    // Mock loading process, will connect to actual AI API in real implementation
     setTimeout(() => {
-      summaryContent.value = '这是关于浏览器扩展开发的视频。快速概括：\n\n1. 介绍了浏览器扩展的基本概念\n2. 演示了如何使用Vue.js构建扩展界面\n3. 讲解了扩展如何与页面内容交互\n4. 分享了一些开发浏览器扩展的最佳实践'
+      summaryContent.value = 'This is a video about browser extension development. Quick summary:\n\n1. Introduces the basic concepts of browser extensions\n2. Demonstrates how to build extension interfaces with Vue.js\n3. Explains how extensions interact with page content\n4. Shares some best practices for browser extension development'
       summaryLoading.value = false
     }, 1500)
   }
 
   /**
-   * 关闭摘要模态框
+   * Close summary modal
    */
   const closeSummaryModal = () => {
     showSummaryModal.value = false

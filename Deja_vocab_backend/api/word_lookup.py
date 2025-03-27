@@ -1,9 +1,7 @@
-import json
 import pickle
 import sqlite3
 from django.http import JsonResponse
 from django.views.decorators.http import require_GET
-from django.contrib.auth.decorators import login_required
 from youdao.spider import YoudaoSpider
 from youdao.config import DB_DIR
 from .word_models import WordDefinition, UserWord, WordReference
@@ -11,33 +9,33 @@ from .word_models import WordDefinition, UserWord, WordReference
 @require_GET
 def lookup_word(request):
     """
-    查询单词定义的API端点
-    先尝试从Django数据库查询，如果不存在则从youdao.db查询，如果仍不存在则使用爬虫获取
+    Query word definition API endpoint
+    First try to query from Django database, if not exist then query from youdao.db, if still not exist then use spider to get
     """
     word_text = request.GET.get('word', '').strip().lower()
     
     if not word_text:
-        return JsonResponse({'error': '请提供单词'}, status=400)
+        return JsonResponse({'error': 'Please provide a word'}, status=400)
     
-    # 处理可能是整个句子的情况，提取第一个单词
+    # Handle possible sentence situation, extract the first word
     import re
     words = re.findall(r'\b[a-zA-Z]+\b', word_text)
     if words:
         word_text = words[0].lower()
     
-    # 简单过滤非单词内容
+    # Simple filter non-word content
     if len(word_text) > 50 or not any(c.isalpha() for c in word_text):
-        return JsonResponse({'error': '无效的单词'}, status=400)
+        return JsonResponse({'error': 'Invalid word'}, status=400)
     
     result = {}
     
-    # 1. 首先查询Django数据库 (使用新模型)
+    # 1. First query Django database (using new model)
     try:
         user = request.user if request.user.is_authenticated else None
         word_def = WordDefinition.objects.filter(text__iexact=word_text).first()
         
         if word_def:
-            # 找到了单词定义
+            # Found word definition
             result = {
                 'source': 'django_db',
                 'word': word_def.text,
@@ -49,20 +47,20 @@ def lookup_word(request):
                 'has_audio': word_def.has_audio
             }
             
-            # 如果用户已登录，尝试获取用户个人的笔记和频率
+            # If user is logged in, try to get user's notes and frequency
             if user:
                 user_word = UserWord.objects.filter(user=user, word_definition=word_def).first()
                 if user_word:
                     result['notes'] = user_word.notes or ''
-                    # 计算单词在引用中的出现次数
+                    # Calculate word frequency in references
                     result['frequency'] = WordReference.objects.filter(user_word=user_word).count()
                     result['is_favorite'] = user_word.is_favorite
             
             return JsonResponse(result)
     except Exception as e:
-        print(f"从Django数据库查询单词失败: {str(e)}")
+        print(f"Failed to query word from Django database: {str(e)}")
     
-    # 2. 然后查询youdao.db
+    # 2. Then query youdao.db
     try:
         if DB_DIR:
             conn = sqlite3.connect(DB_DIR)
@@ -83,11 +81,11 @@ def lookup_word(request):
                     'web_translation': ''
                 }
                 
-                # 提取有道词典数据
+                # Extract Youdao data
                 if 'basic' in youdao_data:
                     basic = youdao_data['basic']
                     
-                    # 音标
+                    # Phonetic
                     if 'phonetic' in basic:
                         result['phonetic'] = basic['phonetic']
                     if 'uk-phonetic' in basic:
@@ -95,11 +93,11 @@ def lookup_word(request):
                     if 'us-phonetic' in basic:
                         result['us_phonetic'] = basic['us-phonetic']
                     
-                    # 释义
+                    # Translation
                     if 'explains' in basic and basic['explains']:
                         result['translation'] = '; '.join(basic['explains'])
                 
-                # 网络释义
+                # Web translation
                 if 'web' in youdao_data and youdao_data['web']:
                     web_trans = []
                     for item in youdao_data['web']:
@@ -109,9 +107,9 @@ def lookup_word(request):
                 
                 return JsonResponse(result)
     except Exception as e:
-        print(f"从youdao.db查询单词失败: {str(e)}")
+        print(f"Failed to query word from youdao.db: {str(e)}")
     
-    # 3. 最后使用爬虫获取
+    # 3. Finally use spider to get
     try:
         spider = YoudaoSpider(word_text)
         youdao_result = spider.get_result(use_cache=True)
@@ -127,11 +125,11 @@ def lookup_word(request):
                 'web_translation': ''
             }
             
-            # 提取有道词典数据
+            # Extract Youdao data
             if 'basic' in youdao_result:
                 basic = youdao_result['basic']
                 
-                # 音标
+                # Phonetic
                 if 'phonetic' in basic:
                     result['phonetic'] = basic['phonetic']
                 if 'uk-phonetic' in basic:
@@ -139,11 +137,11 @@ def lookup_word(request):
                 if 'us-phonetic' in basic:
                     result['us_phonetic'] = basic['us-phonetic']
                 
-                # 释义
+                # Translation
                 if 'explains' in basic and basic['explains']:
                     result['translation'] = '; '.join(basic['explains'])
             
-            # 网络释义
+            # Web translation
             if 'web' in youdao_result and youdao_result['web']:
                 web_trans = []
                 for item in youdao_result['web']:
@@ -153,10 +151,10 @@ def lookup_word(request):
             
             return JsonResponse(result)
     except Exception as e:
-        print(f"使用爬虫查询单词失败: {str(e)}")
+        print(f"Failed to use spider to query word: {str(e)}")
     
-    # 如果所有方法都失败，返回错误
+    # If all methods fail, return error
     return JsonResponse({
-        'error': '无法找到单词定义',
+        'error': 'Failed to find word definition',
         'word': word_text
     }, status=404)

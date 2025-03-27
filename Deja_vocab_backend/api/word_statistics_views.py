@@ -2,28 +2,26 @@ from django.shortcuts import render
 from django.contrib.auth.decorators import login_required
 from django.utils.decorators import method_decorator
 from django.views.generic import TemplateView, View
-from django.db.models import Count, Min, Q, F
 from django.utils import timezone
 from django.http import JsonResponse
 from datetime import timedelta
-import json
 
-from .word_models import WordDefinition, UserWord, WordReference
+from .word_models import UserWord, WordReference
 from .word_adapter import generate_secure_word_id
 
 
 @method_decorator(login_required, name='dispatch')
 class WordStatisticsView(TemplateView):
-    """单词学习统计视图"""
+    """Word statistics view"""
     template_name = 'api/word_statistics.html'
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         
-        # 获取用户
+        # Get user
         user = self.request.user
         
-        # 获取选定的时间范围（天数）
+        # Get selected time range (days)
         days = self.request.GET.get('days', '1')
         try:
             days = int(days)
@@ -32,16 +30,16 @@ class WordStatisticsView(TemplateView):
             
         context['days'] = days
         
-        # 设置时间范围
+        # Set time range
         now = timezone.now()
         start_date = None
         if days > 0:
             start_date = now - timedelta(days=days)
             
-        # 1. 获取用户的总单词数
+        # 1. Gets the total number of words for the user
         context['total_unique_words'] = UserWord.objects.filter(user=user).count()
         
-        # 2. 统计时间范围内唯一单词的数量
+        # 2. Gets the count of unique words within the selected time range
         user_words_query = UserWord.objects.filter(user=user)
         if start_date:
             unique_words_count = user_words_query.filter(created_at__gte=start_date).count()
@@ -50,21 +48,21 @@ class WordStatisticsView(TemplateView):
         
         context['unique_words_count'] = unique_words_count
         
-        # 3. 统计新词数量（在时间范围内添加的单词）
+        # 3. Gets the count of new words added within the selected time range
         if start_date:
             new_words_count = user_words_query.filter(created_at__gte=start_date).count()
         else:
-            new_words_count = 0  # 如果是全部时间范围，就没有"新词"
+            new_words_count = 0  # If all time range, no "new words"
             
         context['new_words_count'] = new_words_count
         
-        # 不再一次性加载所有单词，改为通过API动态获取
+        # No longer load all words at once, instead get dynamically via API
         context['unique_words'] = []
         context['new_words'] = []
         context['all_word_occurrences'] = []
         context['total_word_occurrences'] = 0
         
-        # 转发Chrome扩展ID以便前端可能需要与扩展通信
+        # Forward Chrome extension ID for possible communication with extension
         context['extension_id'] = 'fbkhlnenfchhkkmcodebhiiklcpdjehj'
         
         return context
@@ -72,11 +70,11 @@ class WordStatisticsView(TemplateView):
 
 @method_decorator(login_required, name='dispatch')
 class WordListAPIView(View):
-    """提供分页的单词列表数据API"""
+    """Provides paginated word list data API"""
     
     def get(self, request):
-        # 获取参数
-        list_type = request.GET.get('type', 'unique')  # unique或new
+        # Get parameters
+        list_type = request.GET.get('type', 'unique')  # unique or new
         page = int(request.GET.get('page', 1))
         page_size = int(request.GET.get('page_size', 10))
         days = request.GET.get('days', '1')
@@ -86,44 +84,44 @@ class WordListAPIView(View):
         except ValueError:
             days = 1
         
-        # 设置时间范围
+        # Set time range
         now = timezone.now()
         start_date = None
         if days > 0:
             start_date = now - timedelta(days=days)
         
-        # 查询用户单词
+        # Query user words
         user_words_query = UserWord.objects.filter(user=request.user).select_related('word_definition')
         
-        # 根据类型过滤
+        # Filter by type
         if list_type == 'new' and start_date:
-            # 新词只显示在时间范围内添加的单词
+            # New words only show words added within the time range
             filtered_words = user_words_query.filter(created_at__gte=start_date)
         elif list_type == 'unique' and start_date:
-            # 唯一单词显示曾在时间范围内遇到过的单词
+            # Unique words show words encountered within the time range
             filtered_words = user_words_query.filter(created_at__gte=start_date)
         else:
-            # 全部时间范围
+            # All time range
             filtered_words = user_words_query
         
-        # 计算总数和总页数
+        # Calculate total count and total pages
         total_count = filtered_words.count()
         total_pages = (total_count + page_size - 1) // page_size if total_count > 0 else 1
         
-        # 分页
+        # Pagination
         start = (page - 1) * page_size
         end = start + page_size
         paginated_words = filtered_words[start:end]
         
-        # 构建结果数据
+        # Build result data
         word_list = []
         for user_word in paginated_words:
             word_def = user_word.word_definition
             
-            # 计算单词在引用中的出现次数
+            # Calculate word occurrence count in references
             reference_count = WordReference.objects.filter(user_word=user_word).count()
             
-            # 生成安全的单词ID格式
+            # Generate secure word ID format
             secure_word_id = generate_secure_word_id(word_def.text, request.user.id)
             
             word_data = {
@@ -144,7 +142,7 @@ class WordListAPIView(View):
             }
             word_list.append(word_data)
         
-        # 返回JSON响应
+        # Return JSON response
         return JsonResponse({
             'words': word_list,
             'total_count': total_count,

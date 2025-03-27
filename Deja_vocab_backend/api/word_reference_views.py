@@ -28,7 +28,7 @@ class WordReferenceViewSet(viewsets.ModelViewSet):
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def create_word_reference(request):
-    """创建单词引用，关联用户单词和字幕"""
+    """Create word reference, link user word and subtitle"""
     try:
         data = request.data
         word_text = data.get('word_text')
@@ -45,22 +45,22 @@ def create_word_reference(request):
         # 获取字幕
         subtitle = get_object_or_404(Subtitle, id=subtitle_id)
         
-        # 查找或创建单词定义
+        # Find or create word definitions
         word_def, created = WordDefinition.objects.get_or_create(
             text=word_text,
             defaults={
-                'language': 'en',  # 默认英语
+                'language': 'en',  # Default English
                 'translation': data.get('translation', '')
             }
         )
         
-        # 查找或创建用户单词
+        # Find or create user word
         user_word, created = UserWord.objects.get_or_create(
             user=request.user,
             word_definition=word_def
         )
         
-        # 创建或更新单词引用
+        # Create or update word reference
         word_ref, created = WordReference.objects.get_or_create(
             user_word=user_word,
             subtitle=subtitle,
@@ -70,13 +70,13 @@ def create_word_reference(request):
             }
         )
         
-        # 如果引用已存在，更新上下文位置
+        # If reference exists, update context position
         if not created:
             word_ref.context_start = context_start
             word_ref.context_end = context_end
             word_ref.save()
         
-        serializer = WordReferenceSerializer(word_ref)
+        serializer = WordReferenceSerializer
         
         return Response({
             'success': True,
@@ -94,9 +94,9 @@ def create_word_reference(request):
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def get_word_references(request, word_text=None):
-    """获取特定单词或所有单词的引用"""
+    """Get word references for a specific word or all words"""
     try:
-        # 如果提供了单词文本，过滤该单词的引用
+        # If a word text is provided, filter references for that word
         if word_text:
             word_def = get_object_or_404(WordDefinition, text=word_text)
             user_word = get_object_or_404(UserWord, user=request.user, word_definition=word_def)
@@ -104,7 +104,7 @@ def get_word_references(request, word_text=None):
                 user_word=user_word
             ).select_related('subtitle', 'subtitle__video')
         else:
-            # 否则获取所有单词引用
+            # Otherwise, get all word references
             references = WordReference.objects.filter(
                 user_word__user=request.user
             ).select_related('user_word', 'user_word__word_definition', 'subtitle', 'subtitle__video')
@@ -127,7 +127,7 @@ def get_word_references(request, word_text=None):
 @api_view(['DELETE'])
 @permission_classes([IsAuthenticated])
 def delete_word_reference(request, reference_id):
-    """删除单词引用"""
+    """Delete word reference"""
     try:
         reference = get_object_or_404(WordReference, id=reference_id, user_word__user=request.user)
         word_text = reference.user_word.word_definition.text
@@ -148,18 +148,18 @@ def delete_word_reference(request, reference_id):
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def process_existing_words(request):
-    """处理用户现有单词，为它们创建引用"""
+    """Process existing words, create references for them"""
     try:
         processed = 0
         errors = 0
         
-        # 获取用户所有单词
+        # Get user's all words
         user_words = UserWord.objects.filter(user=request.user)
         
         for user_word in user_words:
             word_text = user_word.word_definition.text
             
-            # 查找包含该单词的字幕
+            # Find subtitles containing the word
             subtitles = Subtitle.objects.filter(
                 video__user=request.user,
                 text__icontains=word_text
@@ -169,12 +169,12 @@ def process_existing_words(request):
                 text = subtitle.text.lower()
                 word_lower = word_text.lower()
                 
-                # 查找单词在字幕中的位置
+                # Find word position in subtitle
                 start_index = text.find(word_lower)
                 if start_index >= 0:
                     end_index = start_index + len(word_lower)
                     
-                    # 创建或更新单词引用
+                    # Create or update word reference
                     try:
                         word_ref, created = WordReference.objects.get_or_create(
                             user_word=user_word,

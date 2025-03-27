@@ -38,7 +38,7 @@
   --glass-shadow: rgba(0, 0, 0, 0.1);
   --glass-blur: 12px;
   
-  /* Enhanced Glass Effect Variables - 增强的玻璃效果变量 */
+  /* Enhanced Glass Effect Variables */
   --enhanced-glass-bg: rgba(255, 255, 255, 0.1);
   --enhanced-glass-bg-hover: rgba(255, 255, 255, 0.15);
   --enhanced-glass-bg-dark: rgba(15, 23, 42, 0.4);
@@ -148,7 +148,7 @@ body.chat-active .content {
   height: 100vh;
   width: 100%;
   position: fixed;
-  inset: 0; /* 简化 left/right/top/bottom */
+  inset: 0; /* Simplified left/right/top/bottom */
   z-index: 9999;
   padding: 0;
   margin: 0;
@@ -156,7 +156,7 @@ body.chat-active .content {
   background-color: var(--content-bg);
 }
 
-/* Animated Background Elements - 采用 will-change 提升性能 */
+/* Animated Background Elements - Using will-change for performance */
 .chat-background {
   position: absolute;
   inset: 0;
@@ -213,7 +213,7 @@ body.chat-active .content {
   overflow: hidden;
 }
 
-/* Chat Header - 优化布局和性能 */
+/* Chat Header - Optimized layout and performance */
 .chat-header {
   display: flex;
   justify-content: space-between;
@@ -224,7 +224,7 @@ body.chat-active .content {
   backdrop-filter: blur(var(--glass-blur));
   -webkit-backdrop-filter: blur(var(--glass-blur));
   z-index: 10;
-  will-change: opacity; /* 提升动画性能 */
+  will-change: opacity; 
 }
 
 .header-left {
@@ -262,7 +262,7 @@ body.chat-active .content {
   color: transparent;
 }
 
-/* 控制按钮组 */
+/* Control button group */
 .chat-controls {
   display: flex;
   align-items: center;
@@ -370,7 +370,7 @@ body.chat-active .content {
   margin-bottom: 20px;
   animation: message-appear 0.3s ease forwards;
   max-width: 90%;
-  will-change: opacity, transform; /* 提升动画性能 */
+  will-change: opacity, transform; /* Using will-change for performance */
 }
 
 .user-message {
@@ -418,7 +418,7 @@ body.chat-active .content {
   margin-right: 12px;
 }
 
-/* Message Content - 海粽优化性能 */
+/* Message Content - Optimized performance */
 .message-content {
   padding: 12px 16px;
   border-radius: 16px;
@@ -428,7 +428,7 @@ body.chat-active .content {
   position: relative;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   transition: transform var(--transition-fast) ease;
-  will-change: transform; /* 提升浮动效果性能 */
+  will-change: transform; /* Using will-change for performance */
 }
 
 .user-message .message-content {
@@ -540,7 +540,7 @@ body.chat-active .content {
   }
 }
 
-/* System Message - 优化布局 */
+/* System Message - Optimized layout */
 .system-message {
   display: flex;
   justify-content: center;
@@ -589,15 +589,15 @@ body.chat-active .content {
   z-index: 10;
 }
 
-/* 导出笔记按钮容器 */
+/* Export Notes Button Container */
 .notes-export-container {
   display: flex;
-  justify-content: flex-start; /* 左对齐按钮 */
-  margin-top: 12px; /* 从底部间距改为顶部间距 */
+  justify-content: flex-start; /* Left aligned buttons */
+  margin-top: 12px; /* Top spacing */
   padding: 0 8px;
 }
 
-/* 模式切换按钮 - 基础样式 */
+/* Mode Toggle Button - Base Style */
 .mode-toggle-button {
   width: 100%;
   position: relative;
@@ -628,7 +628,7 @@ body.chat-active .content {
   z-index: 1;
 }
 
-/* 按钮内部光晕效果 */
+/* Mode Toggle Button - Internal Glow Effect */
 .mode-toggle-button::before {
   content: '';
   position: absolute;
@@ -646,7 +646,7 @@ body.chat-active .content {
   transition: opacity 0.3s ease;
 }
 
-/* 模式切换按钮悬停状态 */
+/* Mode Toggle Button - Hover State */
 .mode-toggle-button:hover {
   transform: translateY(-2px);
   box-shadow: 
@@ -655,7 +655,7 @@ body.chat-active .content {
     inset 0 1px 2px var(--enhanced-glass-highlight);
 }
 
-/* 模式切换按钮点击状态 */
+/* Mode Toggle Button - Active State */
 .mode-toggle-button:active {
   transform: translateY(1px);
   box-shadow: 
@@ -664,7 +664,7 @@ body.chat-active .content {
     inset 0 1px 1px var(--enhanced-glass-highlight);
 }
 
-/* 小型模式切换按钮样式 */
+/* Small Mode Toggle Button - Base Style */
 .mode-toggle-button.small-toggle {
   padding: 6px 14px;
   margin-left: 0;
@@ -679,20 +679,20 @@ body.chat-active .content {
   max-width: 120px;
 }
 
-/* 小型模式切换按钮悬停状态 */
+/* Small Mode Toggle Button - Hover State */
 .mode-toggle-button.small-toggle:hover {
   transform: none;
   background-color: var(--bg-hover);
   box-shadow: none;
 }
 
-/* 小型模式切换按钮点击状态 */
+/* Small Mode Toggle Button - Active State */
 .mode-toggle-button.small-toggle:active {
   transform: none;
   box-shadow: none;
 }
 
-/* 小型模式切换按钮激活状态 */
+/* Small Mode Toggle Button - Active State */
 .mode-toggle-button.small-toggle.active {
   background: linear-gradient(135deg, 
     var(--primary-dark) 0%, 
@@ -968,35 +968,35 @@ pre code {
   }
 }
 
-/* 会话视频列表样式 */
+/* Session Videos Container */
 .session-videos-container {
-  background: rgba(255, 255, 255, 0.7); /* 半透明背景 */
-  backdrop-filter: blur(10px); /* 背景模糊效果 */
-  -webkit-backdrop-filter: blur(10px); /* Safari 兼容 */
+  background: rgba(255, 255, 255, 0.7); /* Semi-transparent background */
+  backdrop-filter: blur(10px); /* Background blur effect */
+  -webkit-backdrop-filter: blur(10px); /* Safari compatibility */
   border: 1px solid rgba(255, 255, 255, 0.18);
   border-radius: 12px;
   overflow: hidden;
-  display: none; /* 默认隐藏，在专注模式下显示 */
+  display: none; /* Default hidden, shown in focus mode */
   box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
   max-height: 80vh;
-  flex-direction: column; /* 当显示时使用flex布局 */
+  flex-direction: column; /* When visible, use flex layout */
   
-  /* 从左侧滑出的面板 */
+  /* Sliding from the left */
   position: fixed;
-  left: -300px; /* 初始位置在屏幕左侧外 */
-  top: 70px; /* 顶部距离 */
-  width: 280px; /* 固定宽度 */
+  left: -300px; /* Initial position outside the screen */
+  top: 70px; /* Top distance */
+  width: 280px; /* Fixed width */
   z-index: 1000;
-  transition: left 0.3s ease; /* 平滑过渡效果 */
+  transition: left 0.3s ease; /* Smooth transition effect */
 }
 
 .session-videos-container.visible {
   display: flex;
-  left: 60px; /* 显示时的位置，保持在按钮右侧 */
+  left: 60px; /* Display position, right of the button */
 }
 
 .dark .session-videos-container {
-  background: rgba(30, 30, 40, 0.75); /* 暗色模式半透明背景 */
+  background: rgba(30, 30, 40, 0.75); /* Dark mode semi-transparent background */
   border-color: rgba(255, 255, 255, 0.08);
   box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
 }
@@ -1006,16 +1006,16 @@ pre code {
   font-weight: 600;
   font-size: 14px;
   color: var(--text-primary);
-  background: rgba(255, 255, 255, 0.3); /* 半透明标题背景 */
+  background: rgba(255, 255, 255, 0.3); /* Semi-transparent title background */
   border-bottom: 1px solid rgba(255, 255, 255, 0.18);
   display: flex;
   align-items: center;
   gap: 8px;
-  justify-content: space-between; /* 让标题和图标分开 */
+  justify-content: space-between; /* Let title and icon separate */
 }
 
 .dark .session-videos-title {
-  background: rgba(30, 30, 40, 0.5); /* 暗色模式半透明标题背景 */
+  background: rgba(30, 30, 40, 0.5); /* Dark mode semi-transparent title background */
   border-bottom-color: rgba(255, 255, 255, 0.05);
 }
 
@@ -1035,10 +1035,10 @@ pre code {
   opacity: 1;
 }
 
-/* 折叠/展开图标样式 */
+/* Toggle icon styles */
 .toggle-icon {
   transition: transform 0.3s ease;
-  margin-left: auto; /* 将图标推到最右边 */
+  margin-left: auto; /* Push icon to the right */
 }
 
 .bi-chevron-up.toggle-icon {
@@ -1054,8 +1054,8 @@ pre code {
   margin: 0;
   padding: 0;
   overflow-y: auto;
-  max-height: calc(80vh - 50px); /* 减去标题高度 */
-  transition: max-height 0.3s ease-in-out; /* 添加展开/折叠动画 */
+  max-height: calc(80vh - 50px); /* Subtract title height */
+  transition: max-height 0.3s ease-in-out; /* Add expand/collapse animation */
 }
 
 .session-video-item {
@@ -1129,12 +1129,12 @@ pre code {
   color: var(--text-secondary);
 }
 
-/* 悬浮按钮样式 */
+/* Floating button styles */
 .video-list-toggle-button {
   position: fixed;
   left: 10px;
   top: 70px;
-  z-index: 1001; /* 确保按钮在最上层 */
+  z-index: 1001; /* Ensure button is on top */
   width: 40px;
   height: 40px;
   border-radius: 50%;

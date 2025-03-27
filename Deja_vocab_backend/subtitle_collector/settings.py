@@ -31,11 +31,11 @@ ALLOWED_HOSTS = [
     '192.168.2.171',
     'dejavocab.com',
     'www.dejavocab.com',
-    '103.131.131.220',  # 添加您的IP地址
-    'linkiai.com',      # 添加另一个域名
-    'www.linkiai.com',   # 包含www子域名
-    '0b55-104-234-99-10.ngrok-free.app',  # ngrok 域名
-    '*.ngrok-free.app',  # 支持所有 ngrok 域名
+    '103.131.131.220',  # Add your IP address
+    'linkiai.com',      # Add another domain
+    'www.linkiai.com',   # Include www subdomain
+    '0b55-104-234-99-10.ngrok-free.app',  # ngrok domain
+    '*.ngrok-free.app',  # Support all ngrok domains
 ]
 
 
@@ -60,14 +60,14 @@ MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'corsheaders.middleware.CorsMiddleware',  # CORS middleware
-    # 'api.middleware.SecureRedirectMiddleware',  # 已移除，由Nginx处理重定向
+    # 'api.middleware.SecureRedirectMiddleware',  # Removed, handled by Nginx
     'django.middleware.common.CommonMiddleware',
-    # 在开发环境中禁用CSRF中间件
+    # Disable CSRF middleware in development environment
     # 'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    # 用户活动跟踪中间件 - 注意必须在AuthenticationMiddleware后面
+    # User activity tracking middleware - must be after AuthenticationMiddleware
     'api.middleware.UserActivityMiddleware',
 ]
 
@@ -146,11 +146,11 @@ MEDIA_ROOT = BASE_DIR / 'media'
 
 # Django REST Framework settings
 REST_FRAMEWORK = {
-    # 为Token认证提供最高优先级
+    # Give highest priority to Token authentication
     'DEFAULT_AUTHENTICATION_CLASSES': [
         'rest_framework.authentication.TokenAuthentication',  # Token auth first
         'rest_framework.authentication.BasicAuthentication',
-        # 移除SessionAuthentication以避免CSRF检查
+        # Remove SessionAuthentication to avoid CSRF checks
         # 'rest_framework.authentication.SessionAuthentication', 
     ],
     'DEFAULT_PERMISSION_CLASSES': [
@@ -172,12 +172,12 @@ CORS_ALLOWED_ORIGINS = [
     "https://0b55-104-234-99-10.ngrok-free.app"
 ]
 
-# 跨域请求是否支持cookie
+# Support cookies in cross-origin requests
 CORS_ALLOW_CREDENTIALS = True
 
-# 使用正则表达式匹配所有Chrome扩展ID
+# Use regex to match all Chrome extension IDs
 CORS_ALLOWED_ORIGIN_REGEXES = [
-    r"^chrome-extension://.*$",  # 匹配任何Chrome扩展
+    r"^chrome-extension://.*$",  # Match any Chrome extension
 ]
 
 CORS_ALLOW_METHODS = [
@@ -201,8 +201,8 @@ CORS_ALLOW_HEADERS = [
     "x-requested-with",
 ]
 
-# CSRF设置
-# 允许Chrome扩展访问
+# CSRF settings
+# Allow Chrome extensions to access
 CSRF_TRUSTED_ORIGINS = [
     "http://localhost:8000",
     "http://127.0.0.1:8000",
@@ -212,13 +212,11 @@ CSRF_TRUSTED_ORIGINS = [
     "https://0b55-104-234-99-10.ngrok-free.app"
 ]
 
-# 对于Chrome扩展，我们需要在CSRF中间件中特别处理
-# Django 4.0+支持在CSRF_TRUSTED_ORIGINS中使用通配符
-# 但更安全的方式是在视图中使用装饰器 @csrf_exempt 或自定义中间件来处理Chrome扩展请求
+# For Chrome extensions, we need special handling in the CSRF middleware
+# Django 4.0+ supports wildcards in CSRF_TRUSTED_ORIGINS
+# But a more secure approach is to use the @csrf_exempt decorator or custom middleware to handle Chrome extension requests
 
-# CSRF_COOKIE_SECURE = False  # 开发环境不需要HTTPS
-
-# 配置日志
+# Configure logging
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
@@ -239,31 +237,31 @@ LOGGING = {
                 record.levelname == 'WARNING' and 
                 record.getMessage().startswith(('Not Found:', '"GET /')) and
                 any(path in record.getMessage() for path in [
-                    # Git和Docker相关
+                    # Git and Docker related
                     '/.git', '/Dockerfile', '/.dockerignore', '/config.js',
                     
-                    # API文档相关
+                    # API documentation related
                     '/api-docs', '/swagger', '/openapi',
                     
-                    # 数据库相关
+                    # Database related
                     '/backup.sql', '/db_backup.sql', '/backup/',
                     
-                    # Laravel相关
+                    # Laravel related
                     '/storage/framework/', '/storage/logs/', '/.env', 'env.php', 'local.xml',
                     
-                    # Drupal和WordPress相关
+                    # Drupal and WordPress related
                     '/sites/all/', '/core/install.php', '/CHANGELOG.txt', '/wp-', '/xmlrpc.php',
                     
-                    # Symfony相关
+                    # Symfony related
                     '/config/packages/', '/config/routes', '/web/config.php', '/web.config',
                     
-                    # Node.js相关
+                    # Node.js related
                     '/package.json', '/yarn.lock', '/.npmrc', '/server.js', '/app.js',
                     
-                    # 日志文件相关
+                    # Log file related
                     '/var/log', '/logs/', '/debug.log', '/error',
                     
-                    # 配置文件相关
+                    # Configuration file related
                     '/.htaccess', '/configuration.php', '/.well-known/'
                 ])
             )
@@ -315,5 +313,5 @@ LOGGING = {
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-# 增加请求字段数量限制以处理大量字幕
+# Increase the request field limit to handle large subtitles
 DATA_UPLOAD_MAX_NUMBER_FIELDS = 10000
