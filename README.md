@@ -1,13 +1,29 @@
 # Déjà Vocab
-（全靠Vibe Coding，没有一行是手写的，因为我还不会😭）
+<p align="center"><i>Created entirely with Vibe Coding - not a single line handwritten because I'm still learning! 😭</i></p>
 
 <p align="center">
   <img src="Deja_vocab_backend/static/images/logo.JPG" alt="Déjà Vocab Logo" width="200">
 </p>
 
-Déjà Vocab - Intelligent YouTube Learning Assistant. Automatically captures video subtitles, builds your personal vocabulary, answers questions with AI in real-time, delivers personalized learning recommendations, and effortlessly enhances your language skills while you enjoy videos.
+<div align="center">
+  <h3>Intelligent YouTube Learning Assistant</h3>
+  <p>Automatically captures video subtitles, builds your personal vocabulary, answers questions with AI in real-time, delivers personalized learning recommendations, and effortlessly enhances your language skills while you enjoy videos.</p>
+  
+  <p>
+    <a href="#project-overview">Overview</a> •
+    <a href="#core-features">Features</a> •
+    <a href="#installation-and-setup">Installation</a> •
+    <a href="#usage-guide">Usage</a> •
+    <a href="#contributing">Contributing</a>
+  </p>
+  
+  <p>
+    <b><a href="#">English</a></b> | 
+    <a href="README.zh.md">中文</a>
+  </p>
+</div>
 
-English | [中文](README.zh.md)
+---
 
 ## Project Overview
 
