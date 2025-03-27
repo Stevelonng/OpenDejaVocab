@@ -1,0 +1,1526 @@
+{% extends "api/base.html" %}
+
+{% block title %}{% if is_favorite_view %}收藏词典{% else %}我的词典{% endif %} | Déjà Vocab{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Dictionary container */
+    .dictionary-container {
+        position: relative;
+    }
+    
+    /* Page header */
+    .page-header {
+        margin-bottom: 2rem;
+    }
+    
+    .page-title {
+        font-size: 1.875rem;
+        font-weight: 800;
+        color: var(--gray-900);
+        margin-bottom: 0.75rem;
+        letter-spacing: -0.025em;
+        line-height: 1.2;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+    
+    .dark .page-title {
+        color: white;
+    }
+    
+    .word-count-badge {
+        font-size: 0.875rem;
+        padding: 0.375rem 0.75rem;
+        border-radius: 1rem;
+        background-color: var(--primary-50);
+        color: var(--primary-600);
+        font-weight: 500;
+        display: flex;
+        align-items: center;
+        gap: 0.375rem;
+    }
+    
+    .dark .word-count-badge {
+        background-color: rgba(59, 130, 246, 0.2);
+        color: var(--primary-400);
+    }
+    
+    .page-description {
+        font-size: 1rem;
+        color: var(--gray-600);
+        max-width: 600px;
+    }
+    
+    .dark .page-description {
+        color: var(--gray-400);
+    }
+    
+    /* Action toolbar */
+    .action-toolbar {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+        margin-bottom: 1.5rem;
+    }
+    
+    .action-button {
+        padding: 0.625rem 1rem;
+        border-radius: 0.5rem;
+        font-size: 0.875rem;
+        font-weight: 500;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        transition: all 0.2s ease;
+    }
+    
+    .action-button i {
+        font-size: 1rem;
+    }
+    
+    .action-button-primary {
+        background-color: var(--primary-50);
+        color: var(--primary-600);
+        border: none;
+    }
+    
+    .action-button-primary:hover {
+        background-color: var(--primary-100);
+        color: var(--primary-700);
+        transform: translateY(-1px);
+    }
+    
+    .dark .action-button-primary {
+        background-color: rgba(59, 130, 246, 0.2);
+        color: var(--primary-400);
+    }
+    
+    .dark .action-button-primary:hover {
+        background-color: rgba(59, 130, 246, 0.3);
+        color: var(--primary-300);
+    }
+    
+    .action-button-danger {
+        background-color: rgba(239, 68, 68, 0.1);
+        color: #EF4444;
+        border: none;
+    }
+    
+    .action-button-danger:hover {
+        background-color: rgba(239, 68, 68, 0.2);
+        color: #DC2626;
+        transform: translateY(-1px);
+    }
+    
+    .dark .action-button-danger {
+        background-color: rgba(239, 68, 68, 0.15);
+        color: #F87171;
+    }
+    
+    .dark .action-button-danger:hover {
+        background-color: rgba(239, 68, 68, 0.25);
+        color: #FCA5A5;
+    }
+    
+    /* Filter section */
+    .filter-section {
+        background-color: white;
+        border-radius: 1rem;
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        border: 1px solid var(--gray-200);
+    }
+    
+    .dark .filter-section {
+        background-color: var(--gray-800);
+        border-color: var(--gray-700);
+    }
+    
+    .filter-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1rem;
+        align-items: center;
+    }
+    
+    .search-form {
+        position: relative;
+        flex: 1;
+        min-width: 200px;
+    }
+    
+    .search-input {
+        width: 100%;
+        padding: 0.625rem 1rem;
+        padding-right: 3rem;
+        border: 1px solid var(--gray-300);
+        border-radius: 0.5rem;
+        font-size: 0.875rem;
+        background-color: white;
+        color: var(--gray-900);
+        transition: all 0.2s ease;
+    }
+    
+    .dark .search-input {
+        background-color: var(--gray-700);
+        border-color: var(--gray-600);
+        color: white;
+    }
+    
+    .search-input:focus {
+        border-color: var(--primary-400);
+        box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.25);
+        outline: none;
+    }
+    
+    .search-button {
+        position: absolute;
+        right: 0;
+        top: 0;
+        bottom: 0;
+        padding: 0 1rem;
+        background-color: transparent;
+        border: none;
+        color: var(--gray-500);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s ease;
+    }
+    
+    .search-button:hover {
+        color: var(--primary-600);
+    }
+    
+    .dark .search-button {
+        color: var(--gray-400);
+    }
+    
+    .dark .search-button:hover {
+        color: var(--primary-400);
+    }
+    
+    .clear-button {
+        padding: 0.625rem 1rem;
+        border-radius: 0.5rem;
+        font-size: 0.875rem;
+        font-weight: 500;
+        background-color: white;
+        border: 1px solid var(--gray-300);
+        color: var(--gray-700);
+        display: flex;
+        align-items: center;
+        gap: 0.375rem;
+        transition: all 0.2s ease;
+    }
+    
+    .clear-button:hover {
+        background-color: var(--gray-50);
+        border-color: var(--gray-400);
+        color: var(--gray-900);
+    }
+    
+    .dark .clear-button {
+        background-color: var(--gray-700);
+        border-color: var(--gray-600);
+        color: var(--gray-300);
+    }
+    
+    .dark .clear-button:hover {
+        background-color: var(--gray-600);
+        color: white;
+    }
+    
+    /* Sort dropdown */
+    .sort-dropdown {
+        position: relative;
+        z-index: 10;
+    }
+    
+    .dropdown-toggle {
+        padding: 0.625rem 1rem;
+        border-radius: 0.5rem;
+        font-size: 0.875rem;
+        font-weight: 500;
+        background-color: white;
+        border: 1px solid var(--gray-300);
+        color: var(--gray-700);
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        min-width: 180px;
+        transition: all 0.2s ease;
+    }
+    
+    .dark .dropdown-toggle {
+        background-color: var(--gray-700);
+        border-color: var(--gray-600);
+        color: var(--gray-300);
+    }
+    
+    .dropdown-toggle:hover {
+        background-color: var(--gray-50);
+        border-color: var(--gray-400);
+        color: var(--gray-900);
+    }
+    
+    .dark .dropdown-toggle:hover {
+        background-color: var(--gray-600);
+        color: white;
+    }
+    
+    .dropdown-toggle i:first-child {
+        color: var(--primary-500);
+        font-size: 1rem;
+    }
+    
+    .dark .dropdown-toggle i:first-child {
+        color: var(--primary-400);
+    }
+    
+    .dropdown-toggle i:last-child {
+        margin-left: auto;
+    }
+    
+    .dropdown-menu {
+        position: absolute;
+        top: calc(100% + 0.5rem);
+        left: 0;
+        right: 0;
+        background-color: white;
+        border-radius: 0.5rem;
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        border: 1px solid var(--gray-200);
+        padding: 0.5rem 0;
+        z-index: 20;
+        opacity: 0;
+        visibility: hidden;
+        transform: translateY(-10px);
+        transition: all 0.2s ease;
+    }
+    
+    .dark .dropdown-menu {
+        background-color: var(--gray-800);
+        border-color: var(--gray-700);
+    }
+    
+    .dropdown-menu.show {
+        opacity: 1;
+        visibility: visible;
+        transform: translateY(0);
+    }
+    
+    .dropdown-item {
+        padding: 0.625rem 1rem;
+        font-size: 0.875rem;
+        color: var(--gray-700);
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        transition: all 0.2s ease;
+        cursor: pointer;
+    }
+    
+    .dark .dropdown-item {
+        color: var(--gray-300);
+    }
+    
+    .dropdown-item:hover {
+        background-color: var(--gray-100);
+        color: var(--gray-900);
+    }
+    
+    .dark .dropdown-item:hover {
+        background-color: var(--gray-700);
+        color: white;
+    }
+    
+    .dropdown-item.active {
+        background-color: var(--primary-50);
+        color: var(--primary-600);
+    }
+    
+    .dark .dropdown-item.active {
+        background-color: rgba(59, 130, 246, 0.2);
+        color: var(--primary-400);
+    }
+    
+    .dropdown-item i {
+        font-size: 1rem;
+    }
+    
+    /* Word list */
+    .word-list {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 1.5rem;
+    }
+    
+    .word-card {
+        background-color: white;
+        border-radius: 1rem;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        border: 1px solid var(--gray-200);
+        transition: all 0.3s ease;
+        overflow: hidden;
+        position: relative;
+    }
+    
+    .dark .word-card {
+        background-color: var(--gray-800);
+        border-color: var(--gray-700);
+    }
+    
+    .word-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
+    }
+    
+    .word-card::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+        background: linear-gradient(to right, var(--primary-500), var(--primary-400));
+        transform: scaleX(0);
+        transform-origin: left;
+        transition: transform 0.3s ease;
+    }
+    
+    .word-card:hover::after {
+        transform: scaleX(1);
+    }
+    
+    .word-card-content {
+        padding: 1.5rem;
+    }
+    
+    .word-header {
+        margin-bottom: 1rem;
+    }
+    
+    .word-text {
+        font-size: 1.25rem;
+        font-weight: 700;
+        color: var(--gray-900);
+        margin-bottom: 0.5rem;
+        line-height: 1.3;
+    }
+    
+    .dark .word-text {
+        color: white;
+    }
+    
+    .word-frequency {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.25rem 0.625rem;
+        background-color: var(--primary-50);
+        color: var(--primary-600);
+        border-radius: 1rem;
+        font-size: 0.75rem;
+        font-weight: 500;
+        gap: 0.25rem;
+    }
+    
+    .dark .word-frequency {
+        background-color: rgba(59, 130, 246, 0.2);
+        color: var(--primary-400);
+    }
+    
+    .word-translation {
+        color: var(--gray-600);
+        font-size: 0.875rem;
+        line-height: 1.5;
+        margin-bottom: 1.5rem;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        height: 2.625rem;
+    }
+    
+    .dark .word-translation {
+        color: var(--gray-400);
+    }
+    
+    .word-actions {
+        display: flex;
+        gap: 0.5rem;
+    }
+    
+    .word-btn {
+        flex: 1;
+        padding: 0.5rem 0.25rem;
+        font-size: 0.75rem;
+        font-weight: 500;
+        border-radius: 0.5rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.375rem;
+        transition: all 0.2s ease;
+    }
+    
+    .word-btn i {
+        font-size: 0.875rem;
+    }
+    
+    .word-btn-favorite {
+        background-color: white;
+        border: 1px solid #F59E0B;
+        color: #F59E0B;
+    }
+    
+    .word-btn-favorite:hover {
+        background-color: rgba(245, 158, 11, 0.1);
+        color: #D97706;
+        transform: translateY(-1px);
+    }
+    
+    .dark .word-btn-favorite {
+        background-color: var(--gray-800);
+        color: #FBBF24;
+        border-color: #FBBF24;
+    }
+    
+    .dark .word-btn-favorite:hover {
+        background-color: rgba(251, 191, 36, 0.15);
+        color: #FCD34D;
+    }
+    
+    .word-btn-favorite.favorited {
+        background-color: #F59E0B;
+        color: white;
+        border-color: #F59E0B;
+    }
+    
+    .word-btn-favorite.favorited:hover {
+        background-color: #D97706;
+        border-color: #D97706;
+    }
+    
+    .dark .word-btn-favorite.favorited {
+        background-color: #D97706;
+        border-color: #D97706;
+    }
+    
+    .dark .word-btn-favorite.favorited:hover {
+        background-color: #B45309;
+        border-color: #B45309;
+    }
+    
+    .word-btn-details {
+        background-color: var(--primary-50);
+        color: var(--primary-600);
+        border: none;
+    }
+    
+    .word-btn-details:hover {
+        background-color: var(--primary-100);
+        color: var(--primary-700);
+        transform: translateY(-1px);
+    }
+    
+    .dark .word-btn-details {
+        background-color: rgba(59, 130, 246, 0.2);
+        color: var(--primary-400);
+    }
+    
+    .dark .word-btn-details:hover {
+        background-color: rgba(59, 130, 246, 0.3);
+        color: var(--primary-300);
+    }
+    
+    /* Empty state */
+    .empty-state {
+        background-color: white;
+        border-radius: 1rem;
+        padding: 4rem 2rem;
+        text-align: center;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        border: 1px solid var(--gray-200);
+        margin: 2rem 0;
+    }
+    
+    .dark .empty-state {
+        background-color: var(--gray-800);
+        border-color: var(--gray-700);
+    }
+    
+    .empty-icon {
+        font-size: 4rem;
+        color: var(--primary-400);
+        margin-bottom: 1.5rem;
+        opacity: 0.8;
+    }
+    
+    .empty-title {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: var(--gray-900);
+        margin-bottom: 1rem;
+    }
+    
+    .dark .empty-title {
+        color: white;
+    }
+    
+    .empty-description {
+        font-size: 1rem;
+        color: var(--gray-600);
+        max-width: 500px;
+        margin: 0 auto 2rem;
+        line-height: 1.6;
+    }
+    
+    .dark .empty-description {
+        color: var(--gray-400);
+    }
+    
+    /* Pagination */
+    .pagination-container {
+        display: flex;
+        justify-content: center;
+        margin-top: 3rem;
+        margin-bottom: 1rem;
+    }
+    
+    .pagination {
+        display: flex;
+        gap: 0.5rem;
+    }
+    
+    .page-item {
+        margin: 0;
+    }
+    
+    .page-link {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 2rem;
+        height: 2rem;
+        padding: 0.25rem 0.5rem;
+        border-radius: 0.5rem;
+        background-color: white;
+        color: var(--gray-700);
+        font-size: 0.875rem;
+        border: 1px solid var(--gray-200);
+        transition: all 0.2s ease;
+    }
+    
+    .dark .page-link {
+        background-color: var(--gray-800);
+        color: var(--gray-300);
+        border-color: var(--gray-700);
+    }
+    
+    .page-link:hover {
+        background-color: var(--gray-50);
+        color: var(--gray-900);
+        border-color: var(--gray-300);
+    }
+    
+    .dark .page-link:hover {
+        background-color: var(--gray-700);
+        color: white;
+        border-color: var(--gray-600);
+    }
+    
+    .page-item.active .page-link {
+        background-color: var(--primary-600);
+        color: white;
+        border-color: var(--primary-600);
+    }
+    
+    .dark .page-item.active .page-link {
+        background-color: var(--primary-600);
+        border-color: var(--primary-600);
+    }
+    
+    .page-item.disabled .page-link {
+        opacity: 0.5;
+        pointer-events: none;
+    }
+    
+    /* Toast notification */
+    .toast-container {
+        position: fixed;
+        bottom: 1.5rem;
+        right: 1.5rem;
+        z-index: 1050;
+    }
+    
+    /* Responsive adjustments */
+    @media (max-width: 768px) {
+        .filter-row {
+            flex-direction: column;
+            align-items: stretch;
+        }
+        
+        .search-form {
+            width: 100%;
+        }
+        
+        .sort-dropdown {
+            width: 100%;
+            margin-top: 0.5rem;
+        }
+        
+        .dropdown-toggle {
+            width: 100%;
+        }
+        
+        .word-list {
+            grid-template-columns: 1fr;
+        }
+        
+        .word-list-text {
+            flex: 0 0 25%;
+        }
+        
+        .word-list-frequency {
+            flex: 0 0 25%;
+        }
+        
+        .word-list-actions {
+            flex: 0 0 25%;
+        }
+    }
+    
+    /* 视图切换按钮 */
+    .view-toggle {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin-left: auto;
+    }
+    
+    @media (max-width: 768px) {
+        .view-toggle {
+            display: none;
+        }
+    }
+    
+    .view-toggle-btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 2.5rem;
+        height: 2.5rem;
+        border-radius: 0.5rem;
+        border: none;
+        background-color: var(--gray-100);
+        color: var(--gray-600);
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+    
+    .dark .view-toggle-btn {
+        background-color: var(--gray-700);
+        color: var(--gray-400);
+    }
+    
+    .view-toggle-btn.active {
+        background-color: var(--primary-50);
+        color: var(--primary-600);
+    }
+    
+    .dark .view-toggle-btn.active {
+        background-color: rgba(59, 130, 246, 0.2);
+        color: var(--primary-400);
+    }
+    
+    .view-toggle-btn:hover:not(.active) {
+        background-color: var(--gray-200);
+        color: var(--gray-700);
+    }
+    
+    .dark .view-toggle-btn:hover:not(.active) {
+        background-color: var(--gray-600);
+        color: var(--gray-300);
+    }
+    
+    /* 列表视图样式 */
+    .word-list-table {
+        background-color: white;
+        border-radius: 1rem;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        border: 1px solid rgba(229, 231, 235, 0.5);
+        overflow: hidden;
+        margin-bottom: 2rem;
+        backdrop-filter: blur(8px);
+    }
+    
+    .dark .word-list-table {
+        background-color: var(--gray-800);
+        border-color: var(--gray-700);
+    }
+    
+    .word-list-header {
+        display: flex;
+        background-color: rgba(243, 244, 246, 0.8);
+        padding: 1rem 1.5rem;
+        font-weight: 600;
+        color: var(--gray-700);
+        border-bottom: 1px solid var(--gray-200);
+        position: sticky;
+        top: 0;
+        z-index: 10;
+    }
+    
+    .dark .word-list-header {
+        background-color: var(--gray-700);
+        color: var(--gray-300);
+        border-color: var(--gray-600);
+    }
+    
+    .word-list-item {
+        display: flex;
+        padding: 1.25rem 1.5rem;
+        border-bottom: 1px solid var(--gray-100);
+        transition: all 0.3s ease;
+        align-items: center;
+    }
+    
+    .dark .word-list-item {
+        border-color: var(--gray-700);
+    }
+    
+    .word-list-item:last-child {
+        border-bottom: none;
+    }
+    
+    .word-list-item:hover {
+        background-color: rgba(243, 244, 246, 0.5);
+        transform: translateY(-2px);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    }
+    
+    .dark .word-list-item:hover {
+        background-color: var(--gray-700);
+    }
+    
+    .word-list-cell {
+        padding: 0 0.75rem;
+    }
+    
+    .word-list-text {
+        flex: 0 0 20%;
+        color: var(--gray-900);
+        font-size: 1.125rem;
+        letter-spacing: -0.01em;
+    }
+    
+    .dark .word-list-text {
+        color: white;
+    }
+    
+    .word-list-translation {
+        flex: 1;
+        color: var(--gray-600);
+        font-size: 1rem;
+        line-height: 1.5;
+    }
+    
+    .dark .word-list-translation {
+        color: var(--gray-400);
+    }
+    
+    .word-list-frequency {
+        flex: 0 0 15%;
+        text-align: center;
+    }
+    
+    .frequency-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.375rem;
+        padding: 0.5rem 0.875rem;
+        border-radius: 0.75rem;
+        background-color: var(--primary-50);
+        color: var(--primary-600);
+        font-size: 0.875rem;
+        font-weight: 600;
+        box-shadow: 0 1px 3px rgba(59, 130, 246, 0.15);
+    }
+    
+    .dark .frequency-badge {
+        background-color: rgba(59, 130, 246, 0.2);
+        color: var(--primary-400);
+    }
+    
+    .word-list-actions {
+        flex: 0 0 15%;
+        display: flex;
+        justify-content: flex-end;
+        gap: 0.5rem;
+    }
+    
+    .word-list-btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 2.5rem;
+        height: 2.5rem;
+        border-radius: 0.625rem;
+        background-color: var(--gray-100);
+        color: var(--gray-600);
+        border: none;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        text-decoration: none;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+        font-size: 1rem;
+    }
+    
+    .dark .word-list-btn {
+        background-color: var(--gray-700);
+        color: var(--gray-400);
+    }
+    
+    .word-list-btn.favorited {
+        background-color: rgba(250, 204, 21, 0.2);
+        color: #EAB308;
+    }
+    
+    .dark .word-list-btn.favorited {
+        background-color: rgba(250, 204, 21, 0.3);
+        color: #FCD34D;
+    }
+    
+    .word-list-btn:hover {
+        background-color: var(--gray-200);
+        color: var(--gray-700);
+        transform: translateY(-2px);
+    }
+    
+    .dark .word-list-btn:hover {
+        background-color: var(--gray-600);
+        color: var(--gray-300);
+    }
+    
+    @media (max-width: 768px) {
+        .word-list-header, .word-list-item {
+            flex-wrap: wrap;
+            padding: 1rem;
+        }
+        
+        .word-list-text {
+            flex: 0 0 100%;
+            margin-bottom: 0.5rem;
+            font-size: 1rem;
+        }
+        
+        .word-list-translation {
+            flex: 1 0 70%;
+            order: 3;
+            font-size: 0.9rem;
+        }
+        
+        .word-list-frequency {
+            flex: 0 0 auto;
+            order: 2;
+            margin-bottom: 0.5rem;
+        }
+        
+        .word-list-actions {
+            flex: 0 0 auto;
+            order: 1;
+            margin-left: auto;
+        }
+        
+        .frequency-badge {
+            padding: 0.375rem 0.75rem;
+            font-size: 0.75rem;
+        }
+    }
+    
+    @media (max-width: 480px) {
+        .word-list-header {
+            display: none; /* 在手机上隐藏表头 */
+        }
+        
+        .word-list-item {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 0.75rem;
+        }
+        
+        .word-list-text {
+            margin-bottom: 0;
+            display: flex;
+            width: 100%;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .word-list-actions {
+            width: 100%;
+            justify-content: flex-end;
+            margin-top: 0.5rem;
+        }
+        
+        .word-list-translation {
+            width: 100%;
+        }
+        
+        .word-list-frequency {
+            order: 3;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="dictionary-container">
+    <!-- Page header -->
+    <div class="page-header">
+        <h1 class="page-title">
+            {% if is_favorite_view %}收藏词典{% else %}我的词典{% endif %}
+            <span class="word-count-badge">
+                <i class="bi bi-journal-text"></i> {{ total_words }} 个单词
+            </span>
+        </h1>
+        <p class="page-description">
+            {% if is_favorite_view %}
+            管理您收藏的词汇，加强记忆与复习
+            {% else %}
+            浏览和管理您收集的所有单词，查看详细信息和例句
+            {% endif %}
+        </p>
+    </div>
+    
+    <!-- Action toolbar -->
+    <div class="action-toolbar">
+        <a href="{% url 'word_statistics' %}" class="action-button action-button-primary">
+            <i class="bi bi-graph-up"></i> 学习统计
+        </a>
+        
+        {% if not is_favorite_view %}
+        <a href="{% url 'delete_all_words' %}" class="action-button action-button-danger">
+            <i class="bi bi-trash"></i> 删除所有单词
+        </a>
+        {% else %}
+        <a href="{% url 'dictionary' %}" class="action-button action-button-primary">
+            <i class="bi bi-arrow-left"></i> 返回词典
+        </a>
+        {% endif %}
+    </div>
+    
+    <!-- Filter section -->
+    <div class="filter-section">
+        <div class="filter-row">
+            <form method="get" class="search-form">
+                <input 
+                    type="text" 
+                    name="q" 
+                    class="search-input" 
+                    placeholder="搜索单词..." 
+                    value="{{ search_query }}"
+                    aria-label="搜索单词"
+                >
+                <button type="submit" class="search-button" aria-label="搜索">
+                    <i class="bi bi-search"></i>
+                </button>
+            </form>
+            
+            {% if search_query %}
+            <a href="{% url 'dictionary' %}" class="clear-button">
+                <i class="bi bi-x-lg"></i> 清除
+            </a>
+            {% endif %}
+            
+            <div class="sort-dropdown">
+                <div class="dropdown-toggle" id="sortDropdown" onclick="toggleDropdown('sortMenu')">
+                    <i class="bi bi-sort-down"></i>
+                    <span>
+                        {% if current_sort == 'frequency' %}
+                        按频率降序
+                        {% elif current_sort == 'frequency_asc' %}
+                        按频率升序
+                        {% elif current_sort == 'az' %}
+                        按字母升序
+                        {% elif current_sort == 'za' %}
+                        按字母降序
+                        {% elif current_sort == 'newest' %}
+                        最新添加的
+                        {% elif current_sort == 'oldest' %}
+                        最早添加的
+                        {% endif %}
+                    </span>
+                    <i class="bi bi-chevron-down"></i>
+                </div>
+                <div class="dropdown-menu" id="sortMenu">
+                    <a class="dropdown-item {% if current_sort == 'frequency' %}active{% endif %}" 
+                       href="?sort=frequency{% if search_query %}&q={{ search_query }}{% endif %}">
+                        <i class="bi bi-sort-numeric-down"></i> 按频率降序
+                    </a>
+                    <a class="dropdown-item {% if current_sort == 'frequency_asc' %}active{% endif %}" 
+                       href="?sort=frequency_asc{% if search_query %}&q={{ search_query }}{% endif %}">
+                        <i class="bi bi-sort-numeric-up"></i> 按频率升序
+                    </a>
+                    <a class="dropdown-item {% if current_sort == 'az' %}active{% endif %}" 
+                       href="?sort=az{% if search_query %}&q={{ search_query }}{% endif %}">
+                        <i class="bi bi-sort-alpha-down"></i> 按字母升序
+                    </a>
+                    <a class="dropdown-item {% if current_sort == 'za' %}active{% endif %}" 
+                       href="?sort=za{% if search_query %}&q={{ search_query }}{% endif %}">
+                        <i class="bi bi-sort-alpha-up"></i> 按字母降序
+                    </a>
+                    <a class="dropdown-item {% if current_sort == 'newest' %}active{% endif %}" 
+                       href="?sort=newest{% if search_query %}&q={{ search_query }}{% endif %}">
+                        <i class="bi bi-calendar-plus"></i> 最新添加的
+                    </a>
+                    <a class="dropdown-item {% if current_sort == 'oldest' %}active{% endif %}" 
+                       href="?sort=oldest{% if search_query %}&q={{ search_query }}{% endif %}">
+                        <i class="bi bi-calendar-minus"></i> 最早添加的
+                    </a>
+                </div>
+            </div>
+            
+            <!-- 视图切换按钮 -->
+            <div class="view-toggle">
+                <button type="button" id="grid-view-btn" class="view-toggle-btn active" title="网格视图">
+                    <i class="bi bi-grid-3x3-gap-fill"></i>
+                </button>
+                <button type="button" id="list-view-btn" class="view-toggle-btn" title="列表视图">
+                    <i class="bi bi-list-ul"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    {% if words %}
+    <!-- 网格视图 -->
+    <div id="word-grid-view" class="word-list">
+        {% for word in words %}
+        <div class="word-card">
+            <div class="word-card-content">
+                <div class="word-header">
+                    <h3 class="word-text">{{ word.text }}</h3>
+                    <span class="word-frequency">
+                        <i class="bi bi-bar-chart-fill"></i> {{ word.frequency }} 次
+                    </span>
+                </div>
+                {% if word.translation %}
+                <p class="word-translation">{{ word.translation }}</p>
+                {% else %}
+                <p class="word-translation text-muted">未添加翻译</p>
+                {% endif %}
+                <div class="word-actions">
+                    {% if word.is_favorite %}
+                    <button class="word-btn word-btn-favorite favorited favorite-btn" 
+                            data-word-id="{{ word.id }}" 
+                            data-action="remove-favorite">
+                        <i class="bi bi-star-fill"></i> 取消收藏
+                    </button>
+                    {% else %}
+                    <button class="word-btn word-btn-favorite favorite-btn" 
+                            data-word-id="{{ word.id }}" 
+                            data-action="add-favorite">
+                        <i class="bi bi-star"></i> 收藏
+                    </button>
+                    {% endif %}
+                    <a href="{% url 'word_detail' word.id %}" class="word-btn word-btn-details">
+                        <i class="bi bi-info-circle"></i> 详情
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    
+    <!-- 列表视图 -->
+    <div id="word-list-view" class="word-list-table" style="display: none;">
+        <div class="word-list-header">
+            <div class="word-list-cell word-list-text">单词</div>
+            <div class="word-list-cell word-list-translation">翻译</div>
+            <div class="word-list-cell word-list-frequency">频率</div>
+            <div class="word-list-cell word-list-actions">操作</div>
+        </div>
+        {% for word in words %}
+        <div class="word-list-item">
+            <div class="word-list-cell word-list-text">
+                <strong>{{ word.text }}</strong>
+            </div>
+            <div class="word-list-cell word-list-translation">
+                {% if word.translation %}
+                {{ word.translation }}
+                {% else %}
+                <span class="text-muted">未添加翻译</span>
+                {% endif %}
+            </div>
+            <div class="word-list-cell word-list-frequency">
+                <span class="frequency-badge"><i class="bi bi-bar-chart-fill"></i> {{ word.frequency }}</span>
+            </div>
+            <div class="word-list-cell word-list-actions">
+                {% if word.is_favorite %}
+                <button class="word-list-btn favorite-btn favorited" 
+                        data-word-id="{{ word.id }}" 
+                        data-action="remove-favorite">
+                    <i class="bi bi-star-fill"></i>
+                </button>
+                {% else %}
+                <button class="word-list-btn favorite-btn" 
+                        data-word-id="{{ word.id }}" 
+                        data-action="add-favorite">
+                    <i class="bi bi-star"></i>
+                </button>
+                {% endif %}
+                <a href="{% url 'word_detail' word.id %}" class="word-list-btn">
+                    <i class="bi bi-info-circle"></i>
+                </a>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    
+    <!-- Pagination -->
+    {% if is_paginated %}
+    <div class="pagination-container">
+        <ul class="pagination">
+            {% if page_obj.has_previous %}
+            <li class="page-item">
+                <a class="page-link" href="?page=1{% if search_query %}&q={{ search_query }}{% endif %}{% if current_sort %}&sort={{ current_sort }}{% endif %}">
+                    <i class="bi bi-chevron-double-left"></i>
+                </a>
+            </li>
+            <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if search_query %}&q={{ search_query }}{% endif %}{% if current_sort %}&sort={{ current_sort }}{% endif %}">
+                    <i class="bi bi-chevron-left"></i>
+                </a>
+            </li>
+            {% endif %}
+
+            {% for num in page_obj.paginator.page_range %}
+                {% if page_obj.number == num %}
+                <li class="page-item active">
+                    <span class="page-link">{{ num }}</span>
+                </li>
+                {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ num }}{% if search_query %}&q={{ search_query }}{% endif %}{% if current_sort %}&sort={{ current_sort }}{% endif %}">{{ num }}</a>
+                </li>
+                {% endif %}
+            {% endfor %}
+
+            {% if page_obj.has_next %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if search_query %}&q={{ search_query }}{% endif %}{% if current_sort %}&sort={{ current_sort }}{% endif %}">
+                    <i class="bi bi-chevron-right"></i>
+                </a>
+            </li>
+            <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if search_query %}&q={{ search_query }}{% endif %}{% if current_sort %}&sort={{ current_sort }}{% endif %}">
+                    <i class="bi bi-chevron-double-right"></i>
+                </a>
+            </li>
+            {% endif %}
+        </ul>
+    </div>
+    {% endif %}
+    
+    {% else %}
+    <!-- Empty state -->
+    <div class="empty-state">
+        <div class="empty-icon">
+            <i class="bi bi-journal-text"></i>
+        </div>
+        <h2 class="empty-title">
+            {% if is_favorite_view %}
+            您的收藏词典还是空的
+            {% else %}
+            您的词典还是空的
+            {% endif %}
+        </h2>
+        <p class="empty-description">
+            {% if is_favorite_view %}
+            在单词详情页中添加单词到收藏
+            {% else %}
+            从视频中提取单词来构建您的个人词典
+            {% endif %}
+        </p>
+        {% if is_favorite_view %}
+        <a href="{% url 'dictionary' %}" class="btn btn-primary">浏览词典</a>
+        {% else %}
+        <a href="{% url 'dashboard' %}" class="btn btn-primary">浏览视频</a>
+        {% endif %}
+    </div>
+    {% endif %}
+</div>
+
+<div class="toast-container"></div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Dropdown toggle functionality
+        window.toggleDropdown = function(menuId) {
+            const menu = document.getElementById(menuId);
+            const toggle = document.getElementById('sortDropdown');
+            
+            if (menu) {
+                // Position the menu correctly
+                if (toggle) {
+                    const rect = toggle.getBoundingClientRect();
+                    menu.style.position = 'absolute';
+                    menu.style.width = toggle.offsetWidth + 'px';
+                    menu.style.left = '0';
+                    menu.style.top = (toggle.offsetHeight + 8) + 'px';
+                }
+                
+                menu.classList.toggle('show');
+                
+                // Close dropdown when clicking outside
+                const closeDropdown = function(e) {
+                    if (!e.target.closest('.dropdown-toggle') && !e.target.closest('.dropdown-menu')) {
+                        menu.classList.remove('show');
+                        document.removeEventListener('click', closeDropdown);
+                    }
+                };
+                
+                setTimeout(() => {
+                    document.addEventListener('click', closeDropdown);
+                }, 0);
+            }
+        };
+        
+        // Word favorite functionality
+        const favoriteBtns = document.querySelectorAll('.favorite-btn');
+        
+        favoriteBtns.forEach(btn => {
+            btn.addEventListener('click', function() {
+                // Prevent multiple clicks
+                if (this.classList.contains('disabled') || this.getAttribute('data-processing') === 'true') {
+                    return;
+                }
+                
+                const wordId = this.getAttribute('data-word-id');
+                // 支持两种视图获取单词文本
+                let wordText = '';
+                const wordCard = this.closest('.word-card');
+                const wordListItem = this.closest('.word-list-item');
+                
+                if (wordCard) {
+                    wordText = wordCard.querySelector('.word-text').textContent;
+                } else if (wordListItem) {
+                    wordText = wordListItem.querySelector('.word-list-text strong').textContent;
+                }
+                
+                const action = this.getAttribute('data-action');
+                const isFavoriting = action === 'add-favorite';
+                // 记录是否在列表视图中
+                const isListView = !!wordListItem;
+                
+                // Mark button as processing
+                this.setAttribute('data-processing', 'true');
+                
+                // Store original state
+                const originalInnerHTML = this.innerHTML;
+                const originalClass = this.className;
+                
+                // Update button appearance for optimistic UI
+                if (isFavoriting) {
+                    if (isListView) {
+                        this.innerHTML = '<i class="bi bi-star-fill"></i>';
+                        this.className = 'word-list-btn favorite-btn favorited';
+                    } else {
+                        this.innerHTML = '<i class="bi bi-star-fill"></i> 取消收藏';
+                        this.className = 'word-btn word-btn-favorite favorited favorite-btn';
+                    }
+                    this.setAttribute('data-action', 'remove-favorite');
+                } else {
+                    if (isListView) {
+                        this.innerHTML = '<i class="bi bi-star"></i>';
+                        this.className = 'word-list-btn favorite-btn';
+                    } else {
+                        this.innerHTML = '<i class="bi bi-star"></i> 收藏';
+                        this.className = 'word-btn word-btn-favorite favorite-btn';
+                    }
+                    this.setAttribute('data-action', 'add-favorite');
+                }
+                
+                // Get auth token
+                const authToken = '{{ request.session.auth_token }}';
+                
+                if (!authToken) {
+                    showToast('错误', '请先登录再进行收藏操作', 'error');
+                    // Restore button state
+                    this.innerHTML = originalInnerHTML;
+                    this.className = originalClass;
+                    this.removeAttribute('data-processing');
+                    return;
+                }
+                
+                // Send AJAX request
+                fetch('/api/web/toggle-favorite/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]')?.value,
+                        'Authorization': `Token ${authToken}`
+                    },
+                    body: `word_id=${wordId}&action=${action}`
+                })
+                .then(response => response.json())
+                .then(data => {
+                    // Processing complete
+                    this.removeAttribute('data-processing');
+                    
+                    if (data.status === 'success') {
+                        // Show success message
+                        const message = isFavoriting ? 
+                            `单词 "${wordText}" 已添加到收藏夹` : 
+                            `单词 "${wordText}" 已从收藏夹移除`;
+                        
+                        showToast('成功', message, 'success');
+                        
+                        // Notify Chrome extension if available
+                        try {
+                            const message = {
+                                action: 'update-favorites',
+                                word: {
+                                    id: wordId,
+                                    is_favorite: data.is_favorite
+                                }
+                            };
+                            
+                            if (window.chrome && chrome.runtime && chrome.runtime.sendMessage) {
+                                chrome.runtime.sendMessage('{{ extension_id }}', message);
+                            }
+                        } catch (error) {
+                            console.error('Extension communication error:', error);
+                        }
+                    } else {
+                        // Show error message
+                        showToast('错误', data.message || '操作失败，请重试', 'error');
+                        
+                        // Restore button state - making sure it works in both view modes
+                        if (isListView) {
+                            // For list view
+                            if (originalClass.includes('favorited')) {
+                                this.innerHTML = '<i class="bi bi-star-fill"></i>';
+                                this.className = 'word-list-btn favorite-btn favorited';
+                            } else {
+                                this.innerHTML = '<i class="bi bi-star"></i>';
+                                this.className = 'word-list-btn favorite-btn';
+                            }
+                        } else {
+                            // For grid view - use original values
+                            this.innerHTML = originalInnerHTML;
+                            this.className = originalClass;
+                        }
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    this.removeAttribute('data-processing');
+                    showToast('错误', '网络错误，请重试', 'error');
+                    
+                    // Restore button state - making sure it works in both view modes
+                    if (isListView) {
+                        // For list view
+                        if (originalClass.includes('favorited')) {
+                            this.innerHTML = '<i class="bi bi-star-fill"></i>';
+                            this.className = 'word-list-btn favorite-btn favorited';
+                        } else {
+                            this.innerHTML = '<i class="bi bi-star"></i>';
+                            this.className = 'word-list-btn favorite-btn';
+                        }
+                    } else {
+                        // For grid view - use original values
+                        this.innerHTML = originalInnerHTML;
+                        this.className = originalClass;
+                    }
+                });
+            });
+        });
+        
+        // Toast notification function
+        window.showToast = function(title, message, type = 'primary') {
+            const toastContainer = document.querySelector('.toast-container');
+            
+            const toast = document.createElement('div');
+            toast.className = 'toast fade show';
+            toast.setAttribute('role', 'alert');
+            toast.setAttribute('aria-live', 'assertive');
+            toast.setAttribute('aria-atomic', 'true');
+            
+            const backgroundColor = type === 'success' ? '#10B981' : 
+                                  type === 'error' ? '#EF4444' : 
+                                  type === 'warning' ? '#F59E0B' : '#3676E0';
+            
+            toast.innerHTML = `
+                <div class="toast-header" style="background-color: ${backgroundColor}; color: white;">
+                    <strong class="me-auto">${title}</strong>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast" aria-label="Close"></button>
+                </div>
+                <div class="toast-body">
+                    ${message}
+                </div>
+            `;
+            
+            toastContainer.appendChild(toast);
+            
+            const bsToast = new bootstrap.Toast(toast, {
+                delay: 5000
+            });
+            
+            toast.addEventListener('hidden.bs.toast', function() {
+                toast.remove();
+            });
+            
+            bsToast.show();
+        };
+    });
+    
+    // 视图切换功能
+    const gridViewBtn = document.getElementById('grid-view-btn');
+    const listViewBtn = document.getElementById('list-view-btn');
+    const gridView = document.getElementById('word-grid-view');
+    const listView = document.getElementById('word-list-view');
+    
+    gridViewBtn.addEventListener('click', function() {
+        gridView.style.display = '';
+        listView.style.display = 'none';
+        
+        gridViewBtn.classList.add('active');
+        listViewBtn.classList.remove('active');
+        
+        // 保存用户偏好
+        localStorage.setItem('wordViewPreference', 'grid');
+    });
+    
+    listViewBtn.addEventListener('click', function() {
+        gridView.style.display = 'none';
+        listView.style.display = '';
+        
+        gridViewBtn.classList.remove('active');
+        listViewBtn.classList.add('active');
+        
+        // 保存用户偏好
+        localStorage.setItem('wordViewPreference', 'list');
+    });
+    
+    // 检查是否是移动设备
+    const isMobile = window.matchMedia('(max-width: 768px)').matches;
+    
+    // 加载用户上次的视图偏好（如果有）
+    const viewPreference = localStorage.getItem('wordViewPreference');
+    if (!isMobile && viewPreference === 'list') {
+        listViewBtn.click();
+    } else {
+        // 在移动设备上始终使用网格视图，忽略保存的偏好
+        gridViewBtn.click();
+    }
+</script>
+{% endblock %}

@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="zh-CN" class="h-full">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Déjà Vocab | AI 语言学习助手</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.2/font/bootstrap-icons.css" rel="stylesheet">
+  <!-- Introduces login interface styles -->
+  <link href="../assets/login/login-ui.css" rel="stylesheet">
+  <!-- Introduces YouTube guide interface styles -->
+  <link href="../assets/guide/youtube-guide.css" rel="stylesheet">
+  <!-- Introduces chat interface styles -->
+  <link id="chat-ui-css" href="../assets/chat/chat-ui.css" rel="stylesheet">
+  <!-- Introduces notification system styles -->
+  <link href="../assets/notification/notification.css" rel="stylesheet">
+</head>
+<body>
+  <!-- Main container -->
+  <div class="app-container">
+    <!-- Decorative background elements -->
+    <div class="animated-background">
+      <div class="gradient-sphere sphere-1"></div>
+      <div class="gradient-sphere sphere-2"></div>
+      <div class="gradient-sphere sphere-3"></div>
+    </div>
+    
+    <!-- Notification container -->
+    <div id="notification-container" class="notification-container"></div>
+    
+    <!-- Login interface -->
+    <div class="auth-container" id="auth-main-content">
+      <div class="brand-header">
+        <div class="logo-container">
+          <div class="logo-icon">
+            <svg height="42" version="1.1" viewBox="0 0 42 42" width="42">
+              <defs>
+                <linearGradient id="logo-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stop-color="#6366f1" />
+                  <stop offset="100%" stop-color="#06b6d4" />
+                </linearGradient>
+                <filter id="glow-effect" x="-50%" y="-50%" width="200%" height="200%">
+                  <feGaussianBlur stdDeviation="2.5" result="blur" />
+                  <feComposite in="SourceGraphic" in2="blur" operator="over" />
+                </filter>
+              </defs>
+              <circle cx="21" cy="21" r="19" fill="url(#logo-gradient)" filter="url(#glow-effect)">
+                <animate attributeName="r" values="19;19.5;19;19.3;19" dur="3s" repeatCount="indefinite" />
+              </circle>
+              <!-- D letter icon -->
+              <path d="M16,15 L20,15 C23.5,15 25,17 25,21 C25,25 23.5,27 20,27 L16,27 Z" fill="white" filter="url(#glow-effect)" />
+              <path d="M18,18 L20,18 C21.5,18 22,19 22,21 C22,23 21.5,24 20,24 L18,24 Z" fill="#E0F2FE">
+                <animate attributeName="fill-opacity" values="1;0.85;1" dur="4s" repeatCount="indefinite" />
+              </path>
+              <!-- Subtitle marker -->
+              <rect x="13" y="25" width="16" height="1.8" rx="0.9" fill="#FFFFFF" opacity="0.9">
+                <animate attributeName="opacity" values="0.9;0.7;0.9" dur="2.5s" repeatCount="indefinite" />
+              </rect>
+            </svg>
+          </div>
+          <h1 class="brand-name">Déjà <span class="accent-text">Vocab</span></h1>
+        </div>
+        <div class="header-controls">
+          <a href="https://dejavocab.com" target="_blank" class="website-link" title="访问官方网站">
+            <i class="bi bi-globe"></i>
+            <span>官网</span>
+          </a>
+          <button id="login-dark-mode-toggle" class="header-icon-btn" title="切换暗黑模式">
+            <i class="bi bi-sun"></i>
+          </button>
+        </div>
+      </div>
+
+      <div class="glass-card auth-card">
+        <div class="tabs">
+          <button class="tab-btn active" id="login-tab">登录</button>
+          <button class="tab-btn" id="register-tab">注册</button>
+          <div class="tab-indicator"></div>
+        </div>
+        
+        <div class="auth-forms">
+          <!-- Login form -->
+          <div id="login-content" class="form-container active">
+            <div class="form-group">
+              <label for="login-email">
+                <i class="bi bi-person"></i>
+                <span>用户名</span>
+              </label>
+              <input type="text" id="login-email" class="form-control" placeholder="请输入您的用户名" required>
+            </div>
+            
+            <div class="form-group">
+              <label for="login-password">
+                <i class="bi bi-lock"></i>
+                <span>密码</span>
+              </label>
+              <div class="password-input-container">
+                <input type="password" id="login-password" class="form-control" placeholder="请输入您的密码" required>
+                <button type="button" class="toggle-password" tabindex="-1">
+                  <i class="bi bi-eye-slash"></i>
+                </button>
+              </div>
+            </div>
+            
+            <button id="login-button" class="btn btn-primary login-btn">
+              <span class="btn-text">登录</span>
+              <div class="btn-loader hidden">
+                <div class="spinner"></div>
+              </div>
+            </button>
+
+            <div id="login-status" class="status-message hidden"></div>
+          </div>
+          
+          <!-- Register form -->
+          <div id="register-content" class="form-container">
+            <div class="form-group">
+              <label for="register-name">
+                <i class="bi bi-person-plus"></i>
+                <span>用户名</span>
+              </label>
+              <input type="text" id="register-name" class="form-control" placeholder="请创建您的用户名" required>
+            </div>
+            
+            <div class="form-group">
+              <label for="register-email">
+                <i class="bi bi-envelope"></i>
+                <span>电子邮箱（可选）</span>
+              </label>
+              <input type="email" id="register-email" class="form-control" placeholder="example@email.com">
+            </div>
+            
+            <div class="form-group">
+              <label for="register-password">
+                <i class="bi bi-lock"></i>
+                <span>密码</span>
+              </label>
+              <div class="password-input-container">
+                <input type="password" id="register-password" class="form-control" placeholder="请设置您的密码" required>
+                <button type="button" class="toggle-password" tabindex="-1">
+                  <i class="bi bi-eye-slash"></i>
+                </button>
+              </div>
+            </div>
+            
+            <div class="form-group">
+              <label for="register-confirm-password">
+                <i class="bi bi-shield-lock"></i>
+                <span>确认密码</span>
+              </label>
+              <div class="password-input-container">
+                <input type="password" id="register-confirm-password" class="form-control" placeholder="请再次输入密码" required>
+                <button type="button" class="toggle-password" tabindex="-1">
+                  <i class="bi bi-eye-slash"></i>
+                </button>
+              </div>
+            </div>
+            
+            <button id="register-button" class="btn btn-primary">
+              <span class="btn-text">创建账户</span>
+              <div class="btn-loader hidden">
+                <div class="spinner"></div>
+              </div>
+            </button>
+          </div>
+        </div>
+      </div>
+      
+      <div class="footer">
+        <div class="copyright">&copy; 2025 Déjà Vocab</div>
+      </div>
+    </div>
+    
+    <!-- Support site guide interface -->
+    <div id="youtube-guide" class="youtube-guide-container">
+      <div class="guide-content">
+        <div class="guide-icon">
+          <i class="bi bi-chat-dots"></i>
+        </div>
+        <h2>Déjà Vocab</h2>
+        <p>有啥不懂的随时问</p>
+        
+        <div class="guide-steps">
+          <div class="step">
+            <div class="step-number">1</div>
+            <div class="step-text">播放油管视频</div>
+          </div>
+          <div class="step">
+            <div class="step-number">2</div>
+            <div class="step-text">剩下交给我吧</div>
+          </div>
+        </div>
+        
+        <div class="supported-sites-header">
+          <span class="line"></span>
+          <span class="line"></span>
+        </div>
+        
+        <div class="supported-sites">
+          <a href="https://www.youtube.com" class="site-link" target="_blank">
+            <i class="bi bi-youtube"></i> 
+            <span>YouTube</span>
+          </a>
+          <a href="https://dejavocab.com" class="site-link" target="_blank">
+            <i class="bi bi-globe"></i> 
+            <span>Déjà Vocab</span>
+          </a>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Chat interface -->
+    <div id="main-container" class="chat-main-container hidden">
+      <div class="chat-container" id="chat-container">
+        <div class="chat-header">
+          <a href="https://dejavocab.com" target="_blank" class="header-left" title="访问官方网站">
+            <div class="logo-icon mini">
+              <svg height="28" version="1.1" viewBox="0 0 42 42" width="28">
+                <defs>
+                  <linearGradient id="logo-gradient-mini" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stop-color="#6366f1" />
+                    <stop offset="100%" stop-color="#06b6d4" />
+                  </linearGradient>
+                </defs>
+                <circle cx="21" cy="21" r="19" fill="url(#logo-gradient-mini)"></circle>
+                <path d="M16,15 L20,15 C23.5,15 25,17 25,21 C25,25 23.5,27 20,27 L16,27 Z" fill="white" />
+                <path d="M18,18 L20,18 C21.5,18 22,19 22,21 C22,23 21.5,24 20,24 L18,24 Z" fill="#E0F2FE"></path>
+                <rect x="13" y="25" width="16" height="1.8" rx="0.9" fill="#FFFFFF" opacity="0.9"></rect>
+              </svg>
+            </div>
+            <h2>Déjà Vocab AI</h2>
+          </a>
+          <div class="chat-controls">
+            <button id="dark-mode-toggle" class="header-icon-btn" title="切换暗黑模式">
+              <i class="bi bi-sun"></i>
+            </button>
+            <button id="clear-chat-btn" class="header-icon-btn" title="清空聊天记录">
+              <i class="bi bi-trash"></i>
+            </button>
+            <button id="logout-btn" class="header-icon-btn" title="退出登录">
+              <i class="bi bi-box-arrow-right"></i>
+            </button>
+          </div>
+        </div>
+        
+        <div class="chat-messages" id="chat-messages">
+          <!-- Session videos container -->
+          <div id="session-videos-container" class="session-videos-container">
+            <div class="session-videos-title">
+              <i class="bi bi-collection-play"></i> 当前会话视频
+            </div>
+            <ul id="session-videos-list" class="session-videos-list">
+              <!-- Video list items will be dynamically added by JavaScript -->
+            </ul>
+          </div>
+          
+          <div class="chat-intro" id="chat-intro">
+            <div class="intro-icon">
+              <i class="bi bi-chat-dots"></i>
+            </div>
+            <h3>Déjà Vocab AI</h3>
+            <p>视频哪里不理解啦，随时问我</p>
+          </div>
+        </div>
+        
+        <div class="chat-input-container">
+          <form class="chat-form">
+            <textarea class="chat-textarea" id="chat-input" placeholder="输入消息..." rows="1"></textarea>
+            <button class="send-button" id="send-button" type="button">
+              <i class="bi bi-send"></i>
+            </button>
+          </form>
+          <div class="notes-export-container">
+            <!-- Remove session export button, only keep mode toggle button -->
+            <button id="chat-mode-toggle" class="mode-toggle-button small-toggle">
+              <i class="bi bi-layers"></i> 专注模式
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Login UI JavaScript -->
+    <script type="module" src="../assets/login/login-ui.js"></script>
+    
+    <!-- Chat UI JavaScript -->
+    <script type="module" id="chat-ui-script" src="../assets/chat/chat-ui.js"></script>
+    
+    <!-- Notification System JavaScript -->
+    <script type="module">
+      // Import notification system
+      import NotificationSystem from '../assets/notification/notification.js';
+      
+      // Ensure singleton initialization
+      document.addEventListener('DOMContentLoaded', () => {
+        // Avoid duplicate initialization
+        if (window.NOTIFICATION_SYSTEM_INITIALIZED) {
+          console.log('[INFO] Notification system already initialized');
+          return;
+        }
+        
+        console.log('[INFO] Initializing notification system');
+        
+        // Get instance and initialize
+        const notificationSystem = NotificationSystem.getInstance();
+        notificationSystem.initialize();
+        
+        // Mark as initialized
+        window.NOTIFICATION_SYSTEM_INITIALIZED = true;
+      });
+    </script>
+  </div>
+  </body>
+</html> 

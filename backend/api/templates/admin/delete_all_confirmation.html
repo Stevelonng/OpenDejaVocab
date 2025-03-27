@@ -1,0 +1,67 @@
+{% extends "admin/base_site.html" %}
+{% load i18n admin_urls static %}
+
+{% block extrahead %}
+    {{ block.super }}
+    <style>
+        .warning-box {
+            background-color: #fff8f7;
+            border: 2px solid #dc3545;
+            border-radius: 4px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        .warning-icon {
+            color: #dc3545;
+            font-size: 2.5em;
+            margin-right: 10px;
+            vertical-align: middle;
+        }
+        .btn-danger {
+            color: #fff;
+            background-color: #dc3545;
+            border-color: #dc3545;
+        }
+        .btn-secondary {
+            color: #fff;
+            background-color: #6c757d;
+            border-color: #6c757d;
+        }
+        .btn {
+            display: inline-block;
+            font-weight: 400;
+            text-align: center;
+            white-space: nowrap;
+            vertical-align: middle;
+            user-select: none;
+            border: 1px solid transparent;
+            padding: .375rem .75rem;
+            font-size: 1rem;
+            line-height: 1.5;
+            border-radius: .25rem;
+            transition: color .15s ease-in-out,background-color .15s ease-in-out,border-color .15s ease-in-out,box-shadow .15s ease-in-out;
+            margin-right: 5px;
+            cursor: pointer;
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+<div class="warning-box">
+    <h1>
+        <i class="warning-icon">⚠️</i>
+        确认删除所有{{ opts.verbose_name_plural }}
+    </h1>
+    
+    <p>您确定要删除<strong>所有 {{ count }} 条{{ opts.verbose_name_plural }}</strong>吗？</p>
+    <p><strong>此操作不可逆，删除后数据将无法恢复！</strong></p>
+    
+    <form method="post">
+        {% csrf_token %}
+        <div class="submit-row">
+            <input type="submit" class="btn btn-danger" value="是的，删除所有记录">
+            <a href="../" class="btn btn-secondary">取消</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

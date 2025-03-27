@@ -1,0 +1,399 @@
+/* Video favorite words style */
+.favorite-words-section {
+  background-color: rgba(0, 0, 0, 0.2);
+  padding: 0;
+  margin: 0 0 12px 0;
+  color: #fff;
+  overflow-y: auto;
+  max-height: 40vh;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  width: 320px;
+  box-sizing: border-box;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.favorite-words-section h3 {
+  font-size: 20px;
+  margin: 0 0 16px 0;
+  padding-bottom: 8px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+  color: #fff;
+}
+
+.favorite-words-section h4 {
+  font-size: 16px;
+  margin: 16px 0 12px 0;
+  color: rgba(255, 255, 255, 0.9);
+  display: flex;
+  align-items: center;
+}
+
+.word-count {
+  font-size: 14px;
+  margin-left: 8px;
+  color: rgba(255, 255, 255, 0.6);
+  font-weight: normal;
+}
+
+/* Current video favorite words */
+.video-favorite-words {
+  margin-bottom: 20px;
+}
+
+.video-favorite-words-list {
+  max-height: 300px;
+  overflow-y: auto;
+  background-color: rgba(40, 40, 40, 0.6);
+  border-radius: 8px;
+  padding: 4px;
+}
+
+.video-favorite-word-item {
+  display: flex;
+  padding: 10px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  margin-bottom: 4px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  align-items: center;
+}
+
+.video-favorite-word-item:last-child {
+  border-bottom: none;
+  margin-bottom: 0;
+}
+
+.video-favorite-word-item:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.word-time {
+  display: flex;
+  align-items: center;
+  min-width: 75px;
+  margin-right: 10px;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 14px;
+}
+
+.time-icon {
+  margin-right: 5px;
+  font-size: 16px;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.word-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.word-text {
+  font-size: 16px;
+  margin-bottom: 4px;
+  color: #fff;
+}
+
+.word-context {
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.7);
+  line-height: 1.4;
+}
+
+.highlighted-word {
+  color: #ff5252;
+  font-weight: bold;
+  background-color: rgba(255, 82, 82, 0.15);
+  padding: 0 2px;
+  border-radius: 2px;
+}
+
+/* All favorite words */
+.all-favorite-words {
+  margin-top: 20px;
+}
+
+/* Simplified word list view - subtitle container */
+.simplified {
+  padding: 8px !important;
+  max-height: none !important;
+  width: 100%;
+  margin: 0 !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  background-color: rgba(20, 20, 20, 0.5);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  box-sizing: border-box;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.simplified .simplified-header {
+  margin-bottom: 8px;
+  padding: 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  padding-bottom: 6px;
+}
+
+/* Close button for the favorite words section */
+.simplified-header .close-btn {
+  background: transparent;
+  border: none;
+  color: rgba(255, 255, 255, 0.7);
+  cursor: pointer;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  padding: 0;
+  transition: all 0.2s ease;
+}
+
+.simplified-header .close-btn:hover {
+  background-color: rgba(255, 255, 255, 0.15);
+  color: #fff;
+}
+
+.simplified h4 {
+  margin: 0 !important;
+  font-size: 13px !important;
+  color: rgba(255, 255, 255, 0.85);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  position: relative;
+  padding-left: 12px;
+}
+
+.simplified h4::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 4px;
+  height: 14px;
+  background: linear-gradient(to bottom, #ffcc00, #ff7700);
+  border-radius: 2px;
+}
+
+.simple-word-list {
+  display: flex;
+  flex-wrap: wrap;
+  padding: 4px 8px 12px 8px;
+  gap: 8px;
+  align-items: center;
+  justify-content: flex-start;
+  background-color: rgba(0, 0, 0, 0.1);
+  max-height: 120px;
+  overflow-y: auto;
+  overflow-x: visible;
+  position: relative;
+  width: 100%;
+  box-sizing: border-box;
+  border-radius: 6px;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+}
+
+.simple-word-list::-webkit-scrollbar {
+  width: 4px;
+}
+
+.simple-word-list::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.simple-word-list::-webkit-scrollbar-thumb {
+  background-color: rgba(255, 255, 255, 0.2);
+  border-radius: 4px;
+}
+
+.favorite-word-item {
+  cursor: pointer;
+  padding: 2px 5px;
+  font-size: 16px;
+  color: #fff;
+  border-radius: 3px;
+  transition: all 0.15s ease;
+}
+
+.favorite-word-item.active {
+  background-color: rgba(255, 204, 0, 0.15);
+  color: #fff;
+  border-color: rgba(255, 204, 0, 0.5);
+  box-shadow: 0 0 8px rgba(255, 204, 0, 0.3), 0 0 0 1px rgba(255, 204, 0, 0.3);
+  transform: translateY(-1px);
+}
+
+.favorite-word-item:hover {
+  background-color: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.25);
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.16);
+  transform: translateY(-1px);
+}
+
+.favorite-words-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+/* Word item container */
+.favorite-word-container {
+  position: relative;
+  display: inline-block;
+  margin: 3px;
+  overflow: visible;
+}
+
+.favorite-word-item {
+  background-color: rgba(40, 40, 40, 0.4);
+  color: rgba(255, 255, 255, 0.95);
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  word-break: keep-all;
+  display: inline-block;
+  max-width: 100%;
+  overflow: visible;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  position: relative;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+  font-weight: 500;
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+
+/* Simplified view word item style */
+.simple-list .favorite-word-item {
+  background-color: transparent;
+  padding: 2px 5px;
+  border-radius: 3px;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+}
+
+/* Word marker (indicates multiple occurrences) */
+.has-multiple {
+  position: relative;
+  padding-right: 22px;
+  overflow: visible;
+}
+
+.count-badge {
+  position: absolute;
+  top: -6px;
+  right: -10px;
+  background: linear-gradient(135deg, #ff5252, #ff3366);
+  color: white;
+  font-size: 10px;
+  border-radius: 10px;
+  padding: 0 5px;
+  min-width: 16px;
+  height: 16px;
+  line-height: 16px;
+  text-align: center;
+  font-weight: bold;
+  display: inline-block;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  z-index: 5;
+}
+
+
+
+.filter-match {
+  background-color: rgba(255, 204, 0, 0.08) !important;
+  border-left: 3px solid #ffcc00 !important;
+  position: relative;
+}
+
+.filter-match::before {
+  content: '\2022'; /* 圆点符号 */
+  position: absolute;
+  left: -12px;
+  color: #ffcc00;
+  font-size: 18px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.filter-match:hover {
+  background-color: rgba(255, 204, 0, 0.15) !important;
+}
+
+/* Pulse highlight animation */
+@keyframes pulse-highlight {
+  0% {
+    background-color: rgba(255, 204, 0, 0.08);
+  }
+  50% {
+    background-color: rgba(255, 204, 0, 0.25);
+  }
+  100% {
+    background-color: rgba(255, 204, 0, 0.08);
+  }
+}
+
+.highlight-pulse {
+  animation: pulse-highlight 1s ease-in-out infinite;
+  box-shadow: 0 0 8px rgba(255, 204, 0, 0.5);
+}
+
+/* Subtitle filter title */
+.subtitle-filter-title {
+  padding: 5px 10px;
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.7);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  background-color: rgba(0, 0, 0, 0.2);
+  margin-top: 10px;
+  margin-bottom: 5px;
+}
+
+.favorite-word-item:hover {
+  background-color: rgba(255, 255, 255, 0.25);
+  transform: translateY(-2px);
+}
+
+/* Loading and error states */
+.loading-state {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.error-state {
+  padding: 10px;
+  color: #ff5252;
+  background-color: rgba(255, 82, 82, 0.1);
+  border-radius: 4px;
+  margin: 10px 0;
+}
+
+.no-favorites-message {
+  color: rgba(255, 255, 255, 0.6);
+  text-align: center;
+  padding: 20px;
+  font-style: italic;
+  background-color: rgba(40, 40, 40, 0.4);
+  border-radius: 8px;
+  margin-top: 10px;
+}

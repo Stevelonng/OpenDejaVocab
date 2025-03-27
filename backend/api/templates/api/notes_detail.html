@@ -1,0 +1,1037 @@
+{% extends "api/base.html" %}
+{% load custom_filters %}
+
+{% block title %}{{ chat_session.title }} | Déjà Vocab{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Notes detail container */
+    .notes-detail-container {
+        position: relative;
+    }
+    
+    /* Page header */
+    .page-header {
+        margin-bottom: 2rem;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 1rem;
+    }
+    
+    .page-title-wrapper {
+        max-width: 80%;
+    }
+    
+    .page-title {
+        font-size: 1.875rem;
+        font-weight: 800;
+        color: var(--gray-900);
+        margin-bottom: 0.75rem;
+        letter-spacing: -0.025em;
+        line-height: 1.2;
+    }
+    
+    .dark .page-title {
+        color: white;
+    }
+    
+    .page-meta {
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 1rem;
+        color: var(--gray-600);
+        font-size: 0.875rem;
+    }
+    
+    .dark .page-meta {
+        color: var(--gray-400);
+    }
+    
+    .meta-item {
+        display: flex;
+        align-items: center;
+        gap: 0.25rem;
+    }
+    
+    .page-actions {
+        display: flex;
+        gap: 0.5rem;
+    }
+    
+    .btn-page-action {
+        padding: 0.5rem 1rem;
+        border-radius: 0.5rem;
+        font-size: 0.875rem;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        display: flex;
+        align-items: center;
+        gap: 0.25rem;
+    }
+    
+    .btn-primary {
+        background-color: var(--primary-500);
+        color: white;
+        border: none;
+    }
+    
+    .btn-primary:hover {
+        background-color: var(--primary-600);
+        transform: translateY(-2px);
+    }
+    
+    .btn-secondary {
+        background-color: white;
+        color: var(--gray-700);
+        border: 1px solid var(--gray-300);
+    }
+    
+    .dark .btn-secondary {
+        background-color: var(--gray-700);
+        color: var(--gray-200);
+        border-color: var(--gray-600);
+    }
+    
+    .btn-secondary:hover {
+        background-color: var(--gray-100);
+        transform: translateY(-2px);
+    }
+    
+    .dark .btn-secondary:hover {
+        background-color: var(--gray-600);
+    }
+    
+    .btn-danger {
+        background-color: white;
+        color: var(--accent-red);
+        border: 1px solid var(--gray-300);
+    }
+    
+    .dark .btn-danger {
+        background-color: var(--gray-700);
+        border-color: var(--gray-600);
+    }
+    
+    .btn-danger:hover {
+        background-color: rgba(239, 68, 68, 0.1);
+        transform: translateY(-2px);
+    }
+    
+    /* Session layout */
+    .session-layout {
+        display: grid;
+        grid-template-columns: 2fr 1fr;
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+    }
+    
+    @media (max-width: 768px) {
+        .session-layout {
+            grid-template-columns: 1fr;
+        }
+    }
+    
+    /* Main content */
+    .session-main {
+        background-color: white;
+        border-radius: 1rem;
+        overflow: hidden;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        border: 1px solid var(--gray-200);
+        display: flex;
+        flex-direction: column;
+        height: 600px; /* 固定高度 */
+    }
+    
+    .dark .session-main {
+        background-color: var(--gray-800);
+        border-color: var(--gray-700);
+    }
+    
+    .chat-container {
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+    }
+    
+    .chat-title {
+        font-size: 1.25rem;
+        font-weight: 700;
+        color: var(--gray-900);
+        padding: 1.5rem;
+        margin: 0;
+        border-bottom: 1px solid var(--gray-200);
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    
+    .dark .chat-title {
+        color: white;
+        border-color: var(--gray-700);
+    }
+    
+    .chat-messages {
+        flex: 1;
+        overflow-y: auto;
+        padding: 1.5rem;
+    }
+    
+    /* Session summary */
+    .session-summary {
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+    }
+    
+    .summary-title {
+        font-size: 1.25rem;
+        font-weight: 700;
+        color: var(--gray-900);
+        padding: 1.5rem;
+        margin: 0;
+        border-bottom: 1px solid var(--gray-200);
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    
+    .dark .summary-title {
+        color: white;
+        border-color: var(--gray-700);
+    }
+    
+    .summary-content {
+        flex: 1;
+        overflow-y: auto;
+        padding: 1.5rem;
+        color: var(--gray-700);
+        line-height: 1.6;
+    }
+    
+    .dark .summary-content {
+        color: var(--gray-300);
+    }
+    
+    /* Markdown styles */
+    .markdown-content h1,
+    .markdown-content h2,
+    .markdown-content h3,
+    .markdown-content h4,
+    .markdown-content h5,
+    .markdown-content h6 {
+        margin-top: 1.5rem;
+        margin-bottom: 0.75rem;
+        font-weight: 600;
+        line-height: 1.25;
+        color: var(--gray-900);
+    }
+    
+    .dark .markdown-content h1,
+    .dark .markdown-content h2,
+    .dark .markdown-content h3,
+    .dark .markdown-content h4,
+    .dark .markdown-content h5,
+    .dark .markdown-content h6 {
+        color: white;
+    }
+    
+    .markdown-content h1 {
+        font-size: 1.5rem;
+    }
+    
+    .markdown-content h2 {
+        font-size: 1.25rem;
+    }
+    
+    .markdown-content h3 {
+        font-size: 1.125rem;
+    }
+    
+    .markdown-content p {
+        margin-bottom: 1rem;
+    }
+    
+    .markdown-content ul,
+    .markdown-content ol {
+        margin-bottom: 1rem;
+        padding-left: 1.5rem;
+    }
+    
+    .markdown-content li {
+        margin-bottom: 0.5rem;
+    }
+    
+    .markdown-content a {
+        color: var(--primary-600);
+        text-decoration: none;
+    }
+    
+    .markdown-content a:hover {
+        text-decoration: underline;
+    }
+    
+    .markdown-content code {
+        font-family: monospace;
+        background-color: var(--gray-100);
+        padding: 0.2em 0.4em;
+        border-radius: 0.25rem;
+        font-size: 0.9em;
+    }
+    
+    .dark .markdown-content code {
+        background-color: var(--gray-700);
+    }
+    
+    .markdown-content pre {
+        margin-bottom: 1rem;
+        padding: 1rem;
+        background-color: var(--gray-100);
+        border-radius: 0.5rem;
+        overflow-x: auto;
+    }
+    
+    .dark .markdown-content pre {
+        background-color: var(--gray-700);
+    }
+    
+    .markdown-content pre code {
+        background-color: transparent;
+        padding: 0;
+    }
+    
+    .markdown-content blockquote {
+        padding-left: 1rem;
+        border-left: 4px solid var(--gray-300);
+        color: var(--gray-600);
+        margin-bottom: 1rem;
+    }
+    
+    .dark .markdown-content blockquote {
+        border-color: var(--gray-600);
+        color: var(--gray-400);
+    }
+    
+    /* Chat messages */
+    .chat-container {
+        padding: 1.5rem;
+        background-color: white;
+        border-radius: 1rem;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        border: 1px solid var(--gray-200);
+    }
+    
+    .dark .chat-container {
+        background-color: var(--gray-800);
+        border-color: var(--gray-700);
+    }
+    
+    .chat-title {
+        font-size: 1.25rem;
+        font-weight: 700;
+        color: var(--gray-900);
+        margin-bottom: 1.5rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    
+    .dark .chat-title {
+        color: white;
+    }
+    
+    .chat-messages {
+        display: flex;
+        flex-direction: column;
+        gap: 1.5rem;
+        max-height: 600px;
+        overflow-y: auto;
+        padding-right: 0.5rem;
+    }
+    
+    /* Scrollbar styling */
+    .chat-messages::-webkit-scrollbar {
+        width: 6px;
+    }
+    
+    .chat-messages::-webkit-scrollbar-track {
+        background: var(--gray-100);
+        border-radius: 10px;
+    }
+    
+    .dark .chat-messages::-webkit-scrollbar-track {
+        background: var(--gray-700);
+    }
+    
+    .chat-messages::-webkit-scrollbar-thumb {
+        background: var(--gray-300);
+        border-radius: 10px;
+    }
+    
+    .dark .chat-messages::-webkit-scrollbar-thumb {
+        background: var(--gray-600);
+    }
+    
+    .chat-messages::-webkit-scrollbar-thumb:hover {
+        background: var(--gray-400);
+    }
+    
+    .dark .chat-messages::-webkit-scrollbar-thumb:hover {
+        background: var(--gray-500);
+    }
+    
+    .message {
+        display: flex;
+        gap: 1rem;
+    }
+    
+    .message-user {
+        align-self: flex-end;
+        flex-direction: row-reverse;
+    }
+    
+    .message-avatar {
+        width: 2.5rem;
+        height: 2.5rem;
+        border-radius: 50%;
+        flex-shrink: 0;
+        background-color: var(--gray-200);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 600;
+        color: var(--gray-600);
+        font-size: 1rem;
+    }
+    
+    .dark .message-avatar {
+        background-color: var(--gray-700);
+        color: var(--gray-300);
+    }
+    
+    .message-user .message-avatar {
+        background-color: var(--primary-100);
+        color: var(--primary-700);
+    }
+    
+    .dark .message-user .message-avatar {
+        background-color: var(--primary-900);
+        color: var(--primary-300);
+    }
+    
+    .message-assistant .message-avatar {
+        background-color: var(--accent-green);
+        color: white;
+    }
+    
+    .message-content {
+        background-color: var(--gray-100);
+        padding: 1rem;
+        border-radius: 1rem;
+        max-width: 80%;
+        color: var(--gray-800);
+        line-height: 1.6;
+    }
+    
+    .dark .message-content {
+        background-color: var(--gray-700);
+        color: var(--gray-200);
+    }
+    
+    .message-user .message-content {
+        background-color: var(--primary-500);
+        color: white;
+        border-top-right-radius: 0;
+    }
+    
+    .message-assistant .message-content {
+        border-top-left-radius: 0;
+    }
+    
+    .message-meta {
+        font-size: 0.75rem;
+        color: var(--gray-500);
+        margin-top: 0.25rem;
+    }
+    
+    .dark .message-meta {
+        color: var(--gray-400);
+    }
+    
+    .message-user .message-meta {
+        text-align: right;
+        color: var(--gray-100);
+    }
+    
+    /* Sidebar */
+    .session-sidebar {
+        background-color: white;
+        border-radius: 1rem;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        border: 1px solid var(--gray-200);
+        height: 600px; /* 与聊天记录相同的高度 */
+        display: flex;
+        flex-direction: column;
+    }
+    
+    .dark .session-sidebar {
+        background-color: var(--gray-800);
+        border-color: var(--gray-700);
+    }
+    
+    /* 相关视频部分的样式 */
+    .videos-section {
+        margin-top: 2rem;
+        padding: 1.5rem;
+        background-color: white;
+        border-radius: 1rem;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        border: 1px solid var(--gray-200);
+    }
+    
+    .dark .videos-section {
+        background-color: var(--gray-800);
+        border-color: var(--gray-700);
+    }
+    
+    .videos-section-title {
+        font-size: 1.25rem;
+        font-weight: 700;
+        color: var(--gray-900);
+        margin-bottom: 1.5rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    
+    .dark .videos-section-title {
+        color: white;
+    }
+    
+    .videos-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 1.5rem;
+    }
+    
+    @media (max-width: 640px) {
+        .videos-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+    
+    .video-item {
+        background-color: white;
+        border-radius: 0.75rem;
+        overflow: hidden;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+        transition: all 0.3s ease;
+        text-decoration: none;
+        border: 1px solid var(--gray-200);
+        display: flex;
+        flex-direction: column;
+    }
+    
+    .dark .video-item {
+        background-color: var(--gray-800);
+        border-color: var(--gray-700);
+    }
+    
+    .video-item:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 10px 15px rgba(0, 0, 0, 0.1);
+    }
+    
+    /* Video list */
+    .video-section {
+        padding: 1.5rem;
+        background-color: white;
+        border-radius: 1rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        border: 1px solid var(--gray-200);
+    }
+    
+    .dark .video-section {
+        background-color: var(--gray-800);
+        border-color: var(--gray-700);
+    }
+    
+    .video-section-title {
+        font-size: 1.25rem;
+        font-weight: 700;
+        color: var(--gray-900);
+        margin-bottom: 1rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    
+    .dark .video-section-title {
+        color: white;
+    }
+    
+    .video-list {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+    }
+    
+    .video-item {
+        display: flex;
+        gap: 0.75rem;
+        border-radius: 0.5rem;
+        padding: 0.75rem;
+        background-color: var(--gray-50);
+        transition: all 0.2s ease;
+    }
+    
+    .dark .video-item {
+        background-color: var(--gray-700);
+    }
+    
+    .video-item:hover {
+        background-color: var(--gray-100);
+        transform: translateY(-2px);
+    }
+    
+    .dark .video-item:hover {
+        background-color: var(--gray-600);
+    }
+    
+    .video-thumbnail {
+        width: 100px;
+        height: 56px;
+        border-radius: 0.25rem;
+        overflow: hidden;
+        flex-shrink: 0;
+        background-color: var(--gray-200);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        position: relative;
+    }
+    
+    .dark .video-thumbnail {
+        background-color: var(--gray-600);
+    }
+    
+    .video-thumbnail img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+    
+    .video-thumbnail i {
+        position: absolute;
+        font-size: 1.5rem;
+        color: var(--gray-500);
+    }
+    
+    .dark .video-thumbnail i {
+        color: var(--gray-400);
+    }
+    
+    .video-info {
+        flex-grow: 1;
+        min-width: 0;
+    }
+    
+    .video-title {
+        font-size: 0.875rem;
+        font-weight: 600;
+        color: var(--gray-900);
+        margin-bottom: 0.25rem;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        line-clamp: 2;
+        -webkit-box-orient: vertical;
+    }
+    
+    .dark .video-title {
+        color: white;
+    }
+    
+    .video-meta {
+        font-size: 0.75rem;
+        color: var(--gray-500);
+    }
+    
+    .dark .video-meta {
+        color: var(--gray-400);
+    }
+
+    .download-title {
+        font-size: 1.25rem;
+        font-weight: 700;
+        color: var(--gray-900);
+        margin-bottom: 1rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    
+    .dark .download-title {
+        color: white;
+    }
+    
+    .download-description {
+        font-size: 0.875rem;
+        color: var(--gray-600);
+        margin-bottom: 1rem;
+        line-height: 1.6;
+    }
+    
+    .dark .download-description {
+        color: var(--gray-400);
+    }
+    
+    .download-formats {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+    
+    .download-button {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        padding: 0.75rem 1rem;
+        border-radius: 0.5rem;
+        background-color: var(--gray-100);
+        color: var(--gray-800);
+        font-weight: 500;
+        font-size: 0.875rem;
+        transition: all 0.2s ease;
+        text-decoration: none;
+    }
+    
+    .dark .download-button {
+        background-color: var(--gray-700);
+        color: var(--gray-200);
+    }
+    
+    .download-button:hover {
+        background-color: var(--gray-200);
+        transform: translateY(-2px);
+    }
+    
+    .dark .download-button:hover {
+        background-color: var(--gray-600);
+    }
+    
+    .download-button.pdf {
+        background-color: rgba(234, 88, 12, 0.1);
+        color: #EA580C;
+    }
+    
+    .download-button.pdf:hover {
+        background-color: rgba(234, 88, 12, 0.2);
+    }
+    
+    .download-button.word {
+        background-color: rgba(37, 99, 235, 0.1);
+        color: #2563EB;
+    }
+    
+    .download-button.word:hover {
+        background-color: rgba(37, 99, 235, 0.2);
+    }
+    
+    .download-button.txt {
+        background-color: rgba(16, 185, 129, 0.1);
+        color: #10B981;
+    }
+    
+    .download-button.txt:hover {
+        background-color: rgba(16, 185, 129, 0.2);
+    }
+    
+    /* Modal styles */
+    .modal-content-custom {
+        border: none;
+        border-radius: 1rem;
+    }
+    
+    .dark .modal-content-custom {
+        background-color: var(--gray-800);
+        color: white;
+    }
+    
+    .modal-header-danger {
+        background-color: rgba(239, 68, 68, 0.1);
+        border-bottom: none;
+        padding: 1rem 1.5rem;
+        border-top-left-radius: 1rem;
+        border-top-right-radius: 1rem;
+    }
+    
+    .dark .modal-header-danger {
+        background-color: rgba(239, 68, 68, 0.2);
+    }
+    
+    .modal-title-custom {
+        color: var(--accent-red);
+        font-weight: 700;
+    }
+    
+    .modal-body-custom {
+        padding: 1.5rem;
+    }
+    
+    .modal-footer-custom {
+        padding: 1rem 1.5rem;
+        border-top: none;
+    }
+    
+    .btn-modal-cancel {
+        padding: 0.5rem 1.5rem;
+        background-color: white;
+        color: var(--gray-700);
+        border: 1px solid var(--gray-300);
+        border-radius: 0.5rem;
+        font-weight: 500;
+        font-size: 0.875rem;
+        transition: all 0.2s ease;
+    }
+    
+    .dark .btn-modal-cancel {
+        background-color: var(--gray-700);
+        color: var(--gray-200);
+        border-color: var(--gray-600);
+    }
+    
+    .btn-modal-cancel:hover {
+        background-color: var(--gray-100);
+        transform: translateY(-2px);
+    }
+    
+    .dark .btn-modal-cancel:hover {
+        background-color: var(--gray-600);
+    }
+    
+    .btn-modal-danger {
+        padding: 0.5rem 1.5rem;
+        background-color: var(--accent-red);
+        color: white;
+        border: none;
+        border-radius: 0.5rem;
+        font-weight: 500;
+        font-size: 0.875rem;
+        transition: all 0.2s ease;
+    }
+    
+    .btn-modal-danger:hover {
+        background-color: #B91C1C;
+        transform: translateY(-2px);
+    }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // 加载YouTube缩略图
+        loadYouTubeThumbnails();
+        
+        // 提取YouTube ID并设置缩略图
+        function loadYouTubeThumbnails() {
+            const videoThumbnails = document.querySelectorAll('.thumbnail-img[data-youtube-url]');
+            console.log('找到', videoThumbnails.length, '个视频缩略图');
+            
+            videoThumbnails.forEach(img => {
+                const youtubeUrl = img.getAttribute('data-youtube-url');
+                console.log('处理URL:', youtubeUrl);
+                
+                if (youtubeUrl) {
+                    const youtubeId = getYoutubeId(youtubeUrl);
+                    console.log('提取ID:', youtubeId);
+                    
+                    if (youtubeId) {
+                        img.src = `https://img.youtube.com/vi/${youtubeId}/mqdefault.jpg`;
+                        img.onerror = function() {
+                            this.src = 'https://via.placeholder.com/480x360?text=无缩略图';
+                        };
+                        console.log('设置缩略图:', img.src);
+                    }
+                }
+            });
+        }
+        
+        // 获取YouTube ID
+        function getYoutubeId(url) {
+            if (!url) return null;
+            
+            // 匹配标准YouTube URL
+            let match = url.match(/(?:youtube\.com\/(?:[^\/\n\s]+\/\S+\/|(?:v|e(?:mbed)?)\/)|youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
+                          
+            if (match && match[1]) {
+                return match[1];
+            }
+            
+            // 匹配youtube.com/watch?v=视频ID格式
+            match = url.match(/[?&]v=([^&#]*)/);
+            if (match && match[1] && match[1].length === 11) {
+                return match[1];
+            }
+            
+            // 匹配youtu.be/视频ID格式
+            match = url.match(/youtu\.be\/([^\/\?\&]*)/);
+            if (match && match[1] && match[1].length === 11) {
+                return match[1];
+            }
+            
+            return null;
+        }
+    });
+</script>
+{% endblock %}
+
+{% block content %}
+<div class="notes-detail-container">
+    <!-- Page header -->
+    <div class="page-header">
+        <div class="page-title-wrapper">
+            <h1 class="page-title">{{ chat_session.title }}</h1>
+            <div class="page-meta">
+                <span class="meta-item">
+                    <i class="bi bi-clock"></i> {{ chat_session.created_at|date:"Y-m-d H:i" }}
+                </span>
+                <span class="meta-item">
+                    <i class="bi bi-chat-dots"></i> {{ chat_session.get_messages_count }} 条消息
+                </span>
+                {% if chat_session.get_duration %}
+                <span class="meta-item">
+                    <i class="bi bi-hourglass-split"></i> {{ chat_session.get_duration }} 分钟
+                </span>
+                {% endif %}
+                <span class="meta-item">
+                    <i class="bi bi-film"></i> {{ chat_session.session_videos.count }} 个视频
+                </span>
+            </div>
+        </div>
+        
+        <div class="page-actions">
+            <a href="{% url 'notes' %}" class="btn-page-action btn-secondary">
+                <i class="bi bi-arrow-left"></i> 返回列表
+            </a>
+            <button class="btn-page-action btn-danger" data-bs-toggle="modal" data-bs-target="#deleteModal">
+                <i class="bi bi-trash"></i> 删除
+            </button>
+        </div>
+    </div>
+    
+    <!-- Session layout -->
+    <div class="session-layout">
+        <!-- Main content - 聊天记录在左侧 -->
+        <div class="session-main">
+            <!-- Chat messages -->
+            <div class="chat-container">
+                <h2 class="chat-title">
+                    <i class="bi bi-chat-square-text"></i> 聊天记录
+                </h2>
+                
+                <div class="chat-messages">
+                    {% for message in chat_session.messages.all %}
+                    <div class="message {% if message.role == 'user' %}message-user{% elif message.role == 'assistant' %}message-assistant{% elif message.role == 'system' %}message-system{% endif %}">
+                        <div class="message-avatar" title="{{ message.get_role_display }}">
+                            {% if message.role == 'user' %}U{% elif message.role == 'assistant' %}A{% elif message.role == 'system' %}S{% endif %}
+                        </div>
+                        <div>
+                            <div class="message-content">
+                                {{ message.content|linebreaksbr }}
+                            </div>
+                            <div class="message-meta">
+                                {{ message.timestamp|date:"Y-m-d H:i:s" }}
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        
+        <!-- Sidebar - 会话摘要在右侧 -->
+        <div class="session-sidebar">
+            {% if chat_session.summary %}
+            <!-- Session summary -->
+            <div class="session-summary">
+                <h2 class="summary-title">
+                    <i class="bi bi-card-text"></i> 会话摘要
+                </h2>
+                <div class="summary-content markdown-content">
+                    {{ chat_session.summary|format_markdown }}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- 相关视频在最下面 -->
+    {% if chat_session.session_videos.exists %}
+    <div class="videos-section">
+        <h2 class="videos-section-title">
+            <i class="bi bi-film"></i> 相关视频
+        </h2>
+        
+        <div class="videos-grid">
+            {% for video in chat_session.session_videos.all %}
+            <a href="{% url 'video_detail' video.id %}" class="video-item">
+                <div class="video-thumbnail">
+                    <img 
+                        src="https://via.placeholder.com/480x360?text=视频缩略图" 
+                        alt="{{ video.title }}" 
+                        class="thumbnail-img"
+                        data-youtube-url="{{ video.url }}"
+                    >
+                </div>
+                <div class="video-info">
+                    <h3 class="video-title">{{ video.title }}</h3>
+                    <div class="video-meta">
+                        <span class="video-meta-item">
+                            <i class="bi bi-clock"></i> {{ video.created_at|date:"Y-m-d" }}
+                        </span>
+                    </div>
+                </div>
+            </a>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+
+<!-- Delete Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content modal-content-custom">
+            <div class="modal-header modal-header-danger">
+                <h5 class="modal-title modal-title-custom" id="deleteModalLabel">
+                    <i class="bi bi-exclamation-triangle me-2"></i> 删除会话记录
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body modal-body-custom">
+                <p>您确定要删除这个会话记录吗？此操作<strong>无法撤销</strong>。</p>
+                <p>该会话包含 {{ chat_session.get_messages_count }} 条消息和 {{ chat_session.session_videos.count }} 个相关视频。删除后所有内容将不可恢复。</p>
+            </div>
+            <div class="modal-footer modal-footer-custom">
+                <button type="button" class="btn-modal-cancel" data-bs-dismiss="modal">取消</button>
+                <form action="{% url 'delete_chat_session_web' chat_session.id %}" method="post" class="d-inline">
+                    {% csrf_token %}
+                    <button type="submit" class="btn-modal-danger">
+                        确认删除
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

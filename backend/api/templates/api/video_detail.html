@@ -1,0 +1,1294 @@
+{% extends "api/base.html" %}
+
+{% block title %}{{ video.title }} | Déjà Vocab{% endblock %}
+
+{% block extra_css %}
+<!-- CSRF Token for AJAX requests -->
+<meta name="csrf-token" content="{{ csrf_token }}">
+
+<style>
+    /* Main container */
+    .video-detail-container {
+        position: relative;
+    }
+    
+    /* Page header */
+    .detail-header {
+        margin-bottom: 2rem;
+    }
+    
+    .detail-title {
+        font-size: 1.75rem;
+        font-weight: 700;
+        color: var(--gray-900);
+        margin-bottom: 0.75rem;
+        line-height: 1.3;
+    }
+    
+    .dark .detail-title {
+        color: white;
+    }
+    
+    .detail-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1rem;
+        margin-bottom: 0.5rem;
+    }
+    
+    .detail-meta-item {
+        display: flex;
+        align-items: center;
+        font-size: 0.875rem;
+        color: var(--gray-600);
+    }
+    
+    .dark .detail-meta-item {
+        color: var(--gray-400);
+    }
+    
+    .detail-meta-item i {
+        margin-right: 0.5rem;
+        color: var(--primary-500);
+    }
+    
+    .dark .detail-meta-item i {
+        color: var(--primary-400);
+    }
+    
+    /* Main content layout */
+    .content-grid {
+        display: grid;
+        grid-template-columns: 35% 1fr;
+        gap: 2rem;
+        position: relative;
+    }
+    
+    /* Subtitle panel */
+    .subtitle-panel {
+        background-color: white;
+        border-radius: 1rem;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        border: 1px solid var(--gray-200);
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        position: sticky;
+        top: 2rem;
+    }
+    
+    .dark .subtitle-panel {
+        background-color: var(--gray-800);
+        border-color: var(--gray-700);
+    }
+    
+    .subtitle-header {
+        padding: 1.25rem;
+        border-bottom: 1px solid var(--gray-200);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+    
+    .dark .subtitle-header {
+        border-color: var(--gray-700);
+    }
+    
+    .subtitle-title {
+        font-size: 1.125rem;
+        font-weight: 600;
+        color: var(--gray-900);
+        display: flex;
+        align-items: center;
+    }
+    
+    .dark .subtitle-title {
+        color: white;
+    }
+    
+    .subtitle-title i {
+        margin-right: 0.75rem;
+        color: var(--primary-500);
+        font-size: 1.25rem;
+    }
+    
+    .dark .subtitle-title i {
+        color: var(--primary-400);
+    }
+    
+    .subtitle-count {
+        font-size: 0.75rem;
+        font-weight: 500;
+        padding: 0.25rem 0.75rem;
+        border-radius: 1rem;
+        background-color: var(--primary-50);
+        color: var(--primary-600);
+    }
+    
+    .dark .subtitle-count {
+        background-color: rgba(59, 130, 246, 0.2);
+        color: var(--primary-400);
+    }
+    
+    .subtitle-container {
+        flex: 1;
+        overflow-y: auto;
+        padding: 0.75rem;
+    }
+    
+    .subtitle-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+    
+    .subtitle-item {
+        margin-bottom: 0.75rem;
+        border-radius: 0.75rem;
+        background-color: var(--gray-50);
+        border: 1px solid var(--gray-100);
+        overflow: hidden;
+        transition: all 0.2s ease;
+        cursor: pointer;
+        position: relative;
+    }
+    
+    .dark .subtitle-item {
+        background-color: var(--gray-700);
+        border-color: var(--gray-600);
+    }
+    
+    .subtitle-item:hover {
+        background-color: var(--gray-100);
+        transform: translateY(-2px);
+        border-color: var(--gray-200);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    }
+    
+    .dark .subtitle-item:hover {
+        background-color: var(--gray-600);
+        border-color: var(--gray-500);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    }
+    
+    .subtitle-item.active {
+        background-color: var(--primary-50);
+        border-color: var(--primary-200);
+    }
+    
+    .dark .subtitle-item.active {
+        background-color: rgba(59, 130, 246, 0.2);
+        border-color: rgba(59, 130, 246, 0.4);
+    }
+    
+    .subtitle-content {
+        padding: 1rem;
+        background: white;
+    }
+    
+    .dark .subtitle-content {
+        background: var(--gray-800);
+    }
+    
+    .subtitle-text {
+        font-size: 0.9375rem;
+        line-height: 1.6;
+        color: var(--gray-900);
+        margin-bottom: 0.75rem;
+    }
+    
+    .dark .subtitle-text {
+        color: white;
+    }
+    
+    .subtitle-text strong {
+        color: var(--primary-600);
+    }
+    
+    .dark .subtitle-text strong {
+        color: var(--primary-400);
+    }
+    
+    .subtitle-actions {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+    
+    .time-badge {
+        font-size: 0.75rem;
+        font-weight: 500;
+        padding: 0.25rem 0.625rem;
+        border-radius: 0.5rem;
+        background-color: rgba(0, 0, 0, 0.05);
+        color: var(--gray-700);
+        display: flex;
+        align-items: center;
+    }
+    
+    .dark .time-badge {
+        background-color: rgba(255, 255, 255, 0.1);
+        color: var(--gray-300);
+    }
+    
+    .time-badge i {
+        margin-right: 0.375rem;
+    }
+    
+    .save-btn {
+        font-size: 0.75rem;
+        font-weight: 500;
+        padding: 0.25rem 0.75rem;
+        border-radius: 0.5rem;
+        border: none;
+        background-color: transparent;
+        color: var(--gray-600);
+        display: flex;
+        align-items: center;
+        transition: all 0.2s ease;
+        opacity: 0;
+    }
+    
+    .dark .save-btn {
+        color: var(--gray-400);
+    }
+    
+    .subtitle-item:hover .save-btn {
+        opacity: 1;
+    }
+    
+    .save-btn i {
+        margin-right: 0.375rem;
+    }
+    
+    .save-btn:hover {
+        background-color: var(--primary-50);
+        color: var(--primary-600);
+    }
+    
+    .dark .save-btn:hover {
+        background-color: rgba(59, 130, 246, 0.2);
+        color: var(--primary-400);
+    }
+    
+    .save-btn.saved {
+        opacity: 1;
+        background-color: var(--primary-50);
+        color: var(--primary-600);
+    }
+    
+    .dark .save-btn.saved {
+        background-color: rgba(59, 130, 246, 0.2);
+        color: var(--primary-400);
+    }
+    
+    .save-btn.saved:hover {
+        background-color: rgba(239, 68, 68, 0.1);
+        color: #EF4444;
+    }
+    
+    .dark .save-btn.saved:hover {
+        background-color: rgba(239, 68, 68, 0.2);
+        color: #F87171;
+    }
+    
+    /* Video player section */
+    .player-section {
+        display: flex;
+        flex-direction: column;
+    }
+    
+    .player-card {
+        background-color: white;
+        border-radius: 1rem;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        border: 1px solid var(--gray-200);
+        overflow: hidden;
+        margin-bottom: 1.5rem;
+    }
+    
+    .dark .player-card {
+        background-color: var(--gray-800);
+        border-color: var(--gray-700);
+    }
+    
+    .player-container {
+        position: relative;
+        width: 100%;
+        padding-top: 56.25%; /* 16:9 aspect ratio */
+        background-color: black;
+    }
+    
+    #youtube-player,
+    .youtube-player {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+    }
+    
+    .player-footer {
+        padding: 1.25rem;
+        border-top: 1px solid var(--gray-200);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+    
+    .dark .player-footer {
+        border-color: var(--gray-700);
+    }
+    
+    .context-display {
+        color: var(--gray-700);
+        font-size: 0.9375rem;
+        line-height: 1.6;
+    }
+    
+    .dark .context-display {
+        color: var(--gray-300);
+    }
+    
+    .context-placeholder {
+        color: var(--gray-500);
+        display: flex;
+        align-items: center;
+    }
+    
+    .dark .context-placeholder {
+        color: var(--gray-400);
+    }
+    
+    .context-placeholder i {
+        margin-right: 0.5rem;
+    }
+    
+    /* Action buttons */
+    .action-card {
+        background-color: white;
+        border-radius: 1rem;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        border: 1px solid var(--gray-200);
+        padding: 1.25rem;
+    }
+    
+    .dark .action-card {
+        background-color: var(--gray-800);
+        border-color: var(--gray-700);
+    }
+    
+    .action-title {
+        font-size: 1rem;
+        font-weight: 600;
+        color: var(--gray-900);
+        margin-bottom: 1rem;
+    }
+    
+    .dark .action-title {
+        color: white;
+    }
+    
+    .action-buttons {
+        display: flex;
+        gap: 1rem;
+    }
+    
+    .btn-action {
+        flex: 1;
+        padding: 0.75rem 1rem;
+        font-size: 0.875rem;
+        font-weight: 500;
+        border-radius: 0.75rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s ease;
+    }
+    
+    .btn-action i {
+        margin-right: 0.5rem;
+    }
+    
+    .btn-primary-action {
+        background-color: var(--primary-600);
+        color: white;
+        border: none;
+    }
+    
+    .btn-primary-action:hover {
+        background-color: var(--primary-700);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(59, 130, 246, 0.25);
+    }
+    
+    .btn-danger-action {
+        background-color: white;
+        color: #EF4444;
+        border: 1px solid rgba(239, 68, 68, 0.3);
+    }
+    
+    .btn-danger-action:hover {
+        background-color: rgba(239, 68, 68, 0.1);
+        color: #DC2626;
+        transform: translateY(-2px);
+    }
+    
+    .dark .btn-danger-action {
+        background-color: var(--gray-800);
+        color: #F87171;
+        border-color: rgba(248, 113, 113, 0.3);
+    }
+    
+    .dark .btn-danger-action:hover {
+        background-color: rgba(248, 113, 113, 0.15);
+        color: #FECACA;
+    }
+    
+    /* Empty state */
+    .empty-subtitle {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        padding: 4rem 2rem;
+        height: 100%;
+    }
+    
+    .empty-icon {
+        font-size: 3rem;
+        color: var(--gray-300);
+        margin-bottom: 1rem;
+    }
+    
+    .dark .empty-icon {
+        color: var(--gray-600);
+    }
+    
+    .empty-title {
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: var(--gray-700);
+        margin-bottom: 0.5rem;
+    }
+    
+    .dark .empty-title {
+        color: var(--gray-300);
+    }
+    
+    .empty-description {
+        color: var(--gray-500);
+        max-width: 300px;
+    }
+    
+    .dark .empty-description {
+        color: var(--gray-400);
+    }
+    
+    /* Delete modal */
+    .modal-content-custom {
+        border-radius: 1rem;
+        border: none;
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+        overflow: hidden;
+    }
+    
+    .dark .modal-content-custom {
+        background-color: var(--gray-800);
+        color: white;
+    }
+    
+    .modal-header-danger {
+        background: linear-gradient(135deg, #EF4444, #DC2626);
+        color: white;
+        border-bottom: none;
+        padding: 1.25rem 1.5rem;
+    }
+    
+    .modal-title-custom {
+        font-weight: 600;
+        font-size: 1.125rem;
+        display: flex;
+        align-items: center;
+    }
+    
+    .modal-title-icon {
+        margin-right: 0.75rem;
+        font-size: 1.25rem;
+    }
+    
+    .modal-close-white {
+        color: white;
+        opacity: 0.8;
+        transition: opacity 0.2s ease;
+        background: transparent;
+        border: none;
+        font-size: 1.25rem;
+    }
+    
+    .modal-close-white:hover {
+        color: white;
+        opacity: 1;
+    }
+    
+    .modal-body-custom {
+        padding: 1.5rem;
+    }
+    
+    .warning-alert {
+        background-color: rgba(239, 68, 68, 0.1);
+        border-left: 4px solid #EF4444;
+        padding: 1rem;
+        border-radius: 0.5rem;
+        margin-bottom: 1.5rem;
+    }
+    
+    .dark .warning-alert {
+        background-color: rgba(239, 68, 68, 0.15);
+    }
+    
+    .warning-title {
+        color: var(--gray-900);
+        font-weight: 500;
+        margin-bottom: 0.5rem;
+    }
+    
+    .dark .warning-title {
+        color: white;
+    }
+    
+    .warning-text {
+        color: #EF4444;
+        margin: 0;
+        display: flex;
+        align-items: center;
+    }
+    
+    .warning-text i {
+        margin-right: 0.5rem;
+    }
+    
+    .modal-footer-custom {
+        border-top: none;
+        padding: 1rem 1.5rem 1.5rem;
+        display: flex;
+        gap: 1rem;
+    }
+    
+    .btn-modal {
+        flex: 1;
+        padding: 0.75rem 1rem;
+        font-size: 0.875rem;
+        font-weight: 500;
+        border-radius: 0.5rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s ease;
+    }
+    
+    .btn-modal i {
+        margin-right: 0.5rem;
+    }
+    
+    .btn-modal-cancel {
+        background-color: white;
+        color: var(--gray-700);
+        border: 1px solid var(--gray-300);
+    }
+    
+    .btn-modal-cancel:hover {
+        background-color: var(--gray-50);
+        color: var(--gray-900);
+    }
+    
+    .dark .btn-modal-cancel {
+        background-color: var(--gray-700);
+        color: var(--gray-300);
+        border-color: var(--gray-600);
+    }
+    
+    .dark .btn-modal-cancel:hover {
+        background-color: var(--gray-600);
+        color: white;
+    }
+    
+    .btn-modal-danger {
+        background-color: rgba(239, 68, 68, 0.1);
+        color: #EF4444;
+        border: 1px solid #EF4444;
+    }
+    
+    .btn-modal-danger:hover {
+        background-color: #EF4444;
+        color: white;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(239, 68, 68, 0.25);
+    }
+    
+    /* Toast notifications */
+    .toast-container {
+        position: fixed;
+        bottom: 1.5rem;
+        right: 1.5rem;
+        z-index: 9999;
+    }
+    
+    .toast {
+        background-color: white;
+        border-radius: 0.75rem;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+        padding: 0.75rem 1rem;
+        margin-top: 0.75rem;
+        display: flex;
+        align-items: center;
+        width: 300px;
+        animation: slideInUp 0.3s ease forwards;
+    }
+    
+    @keyframes slideInUp {
+        from {
+            opacity: 0;
+            transform: translateY(1rem);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    
+    .dark .toast {
+        background-color: var(--gray-800);
+    }
+    
+    .toast-icon {
+        margin-right: 0.75rem;
+        font-size: 1.25rem;
+    }
+    
+    .toast-icon-success {
+        color: #10B981;
+    }
+    
+    .toast-icon-error {
+        color: #EF4444;
+    }
+    
+    .toast-icon-info {
+        color: var(--primary-500);
+    }
+    
+    .toast-content {
+        flex: 1;
+    }
+    
+    .toast-title {
+        font-weight: 600;
+        color: var(--gray-900);
+        font-size: 0.875rem;
+        margin-bottom: 0.25rem;
+    }
+    
+    .dark .toast-title {
+        color: white;
+    }
+    
+    .toast-message {
+        color: var(--gray-600);
+        font-size: 0.8125rem;
+    }
+    
+    .dark .toast-message {
+        color: var(--gray-400);
+    }
+    
+    .toast-close {
+        color: var(--gray-500);
+        background: transparent;
+        border: none;
+        font-size: 1.25rem;
+        line-height: 1;
+        padding: 0;
+        margin-left: 0.5rem;
+        cursor: pointer;
+    }
+    
+    .dark .toast-close {
+        color: var(--gray-400);
+    }
+    
+    /* Responsive adjustments */
+    @media (max-width: 1024px) {
+        .content-grid {
+            grid-template-columns: 1fr;
+            gap: 1.5rem;
+        }
+        
+        .subtitle-panel {
+            position: relative;
+            top: 0;
+            height: auto;
+            max-height: 500px;
+            order: 2;
+        }
+        
+        .player-section {
+            order: 1;
+        }
+    }
+    
+    @media (max-width: 768px) {
+        .subtitle-item {
+            margin-bottom: 0.5rem;
+        }
+        
+        .subtitle-text {
+            font-size: 0.875rem;
+        }
+        
+        .action-buttons {
+            flex-direction: column;
+        }
+        
+        .detail-title {
+            font-size: 1.5rem;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="video-detail-container">
+    <!-- Page header -->
+    <div class="detail-header">
+        <h1 class="detail-title">{{ video.title }}</h1>
+        
+        <div class="detail-meta">
+            <div class="detail-meta-item">
+                <i class="bi bi-calendar-event"></i>
+                收集于 {{ video.created_at|date:"Y年m月d日 H:i" }}
+            </div>
+            
+            <div class="detail-meta-item">
+                <i class="bi bi-collection"></i>
+                {{ subtitles.count }} 个字幕
+            </div>
+        </div>
+    </div>
+    
+    <div class="content-grid">
+        <!-- Subtitle panel -->
+        <div class="subtitle-panel">
+            <div class="subtitle-header">
+                <h3 class="subtitle-title">
+                    <i class="bi bi-subtitle"></i>
+                    字幕列表
+                </h3>
+                
+                <div class="subtitle-count">
+                    {{ subtitles.count }} 个字幕
+                </div>
+            </div>
+            
+            <div class="subtitle-container">
+                {% if subtitles %}
+                <ul class="subtitle-list">
+                    {% for subtitle in subtitles %}
+                    <li class="subtitle-item" data-start-time="{{ subtitle.start_time }}" data-subtitle-id="{{ subtitle.id }}" data-end-time="{{ subtitle.end_time }}">
+                        <div class="subtitle-content">
+                            <div class="subtitle-text">{{ subtitle.text }}</div>
+                            <div class="subtitle-actions">
+                                <div class="time-badge">
+                                    <i class="bi bi-stopwatch"></i>{{ subtitle.start_time|floatformat:1 }}s
+                                </div>
+                                <button class="save-btn" title="收藏句子" data-subtitle-id="{{ subtitle.id }}">
+                                    <i class="bi bi-bookmark-plus"></i>收藏
+                                </button>
+                            </div>
+                        </div>
+                    </li>
+                    {% endfor %}
+                </ul>
+                {% else %}
+                <div class="empty-subtitle">
+                    <div class="empty-icon">
+                        <i class="bi bi-chat-square-text"></i>
+                    </div>
+                    <h4 class="empty-title">没有找到字幕</h4>
+                    <p class="empty-description">该视频没有可用的字幕数据</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Video player section -->
+        <div class="player-section">
+            <div class="player-card">
+                <div class="player-container">
+                    <div id="youtube-player"></div>
+                </div>
+                
+                <div class="player-footer">
+                    <div id="contextDisplay" class="context-placeholder">
+                        <i class="bi bi-arrow-left-circle"></i>点击左侧句子播放相应视频片段
+                    </div>
+                </div>
+            </div>
+            
+            <div class="action-card">
+                <h3 class="action-title">视频操作</h3>
+                <div class="action-buttons">
+                    <a href="{{ video.url }}" target="_blank" class="btn-action btn-primary-action">
+                        <i class="bi bi-youtube"></i>在YouTube上观看
+                    </a>
+                    
+                    <button type="button" class="btn-action btn-danger-action" data-bs-toggle="modal" data-bs-target="#deleteModal">
+                        <i class="bi bi-trash"></i>删除视频
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete confirmation modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true" data-bs-backdrop="static">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content modal-content-custom">
+            <div class="modal-header modal-header-danger">
+                <h5 class="modal-title modal-title-custom" id="deleteModalLabel">
+                    <i class="bi bi-exclamation-triangle-fill modal-title-icon"></i>
+                    确认删除视频
+                </h5>
+                <button type="button" class="modal-close-white" data-bs-dismiss="modal" aria-label="Close">
+                    <i class="bi bi-x"></i>
+                </button>
+            </div>
+            <div class="modal-body modal-body-custom">
+                <div class="warning-alert">
+                    <p class="warning-title">您确定要删除视频"<strong>{{ video.title }}</strong>"及其所有字幕吗？</p>
+                    <p class="warning-text"><i class="bi bi-exclamation-circle"></i> 此操作无法撤销。</p>
+                </div>
+                
+                <div class="video-preview" style="display: flex; align-items: center; margin-top: 1rem;">
+                    <img 
+                        src="https://img.youtube.com/vi/{{ video.youtube_id }}/mqdefault.jpg"
+                        alt="{{ video.title }}"
+                        style="width: 120px; border-radius: 0.5rem; margin-right: 1rem;"
+                        onerror="this.src='https://via.placeholder.com/120x68?text=无缩略图'"
+                    >
+                    <div>
+                        <div style="font-weight: 500; margin-bottom: 0.5rem;">{{ video.title }}</div>
+                        <div style="font-size: 0.875rem; opacity: 0.7;"><i class="bi bi-chat-quote me-1"></i> {{ subtitles.count }} 个字幕</div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer modal-footer-custom">
+                <button type="button" class="btn-modal btn-modal-cancel" data-bs-dismiss="modal">
+                    <i class="bi bi-x"></i> 取消
+                </button>
+                <form method="post" action="{% url 'delete_video' video.id %}" style="flex: 1;">
+                    {% csrf_token %}
+                    <button type="submit" class="btn-modal btn-modal-danger" id="confirmDelete">
+                        <i class="bi bi-trash"></i> 确认删除
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Toast container -->
+<div class="toast-container" id="toastContainer"></div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://www.youtube.com/iframe_api"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // YouTube player initialization
+        let player;
+        let currentVideoId = "{{ video.youtube_id }}";
+        let allSubtitles = {};
+        
+        function onYouTubeIframeAPIReady() {
+            // Initialize player but don't load any video
+            player = new YT.Player('youtube-player', {
+                height: '100%',
+                width: '100%',
+                videoId: currentVideoId,
+                playerVars: {
+                    'playsinline': 1,
+                    'rel': 0,
+                    'modestbranding': 1,
+                    'origin': window.location.origin
+                },
+                events: {
+                    'onReady': onPlayerReady,
+                    'onStateChange': onPlayerStateChange
+                }
+            });
+        }
+        
+        // Ensure YouTube API is loaded
+        if (typeof YT !== 'undefined' && YT.Player) {
+            onYouTubeIframeAPIReady();
+        } else {
+            window.onYouTubeIframeAPIReady = onYouTubeIframeAPIReady;
+        }
+        
+        // Current displayed subtitles
+        let currentVideoSubtitles = [];
+        let lastLoggedTime = 0;
+        
+        // Prepare subtitle data for time synchronization
+        const subtitleItems = document.querySelectorAll('.subtitle-item');
+        const contextDisplay = document.getElementById('contextDisplay');
+        
+        // Toast notification function
+        function showToast(title, message, type = 'info') {
+            const toastContainer = document.getElementById('toastContainer');
+            
+            const toast = document.createElement('div');
+            toast.className = 'toast';
+            
+            const iconClass = type === 'success' ? 'bi-check-circle-fill toast-icon-success' : 
+                             type === 'error' ? 'bi-exclamation-circle-fill toast-icon-error' : 
+                             'bi-info-circle-fill toast-icon-info';
+            
+            toast.innerHTML = `
+                <i class="bi ${iconClass} toast-icon"></i>
+                <div class="toast-content">
+                    <div class="toast-title">${title}</div>
+                    <div class="toast-message">${message}</div>
+                </div>
+                <button type="button" class="toast-close">
+                    <i class="bi bi-x"></i>
+                </button>
+            `;
+            
+            toastContainer.appendChild(toast);
+            
+            // Auto-dismiss after 3 seconds
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transform = 'translateY(1rem)';
+                setTimeout(() => {
+                    toast.remove();
+                }, 300);
+            }, 3000);
+            
+            // Manual dismiss
+            const closeBtn = toast.querySelector('.toast-close');
+            closeBtn.addEventListener('click', () => {
+                toast.style.opacity = '0';
+                toast.style.transform = 'translateY(1rem)';
+                setTimeout(() => {
+                    toast.remove();
+                }, 300);
+            });
+        }
+        
+        // Fetch all subtitles for a video
+        function fetchAllSubtitles(videoDbId) {
+            const url = `/api/web/videos/${videoDbId}/subtitles/`;
+            
+            return fetch(url, {
+                headers: {
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]')?.value
+                }
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`获取字幕失败，状态码: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.subtitles && data.subtitles.length > 0) {
+                    return data.subtitles.map(s => ({
+                        start_time: parseFloat(s.start_time),
+                        end_time: parseFloat(s.end_time),
+                        text: s.text
+                    }));
+                } else {
+                    return [];
+                }
+            })
+            .catch(error => {
+                console.error('Error fetching subtitles:', error);
+                return [];
+            });
+        }
+        
+        // Subtitle click event
+        subtitleItems.forEach(item => {
+            item.addEventListener('click', function() {
+                // Remove active state from other subtitles
+                subtitleItems.forEach(el => el.classList.remove('active'));
+                
+                // Add active state to clicked subtitle
+                this.classList.add('active');
+                
+                const startTime = parseFloat(this.dataset.startTime);
+                
+                // Update context display
+                contextDisplay.className = 'context-display';
+                contextDisplay.innerHTML = this.querySelector('.subtitle-text').innerHTML;
+                
+                // Load video at specific timestamp
+                if (player && player.loadVideoById) {
+                    player.loadVideoById({
+                        'videoId': currentVideoId,
+                        'startSeconds': startTime
+                    });
+                }
+            });
+        });
+        
+        // Player event handlers
+        function onPlayerReady(event) {
+            // Player is ready
+            console.log("YouTube player ready");
+            
+            // Load all subtitles
+            fetchAllSubtitles("{{ video.id }}").then(subtitles => {
+                if (subtitles && subtitles.length > 0) {
+                    currentVideoSubtitles = subtitles;
+                }
+            });
+        }
+        
+        let intervalId = null;
+        
+        function onPlayerStateChange(event) {
+            if (event.data === YT.PlayerState.PLAYING) {
+                updateSubtitleByTime();
+                if (intervalId === null) {
+                    intervalId = setInterval(updateSubtitleByTime, 300);
+                }
+            } else if (event.data === YT.PlayerState.PAUSED || event.data === YT.PlayerState.ENDED) {
+                if (intervalId !== null) {
+                    clearInterval(intervalId);
+                    intervalId = null;
+                }
+            }
+        }
+        
+        function updateSubtitleByTime() {
+            if (!player) return;
+            
+            try {
+                const currentTime = player.getCurrentTime();
+                
+                if (currentVideoSubtitles && currentVideoSubtitles.length > 0) {
+                    // Find matching subtitle based on time
+                    let foundSubtitle = null;
+                    for (const subtitle of currentVideoSubtitles) {
+                        if (currentTime >= subtitle.start_time && currentTime < subtitle.end_time) {
+                            foundSubtitle = subtitle;
+                            break;
+                        }
+                    }
+                    
+                    if (foundSubtitle) {
+                        contextDisplay.className = 'context-display';
+                        contextDisplay.innerHTML = foundSubtitle.text;
+                        
+                        // Highlight matching subtitle in the list
+                        subtitleItems.forEach(el => {
+                            const itemStartTime = parseFloat(el.dataset.startTime);
+                            const itemEndTime = parseFloat(el.dataset.endTime);
+                            
+                            if (Math.abs(itemStartTime - foundSubtitle.start_time) < 0.1 && 
+                                Math.abs(itemEndTime - foundSubtitle.end_time) < 0.1) {
+                                el.classList.add('active');
+                            } else {
+                                el.classList.remove('active');
+                            }
+                        });
+                        
+                        return;
+                    }
+                }
+                
+                // If no exact match, find the closest subtitle
+                const subtitles = document.querySelectorAll('.subtitle-item');
+                let closestItem = null;
+                let minTimeDiff = Infinity;
+                
+                subtitles.forEach(item => {
+                    const startTime = parseFloat(item.dataset.startTime);
+                    const timeDiff = Math.abs(currentTime - startTime);
+                    
+                    if (timeDiff < minTimeDiff) {
+                        minTimeDiff = timeDiff;
+                        closestItem = item;
+                    }
+                });
+                
+                if (closestItem && minTimeDiff < 5) {
+                    subtitleItems.forEach(el => el.classList.remove('active'));
+                    closestItem.classList.add('active');
+                    
+                    contextDisplay.className = 'context-display';
+                    contextDisplay.innerHTML = closestItem.querySelector('.subtitle-text').innerHTML;
+                }
+            } catch (error) {
+                console.error("Error updating subtitle:", error);
+            }
+        }
+        
+        // Handle favorites
+        const saveBtns = document.querySelectorAll('.save-btn');
+        const authToken = '{{ request.session.auth_token }}';
+        
+        // Check if any sentences are already saved
+        function checkSavedSentences() {
+            if (!authToken) return;
+            
+            fetch('/api/sentences/?video_id={{ video.id }}', {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Token ${authToken}`
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.results && data.results.length > 0) {
+                    const savedTexts = data.results.map(sentence => sentence.text);
+                    
+                    // Map sentence IDs
+                    const sentenceMap = {};
+                    data.results.forEach(sentence => {
+                        sentenceMap[sentence.text] = sentence.id;
+                    });
+                    
+                    // Update buttons for saved sentences
+                    subtitleItems.forEach(item => {
+                        const text = item.querySelector('.subtitle-text').textContent;
+                        const saveBtn = item.querySelector('.save-btn');
+                        
+                        if (savedTexts.includes(text)) {
+                            saveBtn.classList.add('saved');
+                            saveBtn.innerHTML = '<i class="bi bi-bookmark-check"></i>已收藏';
+                            saveBtn.dataset.sentenceId = sentenceMap[text];
+                        }
+                    });
+                }
+            })
+            .catch(error => {
+                console.error('Error checking saved sentences:', error);
+            });
+        }
+        
+        // Call on load
+        if (authToken) {
+            checkSavedSentences();
+        }
+        
+        // Save/unsave sentence
+        saveBtns.forEach(btn => {
+            btn.addEventListener('click', function(e) {
+                e.stopPropagation(); // Prevent triggering subtitle click
+                
+                if (!authToken) {
+                    showToast('未登录', '请先登录后再收藏句子', 'error');
+                    return;
+                }
+                
+                const subtitleItem = this.closest('.subtitle-item');
+                const subtitleId = subtitleItem.dataset.subtitleId;
+                const text = subtitleItem.querySelector('.subtitle-text').textContent;
+                const isSaved = this.classList.contains('saved');
+                
+                // Disable button during operation
+                this.disabled = true;
+                
+                if (isSaved) {
+                    // Unsave
+                    const sentenceId = this.dataset.sentenceId;
+                    this.innerHTML = '<i class="bi bi-hourglass-split"></i> 取消中...';
+                    
+                    fetch(`/api/sentences/${sentenceId}/`, {
+                        method: 'DELETE',
+                        headers: {
+                            'Authorization': `Token ${authToken}`,
+                            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]')?.value
+                        }
+                    })
+                    .then(response => {
+                        if (response.ok) {
+                            // Update button state
+                            this.classList.remove('saved');
+                            this.innerHTML = '<i class="bi bi-bookmark-plus"></i>收藏';
+                            delete this.dataset.sentenceId;
+                            
+                            showToast('成功', '已从收藏中移除此句子', 'success');
+                        } else {
+                            throw new Error('删除失败');
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error unsaving sentence:', error);
+                        showToast('错误', '操作失败，请重试', 'error');
+                        
+                        // Restore button state
+                        this.innerHTML = '<i class="bi bi-bookmark-check"></i>已收藏';
+                    })
+                    .finally(() => {
+                        this.disabled = false;
+                    });
+                } else {
+                    // Save
+                    this.innerHTML = '<i class="bi bi-hourglass-split"></i> 收藏中...';
+                    
+                    fetch('/api/add-sentence/', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Token ${authToken}`,
+                            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]')?.value
+                        },
+                        body: JSON.stringify({
+                            text: text,
+                            subtitle_id: subtitleId,
+                            translation: '',
+                            notes: `From video: {{ video.title }}`
+                        })
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        // Update button state
+                        this.classList.add('saved');
+                        this.innerHTML = '<i class="bi bi-bookmark-check"></i>已收藏';
+                        this.dataset.sentenceId = data.id || data.sentence_id;
+                        
+                        showToast('成功', '句子已添加到收藏', 'success');
+                    })
+                    .catch(error => {
+                        console.error('Error saving sentence:', error);
+                        showToast('错误', '操作失败，请重试', 'error');
+                        
+                        // Restore button state
+                        this.innerHTML = '<i class="bi bi-bookmark-plus"></i>收藏';
+                    })
+                    .finally(() => {
+                        this.disabled = false;
+                    });
+                }
+            });
+        });
+        
+        // Handle delete confirmation
+        const confirmDeleteBtn = document.getElementById('confirmDelete');
+        confirmDeleteBtn.addEventListener('click', function() {
+            this.innerHTML = '<i class="bi bi-hourglass-split"></i> 正在删除...';
+            this.disabled = true;
+        });
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,225 @@
+
+/* Notification container - Fixed in the center of the page */
+.notification-container {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 9999;
+  width: 90%;
+  max-width: 420px;
+  pointer-events: none; /* Allow interaction with elements below */
+}
+
+/* Notification card - Glassmorphism Design */
+.notification-card {
+  background: rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  box-shadow: 
+    0 8px 24px rgba(0, 0, 0, 0.15),
+    0 0 0 1px rgba(255, 255, 255, 0.1);
+  padding: 16px 20px;
+  margin-bottom: 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  opacity: 0;
+  transform: translateY(20px);
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+  overflow: hidden;
+  pointer-events: auto; /* Allow interaction with elements below */
+  color: white;
+}
+
+/* Light mode card text color */
+html:not(.dark) .notification-card {
+  color: #333;
+}
+
+/* Active notification card */
+.notification-card.active {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Notification Icon Container */
+.notification-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 12px;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Notification Icon Background */
+.notification-icon::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, var(--primary), var(--secondary));
+  opacity: 0.8;
+  z-index: -1;
+}
+
+/* Notification icon */
+.notification-icon i {
+  font-size: 1.5rem;
+  color: white;
+}
+
+/* Notification title */
+.notification-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin-bottom: 8px;
+  text-align: center;
+  color: white;
+}
+
+/* Light mode title */
+html:not(.dark) .notification-title {
+  color: #333;
+}
+
+/* Notification content */
+.notification-content {
+  font-size: 0.95rem;
+  text-align: center;
+  margin-bottom: 16px;
+  line-height: 1.5;
+  opacity: 0.9;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+/* Light mode content */
+html:not(.dark) .notification-content {
+  color: #555;
+}
+
+/* Notification button */
+.notification-button {
+  padding: 8px 24px;
+  border-radius: 8px;
+  border: none;
+  background: linear-gradient(135deg, var(--primary), var(--secondary));
+  color: white;
+  font-weight: 500;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  position: relative;
+  overflow: hidden;
+}
+
+/* Button hover effect */
+.notification-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.25);
+}
+
+/* Button active effect */
+.notification-button:active {
+  transform: translateY(1px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* Button inner glow effect */
+.notification-button::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, 
+    rgba(255, 255, 255, 0.1) 0%, 
+    rgba(255, 255, 255, 0.05) 50%, 
+    transparent 100%);
+  opacity: 0.6;
+  transition: opacity 0.3s ease;
+}
+
+/* Button hover glow effect */
+.notification-button:hover::before {
+  opacity: 0.8;
+}
+
+/* Dark mode adaptation */
+html.dark .notification-card {
+  background: rgba(15, 23, 42, 0.75);
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+/* Notification Type - Success */
+.notification-success .notification-icon::before {
+  background: linear-gradient(135deg, #10b981, #059669);
+}
+
+/* Notification Type - Information */
+.notification-info .notification-icon::before {
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
+}
+
+/* Notification Type - Warning */
+.notification-warning .notification-icon::before {
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+}
+
+/* Notification Type - Error */
+.notification-error .notification-icon::before {
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+}
+
+/* Notification Type - Mode Change */
+.notification-mode-change .notification-icon::before {
+  background: linear-gradient(135deg, var(--primary), var(--secondary));
+}
+
+/* Responsive Design */
+@media (max-width: 480px) {
+  .notification-container {
+    width: 95%;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+  }
+  
+  .notification-card {
+    padding: 12px 16px;
+  }
+  
+  .notification-icon {
+    width: 40px;
+    height: 40px;
+    margin-bottom: 8px;
+  }
+  
+  .notification-icon i {
+    font-size: 1.2rem;
+  }
+  
+  .notification-title {
+    font-size: 1rem;
+  }
+  
+  .notification-content {
+    font-size: 0.85rem;
+    margin-bottom: 12px;
+  }
+  
+  .notification-button {
+    padding: 6px 18px;
+    font-size: 0.85rem;
+  }
+}

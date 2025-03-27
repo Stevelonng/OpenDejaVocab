@@ -1,0 +1,1336 @@
+<!DOCTYPE html>
+<html lang="zh-CN" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+    
+    <!-- Web App configuration -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Déjà Vocab">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="application-name" content="Déjà Vocab">
+    <meta name="theme-color" content="#3676E0" media="(prefers-color-scheme: light)">
+    <meta name="theme-color" content="#1F2937" media="(prefers-color-scheme: dark)">
+    <meta name="format-detection" content="telephone=no">
+    
+    <title>{% block title %}Déjà Vocab{% endblock %}</title>
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" href="/static/images/dejavu-logo.png">
+    <link rel="shortcut icon" type="image/png" href="/static/images/dejavu-logo.png">
+    <link rel="apple-touch-icon" href="/static/images/dejavu-logo.png">
+    
+    <!-- Prevent theme flash -->
+    <script>
+        // Apply theme before page loads
+        if (localStorage.getItem('dark') === 'true' || 
+            (!localStorage.getItem('dark') && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.classList.add('dark');
+        }
+
+        // Add theme toggle function
+        function toggleTheme(isDark) {
+            if (isDark) {
+                document.documentElement.classList.add('dark');
+                localStorage.setItem('dark', 'true');
+            } else {
+                document.documentElement.classList.remove('dark');
+                localStorage.setItem('dark', 'false');
+            }
+        }
+    </script>
+    
+    <!-- Modern CSS Framework -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Alpine.js for modern interactivity -->
+    <script defer src="https://unpkg.com/alpinejs@3.13.3/dist/cdn.min.js"></script>
+    
+    <style>
+        :root {
+            /* Primary Colors */
+            --primary-50: #EFF6FF;
+            --primary-100: #DBEAFE;
+            --primary-200: #BFDBFE;
+            --primary-300: #93C5FD;
+            --primary-400: #60A5FA;
+            --primary-500: #3676E0;
+            --primary-600: #2563EB;
+            --primary-700: #1D4ED8;
+            --primary-800: #1E40AF;
+            --primary-900: #1E3A8A;
+            
+            /* Gray scale */
+            --gray-50: #F9FAFB;
+            --gray-100: #F3F4F6;
+            --gray-200: #E5E7EB;
+            --gray-300: #D1D5DB;
+            --gray-400: #9CA3AF;
+            --gray-500: #6B7280;
+            --gray-600: #4B5563;
+            --gray-700: #374151;
+            --gray-800: #1F2937;
+            --gray-900: #111827;
+            
+            /* Accent colors */
+            --accent-green: #10B981;
+            --accent-red: #EF4444;
+            --accent-yellow: #F59E0B;
+            --accent-purple: #8B5CF6;
+            
+            /* Layout variables */
+            --sidebar-width: 280px;
+            --header-height: 64px;
+            --border-radius-sm: 0.375rem;
+            --border-radius: 0.5rem;
+            --border-radius-lg: 0.75rem;
+            --border-radius-xl: 1rem;
+            
+            /* Animation durations */
+            --transition-fast: 150ms;
+            --transition-normal: 250ms;
+            --transition-slow: 350ms;
+            
+            /* Shadow variables */
+            --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+            --shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
+        
+        /* Base styles */
+        body {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            background-color: var(--gray-50);
+            color: var(--gray-900);
+            line-height: 1.5;
+            font-size: 16px;
+            display: flex;
+            min-height: 100vh;
+            margin: 0;
+            padding: 0;
+            overflow-x: hidden;
+            transition: background-color var(--transition-normal) ease,
+                        color var(--transition-normal) ease;
+        }
+        
+        /* Dark mode overrides */
+        .dark {
+            color-scheme: dark;
+        }
+        
+        .dark body {
+            background-color: var(--gray-900);
+            color: var(--gray-100);
+        }
+        
+        h1, h2, h3, h4, h5, h6 {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            font-weight: 700;
+            letter-spacing: -0.025em;
+            line-height: 1.2;
+            margin-bottom: 1rem;
+        }
+        
+        h1 {
+            font-size: 2.5rem;
+        }
+        
+        h2 {
+            font-size: 2rem;
+        }
+        
+        h3 {
+            font-size: 1.5rem;
+        }
+        
+        a {
+            color: var(--primary-600);
+            text-decoration: none;
+            transition: color var(--transition-fast) ease;
+        }
+        
+        a:hover {
+            color: var(--primary-700);
+        }
+        
+        /* .dark a {
+            color: var(--primary-400);
+        }
+         */
+        .dark a:hover {
+            color: var(--primary-300);
+        }
+        
+        /* Utility classes */
+        .visually-hidden {
+            position: absolute !important;
+            width: 1px !important;
+            height: 1px !important;
+            padding: 0 !important;
+            margin: -1px !important;
+            overflow: hidden !important;
+            clip: rect(0, 0, 0, 0) !important;
+            white-space: nowrap !important;
+            border: 0 !important;
+        }
+        
+        /* Layout */
+        .app-container {
+            display: flex;
+            width: 100%;
+            min-height: 100vh;
+        }
+        
+        /* Sidebar */
+        .sidebar {
+            width: var(--sidebar-width);
+            background-color: white;
+            border-right: 1px solid var(--gray-200);
+            display: flex;
+            flex-direction: column;
+            position: fixed;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            z-index: 40;
+            transition: transform var(--transition-normal) ease-in-out,
+                        background-color var(--transition-normal) ease;
+            overflow-y: auto;
+        }
+        
+        .dark .sidebar {
+            background-color: var(--gray-800);
+            border-right-color: var(--gray-700);
+        }
+        
+        .sidebar-header {
+            padding: 1.5rem;
+            display: flex;
+            align-items: center;
+            border-bottom: 1px solid var(--gray-200);
+            position: relative;
+        }
+        
+        .dark .sidebar-header {
+            border-bottom-color: var(--gray-700);
+        }
+        
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+        
+        .logo-icon {
+            width: 32px;
+            height: 32px;
+            background: linear-gradient(135deg, var(--primary-600), var(--primary-500));
+            border-radius: var(--border-radius-sm);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 1.25rem;
+            box-shadow: var(--shadow-md);
+        }
+        
+        .logo-text {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            font-weight: 800;
+            font-size: 1.25rem;
+            color: var(--gray-900);
+            display: flex;
+            flex-direction: column;
+            line-height: 1.1;
+        }
+        
+        .dark .logo-text {
+            color: white;
+        }
+        
+        .logo-text-deja {
+            color: var(--primary-600);
+            font-size: 0.85rem;
+            font-weight: 700;
+            text-transform: lowercase;
+        }
+        
+        .dark .logo-text-deja {
+            color: var(--primary-400);
+        }
+        
+        .logo-text-vocab {
+            font-size: 1.2rem;
+        }
+        
+        .sidebar-menu {
+            flex: 1;
+            padding: 1.5rem 0.75rem;
+        }
+        
+        .menu-category {
+            color: var(--gray-500);
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            padding: 0 0.75rem;
+            margin: 1.5rem 0 0.75rem 0;
+        }
+        
+        .dark .menu-category {
+            color: var(--gray-400);
+        }
+        
+        .menu-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        
+        .menu-item {
+            margin: 0.25rem 0;
+        }
+        
+        .menu-link {
+            display: flex;
+            align-items: center;
+            padding: 0.75rem;
+            border-radius: var(--border-radius);
+            color: var(--gray-700);
+            font-weight: 500;
+            transition: all var(--transition-fast) ease;
+        }
+        
+        .dark .menu-link {
+            color: var(--gray-300);
+        }
+        
+        .menu-link:hover {
+            background-color: var(--gray-100);
+            color: var(--gray-900);
+        }
+        
+        .dark .menu-link:hover {
+            background-color: var(--gray-700);
+            color: white;
+        }
+        
+        .menu-link.active {
+            background-color: var(--primary-50);
+            color: var(--primary-700);
+        }
+        
+        .dark .menu-link.active {
+            background-color: rgba(59, 130, 246, 0.15);
+            color: var(--primary-300);
+        }
+        
+        .menu-icon {
+            margin-right: 0.75rem;
+            font-size: 1.25rem;
+            width: 1.5rem;
+            text-align: center;
+            opacity: 0.9;
+        }
+        
+        .menu-badge {
+            margin-left: auto;
+            font-size: 0.75rem;
+            background-color: var(--gray-200);
+            color: var(--gray-700);
+            padding: 0.125rem 0.5rem;
+            border-radius: 1rem;
+            font-weight: 500;
+        }
+        
+        .dark .menu-badge {
+            background-color: var(--gray-700);
+            color: var(--gray-300);
+        }
+        
+        .sidebar-footer {
+            padding: 1rem 1.5rem;
+            border-top: 1px solid var(--gray-200);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        
+        .dark .sidebar-footer {
+            border-top-color: var(--gray-700);
+        }
+        
+        .user-dropdown {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+        
+        .user-avatar {
+            width: 2.5rem;
+            height: 2.5rem;
+            border-radius: 50%;
+            background-color: var(--primary-100);
+            color: var(--primary-600);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 1rem;
+        }
+        
+        .dark .user-avatar {
+            background-color: var(--primary-900);
+            color: var(--primary-300);
+        }
+        
+        .user-info {
+            overflow: hidden;
+        }
+        
+        .user-name {
+            color: var(--gray-900);
+            font-size: 0.875rem;
+            font-weight: 600;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 150px;
+        }
+        
+        .dark .user-name {
+            color: white;
+        }
+        
+        .logout-button {
+            background-color: transparent;
+            color: var(--gray-500);
+            border: none;
+            width: 2rem;
+            height: 2rem;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all var(--transition-fast) ease;
+        }
+        
+        .logout-button:hover {
+            background-color: var(--gray-100);
+            color: var(--gray-700);
+        }
+        
+        .dark .logout-button {
+            color: var(--gray-400);
+        }
+        
+        .dark .logout-button:hover {
+            background-color: var(--gray-700);
+            color: white;
+        }
+        
+        /* Content area */
+        .content {
+            flex: 1;
+            margin-left: var(--sidebar-width);
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            transition: margin var(--transition-normal) ease-in-out;
+        }
+        
+        .content-inner {
+            flex: 1;
+            padding: 2rem;
+            max-width: 1600px;
+            margin: 0 auto;
+            width: 100%;
+        }
+        
+        /* Mobile header */
+        .mobile-header {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: var(--header-height);
+            background-color: white;
+            border-bottom: 1px solid var(--gray-200);
+            padding: 0 1.25rem;
+            z-index: 30;
+            align-items: center;
+            justify-content: space-between;
+        }
+        
+        .dark .mobile-header {
+            background-color: var(--gray-800);
+            border-bottom-color: var(--gray-700);
+        }
+        
+        .menu-trigger {
+            background-color: transparent;
+            border: none;
+            width: 2.5rem;
+            height: 2.5rem;
+            border-radius: var(--border-radius);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--gray-700);
+            cursor: pointer;
+            transition: all var(--transition-fast) ease;
+        }
+        
+        .menu-trigger:hover {
+            background-color: var(--gray-100);
+        }
+        
+        .dark .menu-trigger {
+            color: var(--gray-300);
+        }
+        
+        .dark .menu-trigger:hover {
+            background-color: var(--gray-700);
+        }
+        
+        /* 主题切换按钮 */
+        .theme-toggle {
+            width: 2.5rem;
+            height: 2.5rem;
+            border-radius: 50%;
+            background-color: white;
+            color: var(--gray-800);
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all var(--transition-fast) ease;
+        }
+        
+        .mobile-header .theme-toggle {
+            margin-left: auto;
+            background-color: transparent;
+            box-shadow: none;
+        }
+        
+        .sidebar-header .theme-toggle {
+            position: absolute;
+            top: 50%;
+            right: 1rem;
+            transform: translateY(-50%);
+            background-color: var(--gray-100);
+            box-shadow: var(--shadow-sm);
+        }
+        
+        .dark .theme-toggle {
+            background-color: var(--gray-800);
+            color: var(--gray-200);
+        }
+        
+        .dark .mobile-header .theme-toggle {
+            background-color: transparent;
+        }
+        
+        .dark .sidebar-header .theme-toggle {
+            background-color: var(--gray-700);
+        }
+        
+        .theme-toggle:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+        
+        .mobile-header .theme-toggle:hover {
+            transform: none;
+            box-shadow: none;
+        }
+        
+        .sidebar-header .theme-toggle:hover {
+            transform: translateY(-50%) scale(1.05);
+        }
+        
+        .theme-toggle-icon {
+            font-size: 1.25rem;
+        }
+        
+        /* 意见反馈按钮样式 */
+        .feedback-button {
+            position: fixed;
+            bottom: 1.5rem;
+            right: 1.5rem;
+            background-color: var(--primary-600);
+            color: white;
+            border: none;
+            padding: 0.75rem 1.25rem;
+            border-radius: 2rem;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            z-index: 30;
+            cursor: pointer;
+            box-shadow: var(--shadow-md);
+            transition: all var(--transition-fast) ease;
+        }
+        
+        .feedback-button:hover {
+            background-color: var(--primary-700);
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-lg);
+        }
+        
+        .dark .feedback-button {
+            background-color: var(--primary-700);
+        }
+        
+        .dark .feedback-button:hover {
+            background-color: var(--primary-600);
+        }
+        
+        /* Footer */
+        .footer {
+            background-color: white;
+            border-top: 1px solid var(--gray-200);
+            padding: 1.5rem;
+            text-align: center;
+            color: var(--gray-600);
+            transition: background-color var(--transition-normal) ease;
+            font-size: 0.875rem;
+        }
+        
+        .dark .footer {
+            background-color: var(--gray-800);
+            border-top-color: var(--gray-700);
+            color: var(--gray-400);
+        }
+        
+        .footer-links {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1.5rem;
+            margin-top: 0.5rem;
+        }
+        
+        .footer-link {
+            color: var(--gray-500);
+            transition: color var(--transition-fast) ease;
+        }
+        
+        .footer-link:hover {
+            color: var(--primary-600);
+        }
+        
+        .dark .footer-link {
+            color: var(--gray-400);
+        }
+        
+        .dark .footer-link:hover {
+            color: var(--primary-400);
+        }
+        
+        .footer-brand {
+            color: var(--primary-600);
+            font-weight: 600;
+        }
+        
+        .dark .footer-brand {
+            color: var(--primary-400);
+        }
+        
+        /* Feedback button */
+        
+        /* Feedback modal */
+        .modal-dialog {
+            max-width: 500px;
+            margin: 1.75rem auto;
+        }
+        
+        .modal-content {
+            background-color: white;
+            border-radius: var(--border-radius);
+            border: none;
+            box-shadow: var(--shadow-xl);
+            overflow: hidden;
+        }
+        
+        .dark .modal-content {
+            background-color: var(--gray-800);
+            color: var(--gray-200);
+        }
+        
+        .modal-header {
+            padding: 1.25rem 1.5rem;
+            border-bottom: 1px solid var(--gray-200);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        
+        .dark .modal-header {
+            border-color: var(--gray-700);
+        }
+        
+        .modal-title {
+            font-weight: 700;
+            font-size: 1.25rem;
+            color: var(--gray-900);
+            margin: 0;
+        }
+        
+        .dark .modal-title {
+            color: white;
+        }
+        
+        .modal-body {
+            padding: 1.5rem;
+        }
+        
+        .modal-footer {
+            padding: 1.25rem 1.5rem;
+            border-top: 1px solid var(--gray-200);
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 0.75rem;
+        }
+        
+        .dark .modal-footer {
+            border-color: var(--gray-700);
+        }
+        
+        .btn-close {
+            opacity: 0.75;
+            transition: opacity 0.2s ease;
+        }
+        
+        .btn-close:hover {
+            opacity: 1;
+        }
+        
+        /* 移动端模态框样式优化 */
+        @media (max-width: 640px) {
+            .modal-dialog {
+                margin: 1rem;
+                max-width: calc(100% - 2rem);
+            }
+            
+            .modal-body {
+                padding: 1.25rem;
+            }
+            
+            .modal-header, .modal-footer {
+                padding: 1rem 1.25rem;
+            }
+            
+            textarea.form-control {
+                min-height: 100px;
+            }
+        }
+        
+        /* 表单样式 */
+        .form-label {
+            color: var(--gray-700);
+            font-weight: 500;
+            font-size: 0.875rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .dark .form-label {
+            color: var(--gray-300);
+        }
+        
+        .form-control, .form-select {
+            border: 1px solid var(--gray-300);
+            border-radius: var(--border-radius);
+            font-size: 0.875rem;
+            padding: 0.625rem 0.75rem;
+            transition: border-color var(--transition-fast) ease, box-shadow var(--transition-fast) ease;
+            background-color: white;
+        }
+        
+        .dark .form-control, .dark .form-select {
+            background-color: var(--gray-700);
+            border-color: var(--gray-600);
+            color: white;
+        }
+        
+        .form-control:focus, .form-select:focus {
+            border-color: var(--primary-400);
+            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.25);
+            outline: none;
+        }
+        
+        .dark .form-control:focus, .dark .form-select:focus {
+            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.5);
+        }
+        
+        .dark .form-control::placeholder {
+            color: var(--gray-400);
+        }
+        
+        .alert {
+            border-radius: var(--border-radius);
+            border: 1px solid transparent;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            font-size: 0.875rem;
+        }
+        
+        .alert-success {
+            background-color: var(--primary-50);
+            border-color: var(--primary-200);
+            color: var(--primary-800);
+        }
+        
+        .dark .alert-success {
+            background-color: rgba(59, 130, 246, 0.2);
+            border-color: rgba(59, 130, 246, 0.3);
+            color: var(--primary-300);
+        }
+        
+        /* 按钮样式 */
+        .btn {
+            font-weight: 500;
+            border-radius: var(--border-radius);
+            padding: 0.5rem 1rem;
+            font-size: 0.875rem;
+            transition: all var(--transition-fast) ease;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .btn-sm {
+            padding: 0.375rem 0.75rem;
+            font-size: 0.75rem;
+        }
+        
+        .btn-lg {
+            padding: 0.75rem 1.5rem;
+            font-size: 1rem;
+        }
+        
+        .btn-primary {
+            background-color: var(--primary-600);
+            color: white;
+            border: none;
+        }
+        
+        .btn-primary:hover {
+            background-color: var(--primary-700);
+            transform: translateY(-1px);
+        }
+        
+        .btn-primary:active {
+            background-color: var(--primary-800);
+            transform: translateY(0);
+        }
+        
+        .btn-secondary {
+            background-color: white;
+            border: 1px solid var(--gray-300);
+            color: var(--gray-700);
+        }
+        
+        .btn-secondary:hover {
+            background-color: var(--gray-50);
+            color: var(--gray-900);
+            transform: translateY(-1px);
+        }
+        
+        .dark .btn-secondary {
+            background-color: var(--gray-700);
+            border-color: var(--gray-600);
+            color: var(--gray-200);
+        }
+        
+        .dark .btn-secondary:hover {
+            background-color: var(--gray-600);
+            color: white;
+        }
+        
+        .btn-icon {
+            margin-right: 0.5rem;
+        }
+        
+        /* 吐司通知 */
+        .toast-container {
+            position: fixed;
+            bottom: 1.5rem;
+            right: 1.5rem;
+            z-index: 50;
+        }
+        
+        .toast {
+            background-color: white;
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow-lg);
+            overflow: hidden;
+            width: 300px;
+            margin-top: 0.75rem;
+        }
+        
+        .dark .toast {
+            background-color: var(--gray-800);
+        }
+        
+        .toast-header {
+            background-color: var(--primary-600);
+            color: white;
+            padding: 0.75rem 1rem;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        
+        .toast-body {
+            padding: 1rem;
+            color: var(--gray-700);
+        }
+        
+        .dark .toast-body {
+            color: var(--gray-300);
+        }
+        
+        /* 移动端吐司通知优化 */
+        @media (max-width: 640px) {
+            .toast-container {
+                right: 1rem;
+                bottom: 6rem; /* 移动位置，避免被固定按钮遮挡 */
+            }
+            
+            .toast {
+                width: calc(100vw - 2rem);
+                max-width: 350px;
+            }
+        }
+        
+        /* Utilities */
+        .d-none {
+            display: none !important;
+        }
+        
+        /* Responsive styles */
+        @media (max-width: 1024px) {
+            .sidebar {
+                transform: translateX(-100%);
+            }
+            
+            .sidebar.show {
+                transform: translateX(0);
+            }
+            
+            .content {
+                margin-left: 0;
+            }
+            
+            .mobile-header {
+                display: flex;
+            }
+            
+            .content-inner {
+                padding: calc(var(--header-height) + 1rem) 1.5rem 1.5rem;
+            }
+            
+            .overlay {
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background-color: rgba(0, 0, 0, 0.5);
+                z-index: 35;
+                opacity: 0;
+                visibility: hidden;
+                transition: opacity var(--transition-normal) ease, visibility var(--transition-normal) ease;
+            }
+            
+            .overlay.show {
+                opacity: 1;
+                visibility: visible;
+            }
+        }
+        
+        @media (max-width: 640px) {
+            .content-inner {
+                padding: calc(var(--header-height) + 1rem) 1rem 1rem;
+            }
+            
+            /* 移动设备上的反馈按钮样式 */
+            .feedback-button {
+                width: 3.5rem;
+                height: 3.5rem;
+                border-radius: 50%;
+                padding: 0;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                box-shadow: var(--shadow-lg);
+                bottom: 1.5rem;
+                right: 1.5rem;
+                position: fixed;
+                z-index: 40;
+            }
+            
+            .feedback-button span {
+                display: none;
+            }
+            
+            /* 移动设备上的主题切换按钮样式 */
+            .theme-toggle {
+                width: 2.5rem;
+                height: 2.5rem;
+            }
+            
+            /* 为底部内容添加更多底部内边距，避免被固定按钮遮挡 */
+            .footer {
+                padding-bottom: 5rem;
+            }
+        }
+    </style>
+    
+    {% block extra_css %}{% endblock %}
+</head>
+<body x-data="{ darkMode: localStorage.getItem('dark') === 'true', sidebarOpen: false }">
+    <div class="app-container">
+        <!-- Sidebar -->
+        <aside class="sidebar" :class="{'show': sidebarOpen}">
+            <div class="sidebar-header">
+                <a href="{% url 'home' %}" class="logo">
+                    <div class="logo-icon">D</div>
+                    <div class="logo-text">
+                        <span class="logo-text-deja">deja</span>
+                        <span class="logo-text-vocab">vocab</span>
+                    </div>
+                </a>
+                <button 
+                    class="theme-toggle" 
+                    @click="darkMode = !darkMode; toggleTheme(darkMode)" 
+                    title="Toggle dark mode"
+                >
+                    <i x-show="!darkMode" class="bi bi-moon-stars theme-toggle-icon"></i>
+                    <i x-show="darkMode" class="bi bi-sun theme-toggle-icon"></i>
+                </button>
+            </div>
+            
+            <div class="sidebar-menu">
+                {% if user.is_authenticated %}
+                <nav>
+                    <div class="menu-category">主要功能</div>
+                    <ul class="menu-list">
+                        <li class="menu-item">
+                            <a href="{% url 'dashboard' %}" class="menu-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
+                                <i class="bi bi-collection-play menu-icon"></i>
+                                <span>我的视频</span>
+                            </a>
+                        </li>
+                        <li class="menu-item">
+                            <a href="{% url 'dictionary' %}" class="menu-link {% if request.resolver_match.url_name == 'dictionary' %}active{% endif %}">
+                                <i class="bi bi-journal-text menu-icon"></i>
+                                <span>我的词典</span>
+                            </a>
+                        </li>
+                    </ul>
+                    
+                    <div class="menu-category">学习工具</div>
+                    <ul class="menu-list">
+                        <li class="menu-item">
+                            <a href="{% url 'favorite_dictionary' %}" class="menu-link {% if request.resolver_match.url_name == 'favorite_dictionary' %}active{% endif %}">
+                                <i class="bi bi-star menu-icon"></i>
+                                <span>收藏词典</span>
+                            </a>
+                        </li>
+                        <li class="menu-item">
+                            <a href="{% url 'sentence_list' %}" class="menu-link {% if request.resolver_match.url_name == 'sentence_list' %}active{% endif %}">
+                                <i class="bi bi-chat-quote menu-icon"></i>
+                                <span>我的句子</span>
+                            </a>
+                        </li>
+                        <li class="menu-item">
+                            <a href="{% url 'notes' %}" class="menu-link {% if request.resolver_match.url_name == 'notes' or request.resolver_match.url_name == 'notes_detail' %}active{% endif %}">
+                                <i class="bi bi-journal-richtext menu-icon"></i>
+                                <span>聊天记录</span>
+                            </a>
+                        </li>
+                        <li class="menu-item">
+                            <a href="{% url 'word_statistics' %}" class="menu-link {% if request.resolver_match.url_name == 'word_statistics' %}active{% endif %}">
+                                <i class="bi bi-graph-up menu-icon"></i>
+                                <span>学习统计</span>
+                            </a>
+                        </li>
+                    </ul>
+                </nav>
+                {% else %}
+                <nav>
+                    <div class="menu-category">账户</div>
+                    <ul class="menu-list">
+                        <li class="menu-item">
+                            <a href="{% url 'login' %}" class="menu-link {% if request.resolver_match.url_name == 'login' %}active{% endif %}">
+                                <i class="bi bi-door-open menu-icon"></i>
+                                <span>登录</span>
+                            </a>
+                        </li>
+                        <li class="menu-item">
+                            <a href="{% url 'register' %}" class="menu-link {% if request.resolver_match.url_name == 'register' %}active{% endif %}">
+                                <i class="bi bi-person-plus menu-icon"></i>
+                                <span>注册</span>
+                            </a>
+                        </li>
+                    </ul>
+                </nav>
+                {% endif %}
+            </div>
+            
+            {% if user.is_authenticated %}
+            <div class="sidebar-footer">
+                <div class="user-dropdown">
+                    <div class="user-avatar">
+                        {{ user.username|slice:":1" }}
+                    </div>
+                    <div class="user-info">
+                        <div class="user-name">{{ user.username }}</div>
+                    </div>
+                </div>
+                <a href="{% url 'logout' %}" class="logout-button" title="退出">
+                    <i class="bi bi-box-arrow-right"></i>
+                </a>
+            </div>
+            {% endif %}
+        </aside>
+        
+        <!-- Mobile Header -->
+        <header class="mobile-header">
+            <button class="menu-trigger" @click="sidebarOpen = true">
+                <i class="bi bi-list"></i>
+            </button>
+            
+            <a href="{% url 'home' %}" class="logo">
+                <div class="logo-icon">D</div>
+                <div class="logo-text">
+                    <span class="logo-text-deja">deja</span>
+                    <span class="logo-text-vocab">vocab</span>
+                </div>
+            </a>
+            
+            <button 
+                class="theme-toggle" 
+                @click="darkMode = !darkMode; toggleTheme(darkMode)" 
+                title="Toggle dark mode"
+            >
+                <i x-show="!darkMode" class="bi bi-moon-stars theme-toggle-icon"></i>
+                <i x-show="darkMode" class="bi bi-sun theme-toggle-icon"></i>
+            </button>
+        </header>
+        
+        <!-- Background Overlay -->
+        <div class="overlay" :class="{'show': sidebarOpen}" @click="sidebarOpen = false"></div>
+        
+        <!-- Main Content -->
+        <main class="content">
+            <div class="content-inner">
+                {% if messages %}
+                    {% for message in messages %}
+                        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                            <i class="bi bi-info-circle me-2"></i> {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+                
+                {% block content %}{% endblock %}
+            </div>
+            
+            <!-- Footer -->
+            <footer class="footer">
+                <p>Déjà <span class="footer-brand">Vocab</span> • 学习语言的现代体验</p>
+                <div class="footer-links">
+                    <a href="https://space.bilibili.com/259581780?spm_id_from=333.1007.0.0" target="_blank" class="footer-link">关于我们</a>
+                    <a href="/privacy-policy/" class="footer-link">隐私政策</a>
+                </div>
+                <p class="mt-2">&copy; {% now "Y" %} Déjà Vocab</p>
+            </footer>
+        </main>
+    </div>
+    
+    {% if user.is_authenticated %}
+    <!-- Feedback Button -->
+    <button class="feedback-button" data-bs-toggle="modal" data-bs-target="#feedbackModal">
+        <i class="bi bi-chat-dots"></i>
+        <span>意见反馈</span>
+    </button>
+    
+    <!-- Feedback Modal -->
+    <div class="modal fade" id="feedbackModal" tabindex="-1" aria-labelledby="feedbackModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="feedbackModalLabel">意见反馈</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="text-center mb-3">非常感谢您的宝贵意见，我们将不断完善产品！</p>
+                    <div class="alert alert-success mb-3 py-2">
+                        <strong><i class="bi bi-gift-fill"></i> 采纳奖励：</strong> 被采纳的反馈将获得 Link零记卡组 奖励！请留下微信号以便我们联系您。
+                    </div>
+                    
+                    <form id="feedbackForm" action="{% url 'submit_feedback' %}" method="post">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label for="feedbackType" class="form-label">反馈类型</label>
+                            <select class="form-select" id="feedbackType" name="type" required>
+                                <option value="" selected disabled>请选择</option>
+                                <option value="bug">错误报告</option>
+                                <option value="feature">功能建议</option>
+                                <option value="usability">使用体验</option>
+                                <option value="other">其他</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="feedbackContent" class="form-label">反馈内容</label>
+                            <textarea class="form-control" id="feedbackContent" name="content" rows="4" required placeholder="请描述您的意见或遇到的问题..."></textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label for="feedbackWechat" class="form-label">您的微信号 (可选)</label>
+                            <input type="text" class="form-control" id="feedbackWechat" name="wechat" placeholder="方便我们回复您和发放奖励">
+                        </div>
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-send btn-icon"></i>提交反馈
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Handle feedback form submission
+            const feedbackForm = document.getElementById('feedbackForm');
+            
+            if (feedbackForm) {
+                feedbackForm.addEventListener('submit', function(event) {
+                    event.preventDefault();
+                    
+                    const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+                    const formData = new FormData(feedbackForm);
+                    
+                    const submitButton = feedbackForm.querySelector('button[type="submit"]');
+                    const originalButtonText = submitButton.innerHTML;
+                    submitButton.innerHTML = '<i class="bi bi-hourglass-split btn-icon"></i>提交中...';
+                    submitButton.disabled = true;
+                    
+                    fetch(feedbackForm.action, {
+                        method: 'POST',
+                        body: formData,
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest',
+                            'X-CSRFToken': csrftoken
+                        },
+                        credentials: 'same-origin'
+                    })
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('网络响应异常');
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        // Close modal
+                        const feedbackModal = bootstrap.Modal.getInstance(document.getElementById('feedbackModal'));
+                        feedbackModal.hide();
+                        
+                        // Show success message
+                        showToast('成功', data.message || '感谢您的反馈！我们会认真考虑您的宝贵意见。', 'success');
+                        
+                        // Reset form
+                        feedbackForm.reset();
+                    })
+                    .catch(error => {
+                        console.error('Error submitting feedback:', error);
+                        showToast('错误', '提交反馈时出错。请重试。', 'danger');
+                    })
+                    .finally(() => {
+                        // Restore button state
+                        submitButton.innerHTML = originalButtonText;
+                        submitButton.disabled = false;
+                    });
+                });
+            }
+            
+            // Toast notification function
+            window.showToast = function(title, message, type = 'primary') {
+                const toastContainer = document.querySelector('.toast-container') || createToastContainer();
+                
+                const toast = document.createElement('div');
+                toast.className = 'toast fade show';
+                toast.setAttribute('role', 'alert');
+                toast.setAttribute('aria-live', 'assertive');
+                toast.setAttribute('aria-atomic', 'true');
+                
+                const backgroundColor = type === 'success' ? '#10B981' : 
+                                      type === 'danger' ? '#EF4444' : 
+                                      type === 'warning' ? '#F59E0B' : '#3676E0';
+                
+                toast.innerHTML = `
+                    <div class="toast-header" style="background-color: ${backgroundColor};">
+                        <strong class="me-auto">${title}</strong>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast" aria-label="Close"></button>
+                    </div>
+                    <div class="toast-body">
+                        ${message}
+                    </div>
+                `;
+                
+                toastContainer.appendChild(toast);
+                
+                const bsToast = new bootstrap.Toast(toast, {
+                    delay: 5000
+                });
+                
+                toast.addEventListener('hidden.bs.toast', function() {
+                    toast.remove();
+                });
+                
+                bsToast.show();
+            }
+            
+            function createToastContainer() {
+                const container = document.createElement('div');
+                container.className = 'toast-container';
+                document.body.appendChild(container);
+                return container;
+            }
+            
+            // Prevent sidebar click from closing
+            document.querySelector('.sidebar')?.addEventListener('click', (e) => {
+                e.stopPropagation();
+            });
+        });
+    </script>
+    
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

@@ -1,0 +1,45 @@
+# Django and Django REST Framework
+Django>=4.2.0,<5.2.0
+djangorestframework>=3.14.0
+django-cors-headers>=4.0.0
+
+# NLP and Language Processing
+spacy>=3.5.0
+# Download language models with: python -m spacy download en_core_web_sm
+
+# Google Gemini AI
+google-genai==1.7.0  # Supports 'from google import genai' import pattern
+google.generativeai>=0.3.0  # Official Google Generative AI Python SDK
+# YouTube Transcript API
+youtube-transcript-api>=0.6.0
+
+# Database (SQLite comes with Django, other options below)
+# psycopg2-binary>=2.9.5  # Uncomment if using PostgreSQL
+
+# Caching
+django-redis>=5.2.0  # For production Redis caching
+
+# Production server
+gunicorn>=20.1.0
+whitenoise>=6.4.0  # For static file serving
+
+# Development
+python-dotenv>=1.0.0  # For environment variables
+
+# Testing
+pytest>=7.3.1
+pytest-django>=4.5.2
+
+# Utilities
+requests>=2.28.0
+Pillow>=9.5.0  # For image processing if needed
+termcolor>=2.3.0  # For colored terminal output
+beautifulsoup4>=4.11.0  # HTML parsing (bs4)
+lxml>=4.9.0  # XML/HTML parser for BeautifulSoup
+
+# Document generation
+python-docx>=0.8.11  # For Word document generation
+reportlab>=3.6.12   # For PDF generation
+
+# Markdown support
+markdown>=3.4.1

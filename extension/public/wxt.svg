@@ -1,0 +1,74 @@
+<svg width="72" height="72" viewBox="0 0 72 72" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g clip-path="url(#clip0_305_516)">
+<g clip-path="url(#clip1_305_516)">
+<path d="M49.0229 69.1875C54.1272 69.1875 58.265 65.0497 58.265 59.9454V50.7033H59.9454C65.0497 50.7033 69.1875 46.5655 69.1875 41.4612C69.1875 36.357 65.0497 32.2191 59.9454 32.2191H58.265V22.9771C58.265 17.8728 54.1272 13.735 49.0229 13.735H39.7809V12.0546C39.7809 6.95032 35.643 2.8125 30.5388 2.8125C25.4345 2.8125 21.2967 6.95032 21.2967 12.0546V13.735H12.0546C6.95032 13.735 2.8125 17.8728 2.8125 22.9771V32.2191H4.49288C9.59714 32.2191 13.735 36.357 13.735 41.4612C13.735 46.5655 9.59714 50.7033 4.49288 50.7033H2.8125V69.1875H21.2967V67.5071C21.2967 62.4029 25.4345 58.265 30.5388 58.265C35.643 58.265 39.7809 62.4029 39.7809 67.5071V69.1875H49.0229Z" stroke="#67D55E" stroke-width="5.625"/>
+</g>
+</g>
+<defs>
+<clipPath id="clip0_305_516">
+<rect width="72" height="72" fill="white"/>
+</clipPath>
+<clipPath id="clip1_305_516">
+<rect width="72" height="72" fill="white"/>
+</clipPath>
+</defs>
+</svg>
+  <svg height="36" version="1.1" viewBox="0 0 36 36" width="36" style="filter: drop-shadow(0 0 5px rgba(54, 238, 224, 0.6));">
+              <!-- 渐变和滤镜定义 -->
+              <defs>
+                <linearGradient id="dejavocab-btn-gradient-popup" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stop-color="#0a84ff" /> <!-- primary(深色模式) -->
+                  <stop offset="100%" stop-color="#36eee0" /> <!-- accent(浅色模式) -->
+                </linearGradient>
+                <linearGradient id="dejavocab-inner-gradient-popup" x1="0%" y1="0%" x2="100%" y2="0%">
+                  <stop offset="0%" stop-color="#3c8ce7" />
+                  <stop offset="100%" stop-color="#00eaff" />
+                </linearGradient>
+                
+                <!-- 发光滤镜 -->
+                <filter id="glow-popup" x="-30%" y="-30%" width="160%" height="160%">
+                  <feGaussianBlur stdDeviation="2" result="blur" />
+                  <feComposite in="SourceGraphic" in2="blur" operator="over" />
+                </filter>
+                
+                <!-- 粒子发光滤镜 -->
+                <filter id="particle-glow-popup" x="-50%" y="-50%" width="200%" height="200%">
+                  <feGaussianBlur stdDeviation="0.5" result="particle-blur" />
+                  <feComposite in="SourceGraphic" in2="particle-blur" operator="over" />
+                </filter>
+              </defs>
+              
+              <!-- 主背景圆圈带吸气效果 -->
+              <circle cx="18" cy="18" r="16" fill="url(#dejavocab-btn-gradient-popup)">
+                <animate attributeName="r" values="16;16.3;16;16.2;16" dur="3s" repeatCount="indefinite" />
+              </circle>
+              
+              <!-- 刺激的内外光晕 -->
+              <circle cx="18" cy="18" r="17" fill="none" stroke="#FFFFFF" stroke-width="0.3" opacity="0.4" filter="url(#glow-popup)">
+                <animate attributeName="stroke-opacity" values="0.4;0.1;0.4;0.2;0.4" dur="3.5s" repeatCount="indefinite" />
+              </circle>
+              
+              <!-- 装饰粒子 -->
+              <g filter="url(#particle-glow-popup)">
+                <circle class="particle" cx="10" cy="14" r="0.4" fill="#FFFFFF" opacity="0.8">
+                  <animate attributeName="opacity" values="0.8;0.3;0.8" dur="2s" begin="0.1s" repeatCount="indefinite" />
+                </circle>
+                <circle class="particle" cx="26" cy="22" r="0.3" fill="#FFFFFF" opacity="0.7">
+                  <animate attributeName="opacity" values="0.7;0.2;0.7" dur="2.5s" begin="0.7s" repeatCount="indefinite" />
+                </circle>
+                <circle class="particle" cx="22" cy="9" r="0.5" fill="#FFFFFF" opacity="0.6">
+                  <animate attributeName="opacity" values="0.6;0.1;0.6" dur="3.1s" begin="0.3s" repeatCount="indefinite" />
+                </circle>
+              </g>
+              
+              <!-- D 字母图标 -->
+              <path d="M14,12 L18,12 C21.5,12 23,14 23,18 C23,22 21.5,24 18,24 L14,24 Z" fill="white" filter="url(#glow-popup)" />
+              <path d="M16,15 L18,15 C19.5,15 20,16 20,18 C20,20 19.5,21 18,21 L16,21 Z" fill="url(#dejavocab-inner-gradient-popup)">
+                <animate attributeName="fill-opacity" values="1;0.85;1" dur="4s" repeatCount="indefinite" />
+              </path>
+              
+              <!-- 字幕标记带微光效果 -->
+              <rect x="11" y="22" width="14" height="1.5" rx="0.75" fill="#FFFFFF" opacity="0.9">
+                <animate attributeName="opacity" values="0.9;0.7;0.9" dur="2.5s" repeatCount="indefinite" />
+              </rect>
+            </svg>

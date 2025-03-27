@@ -1,0 +1,55 @@
+<component name="InspectionProjectProfileManager">
+  <profile version="1.0">
+    <option name="myName" value="Project Default" />
+    <inspection_tool class="PyPackageRequirementsInspection" enabled="true" level="WARNING" enabled_by_default="true">
+      <option name="ignoredPackages">
+        <value>
+          <list size="42">
+            <item index="0" class="java.lang.String" itemvalue="html5lib" />
+            <item index="1" class="java.lang.String" itemvalue="python-dotenv" />
+            <item index="2" class="java.lang.String" itemvalue="setuptools" />
+            <item index="3" class="java.lang.String" itemvalue="numpy" />
+            <item index="4" class="java.lang.String" itemvalue="sqlite3_api" />
+            <item index="5" class="java.lang.String" itemvalue="srsly" />
+            <item index="6" class="java.lang.String" itemvalue="Jinja2" />
+            <item index="7" class="java.lang.String" itemvalue="redis" />
+            <item index="8" class="java.lang.String" itemvalue="python-magic" />
+            <item index="9" class="java.lang.String" itemvalue="spacy" />
+            <item index="10" class="java.lang.String" itemvalue="pathlib" />
+            <item index="11" class="java.lang.String" itemvalue="starlette" />
+            <item index="12" class="java.lang.String" itemvalue="certifi" />
+            <item index="13" class="java.lang.String" itemvalue="blis" />
+            <item index="14" class="java.lang.String" itemvalue="uvicorn" />
+            <item index="15" class="java.lang.String" itemvalue="itsdangerous" />
+            <item index="16" class="java.lang.String" itemvalue="sympy" />
+            <item index="17" class="java.lang.String" itemvalue="websockets" />
+            <item index="18" class="java.lang.String" itemvalue="Flask" />
+            <item index="19" class="java.lang.String" itemvalue="blinker" />
+            <item index="20" class="java.lang.String" itemvalue="pydantic" />
+            <item index="21" class="java.lang.String" itemvalue="cases" />
+            <item index="22" class="java.lang.String" itemvalue="typer" />
+            <item index="23" class="java.lang.String" itemvalue="Flask-Cors" />
+            <item index="24" class="java.lang.String" itemvalue="Werkzeug" />
+            <item index="25" class="java.lang.String" itemvalue="wrapt" />
+            <item index="26" class="java.lang.String" itemvalue="aiohappyeyeballs" />
+            <item index="27" class="java.lang.String" itemvalue="channels_redis" />
+            <item index="28" class="java.lang.String" itemvalue="chardet" />
+            <item index="29" class="java.lang.String" itemvalue="fastapi" />
+            <item index="30" class="java.lang.String" itemvalue="cymem" />
+            <item index="31" class="java.lang.String" itemvalue="AllPairs" />
+            <item index="32" class="java.lang.String" itemvalue="deepgram-sdk" />
+            <item index="33" class="java.lang.String" itemvalue="Django" />
+            <item index="34" class="java.lang.String" itemvalue="mpmath" />
+            <item index="35" class="java.lang.String" itemvalue="python-decouple" />
+            <item index="36" class="java.lang.String" itemvalue="murmurhash" />
+            <item index="37" class="java.lang.String" itemvalue="thinc" />
+            <item index="38" class="java.lang.String" itemvalue="cloudpathlib" />
+            <item index="39" class="java.lang.String" itemvalue="msgpack" />
+            <item index="40" class="java.lang.String" itemvalue="webencodings" />
+            <item index="41" class="java.lang.String" itemvalue="base" />
+          </list>
+        </value>
+      </option>
+    </inspection_tool>
+  </profile>
+</component>
