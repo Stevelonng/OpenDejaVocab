@@ -1,5 +1,9 @@
 # Déjà Vocab
 
+<p align="center">
+  <img src="Deja_vocab_backend/static/images/logo.JPG" alt="Déjà Vocab Logo" width="200">
+</p>
+
 Déjà Vocab - Intelligent YouTube Learning Assistant. Automatically captures video subtitles, builds your personal vocabulary, answers questions with AI in real-time, delivers personalized learning recommendations, and effortlessly enhances your language skills while you enjoy videos.
 
 English | [中文](README.zh.md)
