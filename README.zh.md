@@ -1,5 +1,5 @@
 # Déjà Vocab - 旨在做最强的语言学习生态
-（我的第一个Vibe Coding项目）
+（全靠Vibe Coding，没有一行是手写的，因为我还不会😭）
 
 <p align="center">
   <img src="Deja_vocab_backend/static/images/logo.JPG" alt="Déjà Vocab Logo" width="200">
