@@ -1,11 +1,29 @@
 # Déjà Vocab - 旨在做最强的语言学习生态
-（全靠Vibe Coding，没有一行是手写的，因为我还不会😭）
+<p align="center"><i>全靠Vibe Coding，没有一行是手写的，因为我还不会😭</i></p>
 
 <p align="center">
   <img src="Deja_vocab_backend/static/images/logo.JPG" alt="Déjà Vocab Logo" width="200">
 </p>
 
-[English](README.md) | 中文
+<div align="center">
+  <h3>智能YouTube学习助手</h3>
+  <p>自动收集视频字幕，构建个人词典，AI实时解答问题，提供个性化学习建议，边看视频边轻松提升语言能力。</p>
+  
+  <p>
+    <a href="#项目概述">项目概述</a> •
+    <a href="#核心功能">核心功能</a> •
+    <a href="#安装说明">安装说明</a> •
+    <a href="#使用指南">使用指南</a> •
+    <a href="#贡献指南">贡献指南</a>
+  </p>
+  
+  <p>
+    <a href="README.md">English</a> | 
+    <b><a href="#">中文</a></b>
+  </p>
+</div>
+
+---
 
 ## 项目概述
 
