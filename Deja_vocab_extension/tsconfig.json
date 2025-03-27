@@ -1,0 +1,19 @@
+{
+  "extends": "./.wxt/tsconfig.json",
+  "compilerOptions": {
+    "types": ["node", "chrome"],
+    "paths": {
+      "@/*": ["./*"]
+    }
+  },
+  "include": [
+    "**/*.ts",
+    "**/*.tsx",
+    "**/*.vue",
+    "types/**/*.d.ts"
+  ],
+  "exclude": [
+    "**/HelloWorld.vue",
+    "node_modules"
+  ]
+}

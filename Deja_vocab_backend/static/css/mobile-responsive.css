@@ -1,0 +1,1050 @@
+/* 
+ * Déjà Vocab 移动端响应式样式优化
+ * 解决字体过大和元素穿模问题
+ */
+
+/* 基础移动端优化 */
+@media (max-width: 991.98px) {
+    /* 整体字体尺寸调整 */
+    body {
+        font-size: 14px; /* 减小基础字体大小 */
+    }
+    
+    /* 标题字体大小调整 */
+    h1 {
+        font-size: 1.8rem !important;
+        margin-bottom: 1rem !important;
+    }
+    
+    h2 {
+        font-size: 1.5rem !important;
+        margin-bottom: 0.8rem !important;
+    }
+    
+    h3 {
+        font-size: 1.2rem !important;
+        margin-bottom: 0.6rem !important;
+    }
+    
+    /* 导航栏字体和图标大小 */
+    .brand-text {
+        font-size: 1.3rem !important;
+    }
+    
+    .sidebar-nav-link .bi {
+        font-size: 1.3rem !important;
+    }
+    
+    /* 隐藏侧边栏中重复的标题 */
+    .sidebar .sidebar-header {
+        display: none !important;
+    }
+    
+    /* 内容区域调整 */
+    .main-content {
+        padding: 1rem !important;
+    }
+    
+    /* 卡片样式优化 */
+    .card {
+        margin-bottom: 1rem !important;
+    }
+    
+    .card-body {
+        padding: 1.25rem !important;
+    }
+    
+    /* 表单元素调整 */
+    .form-control, .form-select, .btn {
+        font-size: 0.9rem !important;
+        padding: 0.375rem 0.75rem !important;
+    }
+    
+    /* 防止元素溢出和穿模 */
+    img, video, iframe, embed, object {
+        max-width: 100% !important;
+        height: auto !important;
+    }
+    
+    /* 表格响应式处理 */
+    table {
+        display: block;
+        width: 100%;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+    
+    /* 修复表格内的字体大小 */
+    td, th {
+        font-size: 0.85rem !important;
+        padding: 0.5rem !important;
+    }
+    
+    /* 修复反馈按钮大小和位置 */
+    .feedback-button {
+        padding: 0.5rem 0.75rem !important;
+        font-size: 0.9rem !important;
+        right: 0.75rem !important;
+        bottom: 0.75rem !important;
+    }
+    
+    /* 修复footer样式 */
+    .footer {
+        padding: 1rem 0 !important;
+        font-size: 0.85rem !important;
+    }
+    
+    .footer-links a {
+        margin: 0 5px !important;
+    }
+    
+    /* Dashboard页面视频卡片按钮修复 */
+    .video-actions {
+        flex-direction: column !important;
+        gap: 0.5rem !important;
+        -webkit-box-orient: vertical !important;
+        -webkit-flex-direction: column !important;
+    }
+    
+    .video-actions > * {
+        display: block !important;
+        width: 100% !important;
+        margin-right: 0 !important;
+        margin-bottom: 8px !important;
+    }
+    
+    .btn-video-action {
+        width: 100% !important;
+        padding: 0.5rem 1rem !important;
+        font-size: 0.85rem !important;
+        justify-content: flex-start !important;
+        display: block !important;
+    }
+    
+    .video-title {
+        font-size: 1.1rem !important;
+        margin-bottom: 0.75rem !important;
+    }
+    
+    .video-meta {
+        margin-bottom: 0.75rem !important;
+    }
+    
+    .video-content {
+        padding: 1rem !important;
+    }
+    
+    .video-item-inner {
+        flex-direction: column !important;
+        -webkit-box-orient: vertical !important;
+        -webkit-flex-direction: column !important;
+    }
+    
+    .video-thumbnail-container {
+        height: 180px !important;
+        width: 100% !important;
+    }
+    
+    /* Word Detail页面按钮修复 */
+    .word-header {
+        flex-direction: column !important;
+        -webkit-box-orient: vertical !important;
+        -webkit-flex-direction: column !important;
+        align-items: flex-start !important;
+    }
+    
+    .action-buttons {
+        display: flex !important;
+        flex-direction: column !important;
+        -webkit-box-orient: vertical !important;
+        -webkit-flex-direction: column !important;
+        width: 100% !important;
+        gap: 0.5rem !important;
+        margin-top: 1rem !important;
+    }
+    
+    .action-buttons > * {
+        display: block !important;
+        width: 100% !important;
+        margin-right: 0 !important;
+        margin-bottom: 0.5rem !important;
+        text-align: left !important;
+    }
+    
+    .action-buttons .btn {
+        justify-content: flex-start !important;
+        padding: 0.6rem 1rem !important;
+    }
+    
+    /* 修复编辑和返回按钮边框问题 */
+    .action-buttons .btn-outline {
+        border: 1px solid #6c757d !important;
+        background-color: transparent !important;
+        color: #6c757d !important;
+    }
+    
+    .action-buttons .btn-outline:hover {
+        background-color: #6c757d !important;
+        color: #fff !important;
+    }
+    
+    .action-buttons .btn .icon {
+        margin-right: 8px !important;
+    }
+    
+    .word-title {
+        align-items: center !important;
+        flex-wrap: wrap !important;
+        margin-bottom: 0.5rem !important;
+    }
+    
+    .word-text {
+        font-size: 1.6rem !important;
+        margin-bottom: 0.5rem !important;
+    }
+    
+    .phonetics {
+        display: flex !important;
+        flex-wrap: wrap !important;
+        margin-bottom: 0.75rem !important;
+    }
+}
+
+/* 小型手机设备 (iPhone SE, 较小的Android设备) */
+@media (max-width: 374.98px) {
+    body {
+        font-size: 13px; /* 进一步减小字体 */
+    }
+    
+    /* 进一步缩小边距和内边距 */
+    .card-body, .main-content {
+        padding: 0.75rem !important;
+    }
+    
+    /* 调整表单元素大小 */
+    .form-control, .form-select, .btn {
+        padding: 0.25rem 0.5rem !important;
+        font-size: 0.85rem !important;
+    }
+    
+    /* 调整移动导航栏 */
+    .mobile-header {
+        padding: 0 0.5rem !important;
+    }
+    
+    /* 调整品牌文字 */
+    .brand-text {
+        font-size: 1.1rem !important;
+    }
+    
+    /* 进一步减小视频操作按钮 */
+    .btn-video-action {
+        padding: 0.4rem 0.8rem !important;
+        font-size: 0.8rem !important;
+    }
+    
+    /* 减小视频元信息文本大小 */
+    .video-meta-item {
+        font-size: 0.8rem !important;
+    }
+    
+    /* 减小缩略图高度 */
+    .video-thumbnail-container {
+        height: 150px !important;
+    }
+    
+    /* Word Detail页面小屏幕进一步优化 */
+    .word-card {
+        padding: 1rem !important;
+    }
+    
+    .action-buttons .btn {
+        padding: 0.5rem 0.8rem !important;
+        font-size: 0.8rem !important;
+    }
+    
+    .word-text {
+        font-size: 1.4rem !important;
+    }
+}
+
+/* Dashboard页面平板尺寸优化 */
+@media (min-width: 576px) and (max-width: 991.98px) {
+    /* 在平板上保持水平按钮，但减小尺寸 */
+    .video-actions {
+        flex-direction: row !important;
+        flex-wrap: wrap !important;
+        justify-content: flex-start !important;
+        gap: 0.5rem !important;
+        -webkit-box-orient: horizontal !important;
+        -webkit-flex-direction: row !important;
+    }
+    
+    .video-actions > * {
+        display: inline-block !important;
+        width: auto !important;
+        margin-right: 8px !important;
+        margin-bottom: 8px !important;
+    }
+    
+    .btn-video-action {
+        width: auto !important;
+        flex: 0 0 auto !important;
+        white-space: nowrap !important;
+        font-size: 0.8rem !important;
+        padding: 0.4rem 0.8rem !important;
+        display: inline-block !important;
+    }
+    
+    /* Word Detail页面平板优化 */
+    .word-header {
+        flex-direction: row !important;
+        -webkit-box-orient: horizontal !important;
+        -webkit-flex-direction: row !important;
+        justify-content: space-between !important;
+    }
+    
+    .action-buttons {
+        flex-direction: row !important;
+        flex-wrap: wrap !important;
+        -webkit-box-orient: horizontal !important;
+        -webkit-flex-direction: row !important;
+        width: auto !important;
+        margin-top: 0 !important;
+        margin-left: 1rem !important;
+    }
+    
+    .action-buttons > * {
+        width: auto !important;
+        margin-right: 0.5rem !important;
+        margin-bottom: 0.5rem !important;
+    }
+}
+
+/* 专门针对Safari的修复 - 更直接的方法 */
+@media not all and (min-resolution:.001dpcm) {
+    @supports (-webkit-appearance:none) {
+        @media (max-width: 575.98px) {
+            /* 手机Safari强制垂直按钮 */
+            .video-actions,
+            .action-buttons {
+                display: block !important;
+                width: 100% !important;
+            }
+            
+            .video-actions a, 
+            .video-actions button,
+            .action-buttons a,
+            .action-buttons button {
+                display: block !important;
+                width: 100% !important;
+                margin-right: 0 !important;
+                margin-bottom: 8px !important;
+                box-sizing: border-box !important;
+            }
+            
+            .btn-video-action,
+            .action-buttons .btn {
+                width: 100% !important;
+                box-sizing: border-box !important;
+                margin-right: 0 !important;
+            }
+            
+            /* Safari中保持按钮边框 */
+            .action-buttons .btn-outline {
+                border: 1px solid #6c757d !important;
+                background-color: transparent !important;
+                color: #6c757d !important;
+            }
+            
+            .action-buttons .btn-outline:hover {
+                background-color: #6c757d !important;
+                color: #fff !important;
+            }
+            
+            .video-item-inner,
+            .word-header {
+                display: block !important;
+            }
+            
+            .video-content {
+                display: block !important;
+            }
+        }
+    }
+}
+
+/* Dictionary页面移动端优化 */
+@media (max-width: 576px) {
+    /* 过滤和搜索区域重新优化 */
+    .filters-section {
+        margin-bottom: 1rem !important;
+    }
+    
+    .filter-row {
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 0.75rem !important;
+        width: 100% !important;
+    }
+    
+    /* 搜索表单优化 */
+    .search-form {
+        display: flex !important;
+        width: 100% !important;
+        position: relative !important;
+    }
+    
+    .search-input {
+        height: 40px !important;
+        border-radius: 8px !important;
+        padding: 0.5rem 2.5rem 0.5rem 1rem !important;
+        font-size: 0.9rem !important;
+        width: 100% !important;
+        border: 1px solid rgba(0, 0, 0, 0.1) !important;
+    }
+    
+    .dark .search-input {
+        background-color: rgba(30, 41, 59, 0.7) !important;
+        border-color: rgba(255, 255, 255, 0.1) !important;
+        color: rgba(255, 255, 255, 0.9) !important;
+    }
+    
+    .search-btn {
+        position: absolute !important;
+        right: 5px !important;
+        top: 50% !important;
+        transform: translateY(-50%) !important;
+        background: transparent !important;
+        border: none !important;
+        width: 36px !important;
+        height: 36px !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        color: var(--gray-dark) !important;
+    }
+    
+    .dark .search-btn {
+        color: rgba(255, 255, 255, 0.7) !important;
+    }
+    
+    /* 清除按钮样式 */
+    .clear-btn {
+        padding: 0.6rem 1rem !important;
+        border-radius: 8px !important;
+        font-size: 0.85rem !important;
+        background-color: rgba(108, 117, 125, 0.1) !important;
+        color: #6c757d !important;
+        text-decoration: none !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        gap: 0.5rem !important;
+    }
+    
+    .dark .clear-btn {
+        background-color: rgba(255, 255, 255, 0.1) !important;
+        color: rgba(255, 255, 255, 0.7) !important;
+    }
+    
+    .clear-btn:hover {
+        background-color: rgba(108, 117, 125, 0.15) !important;
+    }
+    
+    /* 排序下拉菜单优化 */
+    .sort-dropdown {
+        width: 100% !important;
+        position: relative !important;
+    }
+    
+    .dropdown-toggle {
+        width: 100% !important;
+        padding: 0.6rem 1rem !important;
+        border-radius: 8px !important;
+        font-size: 0.9rem !important;
+        background-color: white !important;
+        border: 1px solid rgba(0, 0, 0, 0.1) !important;
+        display: flex !important;
+        justify-content: space-between !important;
+        align-items: center !important;
+        cursor: pointer !important;
+    }
+    
+    .dark .dropdown-toggle {
+        background-color: rgba(30, 41, 59, 0.7) !important;
+        border-color: rgba(255, 255, 255, 0.1) !important;
+        color: rgba(255, 255, 255, 0.9) !important;
+    }
+    
+    /* 这里只针对sort-dropdown内的下拉菜单设置样式 */
+    .sort-dropdown .dropdown-menu {
+        width: 100% !important; /* 与sort-dropdown同宽 */
+        left: 0 !important;
+        right: 0 !important;
+        border-radius: 8px !important;
+        margin-top: 0.25rem !important;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1) !important;
+        border: 1px solid rgba(0, 0, 0, 0.1) !important;
+        max-height: 250px !important;
+        overflow-y: auto !important;
+        z-index: 1000 !important;
+        position: absolute !important;
+    }
+    
+    .dark .sort-dropdown .dropdown-menu {
+        background-color: #1e293b !important;
+        border-color: rgba(255, 255, 255, 0.1) !important;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3) !important;
+    }
+    
+    .dropdown-item {
+        padding: 0.6rem 1rem !important;
+        font-size: 0.9rem !important;
+        display: flex !important;
+        align-items: center !important;
+        gap: 0.5rem !important;
+    }
+    
+    .dark .dropdown-item {
+        color: rgba(255, 255, 255, 0.8) !important;
+    }
+    
+    .dropdown-item:hover {
+        background-color: rgba(0, 0, 0, 0.05) !important;
+    }
+    
+    .dark .dropdown-item:hover {
+        background-color: rgba(255, 255, 255, 0.05) !important;
+    }
+    
+    .dropdown-item.active {
+        background-color: rgba(14, 165, 233, 0.1) !important;
+        color: var(--primary) !important;
+        font-weight: 500 !important;
+    }
+    
+    .dark .dropdown-item.active {
+        background-color: rgba(14, 165, 233, 0.2) !important;
+        color: #38bdf8 !important;
+    }
+    
+    /* 平板设备上保持水平布局 */
+    @media (min-width: 577px) and (max-width: 991.98px) {
+        .filter-row {
+            flex-direction: row !important;
+            flex-wrap: wrap !important;
+        }
+        
+        .search-form {
+            flex: 1 !important;
+            min-width: 200px !important;
+        }
+        
+        .clear-btn, .sort-dropdown {
+            flex: 0 0 auto !important;
+            width: auto !important;
+        }
+    }
+    
+    /* 单词卡片优化 */
+    .word-card {
+        padding: 1rem !important;
+        margin-bottom: 0.75rem !important;
+    }
+    
+    .word-card-content {
+        gap: 0.75rem !important;
+    }
+    
+    /* 单词信息区优化 */
+    .word-info {
+        width: 100% !important;
+        min-width: 0 !important;
+        margin-bottom: 0.25rem !important;
+    }
+    
+    .word-header {
+        margin-bottom: 0.5rem !important;
+        align-items: center !important;
+    }
+    
+    .word-text {
+        font-size: 1.25rem !important;
+        margin-bottom: 0 !important;
+        line-height: 1.3 !important;
+    }
+    
+    .word-badge {
+        padding: 0.25rem 0.5rem !important;
+        font-size: 0.75rem !important;
+    }
+    
+    .word-translation {
+        font-size: 0.95rem !important;
+        margin-bottom: 0.75rem !important;
+        line-height: 1.4 !important;
+    }
+    
+    /* 操作按钮区域优化 */
+    .word-actions {
+        width: 100% !important;
+        justify-content: space-between !important;
+    }
+    
+    .btn-favorite, .btn-details {
+        padding: 0.5rem 0.75rem !important;
+        font-size: 0.85rem !important;
+        flex: 1 !important;
+        justify-content: center !important;
+        margin: 0 !important;
+    }
+    
+    /* 分页控件优化 */
+    .pagination {
+        margin: 1rem 0 !important;
+    }
+    
+    .page-link {
+        padding: 0.4rem 0.65rem !important;
+        font-size: 0.85rem !important;
+    }
+}
+
+/* 小型手机上进一步优化 */
+@media (max-width: 374.98px) {
+    /* 字典容器边距调整 */
+    .dictionary-container {
+        padding: 0.5rem !important;
+    }
+    
+    /* 字典标题优化 */
+    .page-title {
+        font-size: 1.5rem !important;
+    }
+    
+    .stats-badge {
+        font-size: 0.8rem !important;
+        padding: 0.25rem 0.5rem !important;
+        margin-left: 0.5rem !important;
+    }
+    
+    /* 单词卡片进一步减小边距 */
+    .word-card {
+        padding: 0.75rem !important;
+    }
+    
+    /* 优化按钮的显示 */
+    .word-actions {
+        gap: 0.5rem !important;
+    }
+    
+    .btn-favorite, .btn-details {
+        padding: 0.4rem 0.6rem !important;
+        font-size: 0.8rem !important;
+    }
+    
+    /* 下拉菜单优化 */
+    .dropdown-menu {
+        min-width: 180px !important;
+    }
+    
+    .dropdown-item {
+        padding: 0.4rem 0.75rem !important;
+        font-size: 0.85rem !important;
+    }
+}
+
+/* 针对句子列表页面的移动端优化 */
+@media (max-width: 768px) {
+    /* 句子列表页面标题 */
+    .page-title {
+        font-size: 1.8rem !important;
+        text-align: center !important;
+    }
+    
+    .page-header p {
+        text-align: center !important;
+        font-size: 0.9rem !important;
+    }
+    
+    /* 过滤区域优化 */
+    .filter-section {
+        padding: 1rem !important;
+        margin-bottom: 1.5rem !important;
+    }
+    
+    .search-form {
+        width: 100% !important;
+    }
+    
+    /* 视频卡片优化 */
+    .video-card {
+        margin-bottom: 1.25rem !important;
+    }
+    
+    .video-header {
+        padding: 1rem !important;
+        flex-direction: column !important;
+        align-items: flex-start !important;
+    }
+    
+    .video-thumbnail {
+        width: 100% !important;
+        height: auto !important;
+        aspect-ratio: 16/9 !important;
+        margin-right: 0 !important;
+        margin-bottom: 0.75rem !important;
+    }
+    
+    .video-title {
+        font-size: 1rem !important;
+        -webkit-line-clamp: 2 !important;
+        line-clamp: 2 !important;
+    }
+    
+    .video-meta {
+        width: 100% !important;
+        flex-wrap: nowrap !important;
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        gap: 0.5rem !important;
+    }
+    
+    /* 移动端将toggle icon移至右下角 */
+    .toggle-icon {
+        position: absolute !important;
+        bottom: 1rem !important;
+        right: 1rem !important;
+        margin-left: 0 !important;
+        width: 32px !important;
+        height: 32px !important;
+        background-color: rgba(14, 165, 233, 0.1) !important;
+        z-index: 2 !important;
+    }
+    
+    /* 句子内容区优化 */
+    .content-panel {
+        padding: 1rem !important;
+    }
+    
+    .content-section {
+        flex-direction: column !important;
+        gap: 1rem !important;
+    }
+    
+    /* 句子列表优化 */
+    .sentences-list {
+        max-height: none !important;
+        min-width: 0 !important;
+    }
+    
+    .sentence-item {
+        padding: 1rem !important;
+        margin-bottom: 0.75rem !important;
+    }
+    
+    .sentence-text {
+        font-size: 0.95rem !important;
+        margin-bottom: 0.5rem !important;
+    }
+    
+    .sentence-translation {
+        margin-bottom: 0.75rem !important;
+        padding-bottom: 0.5rem !important;
+    }
+    
+    /* 播放器区域优化 */
+    .player-section {
+        width: 100% !important;
+    }
+    
+    .player-caption {
+        padding: 0.75rem !important;
+        margin-top: 0.75rem !important;
+    }
+    
+    /* 删除按钮始终可见 */
+    .delete-btn {
+        opacity: 1 !important;
+        top: 0.5rem !important;
+        right: 0.5rem !important;
+    }
+    
+    /* 删除确认模态框 */
+    .modal-content {
+        width: 90% !important;
+        max-width: 400px !important;
+        padding: 1.25rem !important;
+    }
+}
+
+/* 针对极小屏幕的特别优化 */
+@media (max-width: 380px) {
+    .video-badge, .video-date {
+        font-size: 0.75rem !important;
+    }
+    
+    .sentence-meta {
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        gap: 0.5rem !important;
+    }
+    
+    .modal-actions {
+        flex-direction: column !important;
+        gap: 0.75rem !important;
+    }
+    
+    .btn-cancel, .btn-delete {
+        width: 100% !important;
+        justify-content: center !important;
+    }
+}
+
+/* 修复特定元素的穿模问题 */
+.modal-dialog {
+    margin: 0.5rem auto !important;
+    max-width: 95% !important;
+}
+
+.modal-content {
+    max-height: 90vh !important;
+    overflow-y: auto !important;
+}
+
+/* 修复长内容页面的溢出问题 */
+.privacy-policy-content,
+.terms-content,
+.help-content {
+    max-width: 100% !important;
+    overflow-wrap: break-word !important;
+    word-wrap: break-word !important;
+}
+
+/* 修复输入框和文本区域在iOS上的问题 */
+input, textarea, select {
+    font-size: 16px !important; /* 防止iOS上自动缩放 */
+}
+
+/* 修复滚动问题 */
+.overflow-auto {
+    -webkit-overflow-scrolling: touch !important;
+}
+
+/* 修复字典和句子列表可能的溢出问题 */
+.word-item, .sentence-item {
+    overflow-wrap: break-word !important;
+    word-break: break-word !important;
+}
+
+/* 确保按钮文字不会溢出 */
+.btn {
+    white-space: normal !important;
+}
+
+/* 全局按钮样式修复 */
+.btn-outline {
+    border: 1px solid #6c757d !important;
+    background-color: transparent !important;
+    color: #6c757d !important;
+}
+
+.btn-outline:hover {
+    background-color: #6c757d !important;
+    color: #fff !important;
+}
+
+/* 暗黑模式下页面描述文字样式 */
+.dark .page-description {
+    color: rgba(255, 255, 255, 0.85) !important;
+    opacity: 1 !important;
+    font-weight: 500 !important;
+    text-shadow: 0 1px 4px rgba(0, 0, 0, 0.2) !important;
+}
+
+/* 强制修复单词详情页按钮样式 - 将应用于所有设备 */
+@media (max-width: 991.98px) {
+    /* 使用更高优先级选择器强制垂直排列 */
+    body .word-card .word-header .action-buttons {
+        display: flex !important;
+        flex-direction: column !important;
+        width: 100% !important;
+        margin-top: 15px !important;
+    }
+    
+    body .word-card .word-header .action-buttons > * {
+        width: 100% !important;
+        display: block !important;
+        margin: 0 0 8px 0 !important;
+        box-sizing: border-box !important;
+    }
+    
+    /* 修复按钮边框 */
+    body .word-card .word-header .action-buttons .btn-outline {
+        border: 2px solid #6c757d !important;
+    }
+    
+    /* 强制垂直排列并修复布局 */
+    body .word-card .word-header {
+        flex-direction: column !important;
+        align-items: stretch !important;
+    }
+}
+
+/* 修复暗黑模式下描述文字的可见性问题 */
+.dark .page-header .text-muted {
+    color: rgba(255, 255, 255, 0.85) !important;
+    opacity: 1 !important;
+    font-weight: 500 !important;
+    text-shadow: 0 1px 4px rgba(0, 0, 0, 0.2) !important;
+}
+
+/* 日期输入控件优化 - 桌面和移动通用样式 */
+.date-input-wrapper {
+    position: relative;
+    width: 100%;
+}
+
+.date-icon {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    pointer-events: none;
+    z-index: 1;
+}
+
+.date-input::-webkit-calendar-picker-indicator {
+    background-color: transparent;
+    color: transparent;
+    cursor: pointer;
+    height: 100%;
+    position: absolute;
+    width: 100%;
+    left: 0;
+}
+
+.col-md-6 {
+    display: flex
+;
+    justify-content: center;
+}
+
+/* Safari 日期输入优化 */
+@media (max-width: 991.98px) {
+    /* 日期输入控件优化 */
+    .date-input {
+        -webkit-appearance: none;
+        appearance: none;
+        width: 100% !important;
+        padding: 8px 12px !important;
+        border: 1px solid #ced4da !important;
+        border-radius: 8px !important;
+        background-color: #fff !important;
+        font-size: 16px !important; /* 确保不会在iOS上自动缩放 */
+        line-height: 1.5 !important;
+        height: auto !important;
+        color: #212529 !important;
+    }
+   
+    /* 修复不显示或遮挡日期图标的问题 */
+    .date-input::-webkit-calendar-picker-indicator {
+        opacity: 0 !important;
+    }
+
+    /* Safari 特定优化 */
+    @supports (-webkit-touch-callout: none) {
+        .date-input {
+            min-height: 44px !important; /* Safari上提供更大的触摸区域 */
+            padding-right: 30px !important;
+            background-color: transparent !important;
+        }
+        
+        /* 修复日期筛选容器样式 */
+        .date-filter {
+            width: 100% !important;
+            margin-bottom: 0.75rem !important;
+        }
+        
+        /* 解决Filter部分在Safari上的布局问题 */
+        .filter-section {
+            padding: 1.25rem !important;
+        }
+        
+        /* 确保筛选按钮在Safari上正确显示 */
+        .filter-btn {
+            min-height: 44px !important;
+            padding: 8px 15px !important;
+            font-size: 14px !important;
+            -webkit-appearance: none !important;
+            -moz-appearance: none !important;
+            appearance: none !important;
+        }
+        
+        /* 修复Safari上的表单控件问题 */
+        input[type="date"].date-input {
+            -webkit-appearance: none !important;
+            appearance: none !important;
+            position: relative !important;
+            color-scheme: light !important; /* 防止深色模式下出现黑色背景 */
+        }
+    }
+}
+
+/* 小型手机设备的额外优化 */
+@media (max-width: 576px) {
+    .date-filter {
+        margin-bottom: 1rem !important;
+    }
+    
+    .filter-section .row {
+        flex-direction: column !important;
+    }
+    
+    .filter-section .col-md-6 {
+        width: 100% !important;
+    }
+    
+    .filter-section .d-flex {
+        justify-content: space-between !important;
+        width: 100% !important;
+    }
+    
+    .filter-btn {
+        flex: 1 !important;
+        margin-right: 8px !important;
+        white-space: nowrap !important;
+        font-size: 13px !important;
+        padding: 8px 10px !important;
+    }
+    
+    .filter-btn:last-child {
+        margin-right: 0 !important;
+    }
+    
+    /* 小屏幕上更明显的日期图标 */
+    .date-icon {
+        font-size: 1.1rem !important;
+        right: 10px !important;
+    }
+}
+
+/* 针对iOS上黑暗模式的优化 */
+@media (prefers-color-scheme: dark) {
+    .date-input {
+        background-color: #2d2d2d !important;
+        color: #f5f5f5 !important;
+        border-color: #444 !important;
+    }
+    
+    .date-icon {
+        color: #f5f5f5 !important;
+    }
+    
+    @supports (-webkit-touch-callout: none) {
+        input[type="date"].date-input {
+            color-scheme: dark !important;
+        }
+    }
+}

@@ -1,0 +1,175 @@
+/* PWA全屏模式下的样式 */
+
+/* 为iOS Web App模式设置CSS变量 */
+:root {
+    --safe-area-inset-top: 0px;
+    --safe-area-inset-right: 0px;
+    --safe-area-inset-bottom: 0px;
+    --safe-area-inset-left: 0px;
+}
+
+/* 在iOS Web App模式下应用的全局样式 */
+.ios-webapp-mode {
+    /* 防止溢出滚动 */
+    overflow-x: hidden;
+    /* 调整全局布局 */
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
+
+/* 在iOS Web App模式下的页面头部样式 */
+.ios-webapp-mode .sidebar {
+    /* 调整侧边栏顶部，避开状态栏和摄像头 */
+    padding-top: calc(var(--safe-area-inset-top) + 3.5rem);
+    /* 使用固定定位，确保不会滚动 */
+    position: fixed;
+    /* 确保足够的z-index */
+    z-index: 1030;
+}
+
+/* iOS Web App模式下的移动导航头部 */
+.ios-webapp-mode .mobile-header {
+    padding-top: calc(var(--safe-area-inset-top) + 1rem);
+    height: calc(var(--safe-area-inset-top) + 4rem);
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 1040;
+    /* 添加模糊背景效果 */
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    /* 确保内容垂直居中 */
+    display: flex;
+    align-items: center;
+}
+
+/* iOS Web App模式下的移动头部内容居中 */
+.ios-webapp-mode .mobile-header .brand-text,
+.ios-webapp-mode .mobile-header .menu-toggle {
+    /* 移除可能影响垂直对齐的边距 */
+    margin-top: 0;
+    margin-bottom: 0;
+    /* 确保按钮和文本垂直居中 */
+    display: flex;
+    align-items: center;
+}
+
+/* 特别针对已调整的移动头部 */
+.ios-webapp-mode .mobile-header.pwa-adjusted {
+    /* 注意：这里将顶部填充增加，避开iPhone的刘海和状态栏 */
+    padding-top: calc(env(safe-area-inset-top) + 0.8rem);
+    /* 增加高度以适应新的填充 */
+    height: calc(env(safe-area-inset-top) + 3.5rem);
+    /* 确保内容垂直居中，考虑安全区域 */
+    padding-bottom: 0.8rem;
+}
+
+/* 修正内容区域，考虑安全区域 */
+.ios-webapp-mode .content-wrapper {
+    /* 增加顶部边距，为固定导航栏留出空间 */
+    margin-top: calc(var(--safe-area-inset-top) + 4rem);
+    /* 内容区域flex-grow确保撑满屏幕 */
+    flex: 1 0 auto;
+    /* 调整内边距 */
+    padding-left: var(--safe-area-inset-left);
+    padding-right: var(--safe-area-inset-right);
+    /* 移除底部填充，让footer自然对齐 */
+    padding-bottom: 0;
+}
+
+/* 针对已调整的内容区域 */
+.ios-webapp-mode .content-wrapper.pwa-adjusted {
+    /* 增大顶部margin以避开导航栏 */
+    margin-top: calc(env(safe-area-inset-top) + 3.5rem);
+}
+
+/* 确保页面主要内容有适当的上下边距 */
+.ios-webapp-mode .main-content {
+    padding-top: 1rem;
+    padding-bottom: 1rem;
+}
+
+/* iOS Web App模式下的底部固定元素 */
+.ios-webapp-mode .fixed-bottom {
+    padding-bottom: var(--safe-area-inset-bottom);
+    /* 确保底部元素固定在屏幕底部 */
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+}
+
+/* 确保footer与底部对齐 */
+.ios-webapp-mode .footer {
+    /* 重置任何边距 */
+    margin: 0;
+    /* 适应底部安全区域 */
+    padding-bottom: calc(var(--safe-area-inset-bottom) + 0.5rem);
+    /* 设为flex-shrink:0防止被压缩 */
+    flex-shrink: 0;
+    /* 确保footer可见 */
+    background-color: var(--content-bg);
+    position: relative;
+    width: 100%;
+}
+
+/* 针对已调整的底部 */
+.ios-webapp-mode .footer.pwa-adjusted {
+    /* 确保直接贴合底部边缘 */
+    padding-bottom: env(safe-area-inset-bottom);
+    /* 使用margin-top: auto确保footer推到底部 */
+    margin-top: auto;
+}
+
+/* 防止iOS Web App模式下的链接出现默认的蓝色/紫色颜色和下划线 */
+.ios-webapp-mode a {
+    -webkit-tap-highlight-color: transparent;
+    text-decoration: none;
+}
+
+/* 禁用iOS中的长按选择菜单 */
+.ios-webapp-mode {
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
+}
+
+/* 允许输入框和文本区域中的文本选择 */
+.ios-webapp-mode input,
+.ios-webapp-mode textarea {
+    -webkit-touch-callout: default;
+    -webkit-user-select: text;
+    user-select: text;
+}
+
+/* iOS底部导航栏的固定定位 */
+.ios-webapp-mode .mobile-nav-bar {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    z-index: 1000;
+    padding-bottom: var(--safe-area-inset-bottom);
+}
+
+/* 调整反馈按钮位置，避免与底部安全区域重叠 */
+.ios-webapp-mode .feedback-button {
+    bottom: calc(var(--safe-area-inset-bottom) + 1rem);
+    right: 1rem;
+}
+
+/* 针对已调整的反馈按钮 */
+.ios-webapp-mode .feedback-button.pwa-adjusted {
+    /* 确保不会与底部安全区域重叠 */
+    bottom: calc(env(safe-area-inset-bottom) + 1rem);
+}
+
+/* 为模态对话框添加安全区域边距 */
+.ios-webapp-mode .modal-content {
+    margin-bottom: var(--safe-area-inset-bottom);
+}

@@ -1,0 +1,1240 @@
+{% extends "api/base.html" %}
+
+{% block title %}我的句子 | Déjà Vocab{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Page container */
+    .page-container {
+        position: relative;
+    }
+    
+    /* Page header */
+    .page-header {
+        margin-bottom: 2rem;
+    }
+    
+    .page-title {
+        font-size: 1.875rem;
+        font-weight: 800;
+        color: var(--gray-900);
+        margin-bottom: 0.75rem;
+        letter-spacing: -0.025em;
+        line-height: 1.2;
+    }
+    
+    .dark .page-title {
+        color: white;
+    }
+    
+    .page-description {
+        font-size: 1rem;
+        color: var(--gray-600);
+        max-width: 600px;
+    }
+    
+    .dark .page-description {
+        color: var(--gray-400);
+    }
+    
+    /* Search bar */
+    .search-section {
+        background-color: white;
+        border-radius: 1rem;
+        padding: 1.25rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        border: 1px solid var(--gray-200);
+    }
+    
+    .dark .search-section {
+        background-color: var(--gray-800);
+        border-color: var(--gray-700);
+    }
+    
+    .search-form {
+        display: flex;
+        width: 100%;
+    }
+    
+    .search-input {
+        flex: 1;
+        padding: 0.75rem 1rem;
+        border: 1px solid var(--gray-300);
+        border-right: none;
+        border-radius: 0.5rem 0 0 0.5rem;
+        font-size: 0.875rem;
+        transition: all 0.2s ease;
+        color: var(--gray-900);
+        background-color: white;
+    }
+    
+    .dark .search-input {
+        background-color: var(--gray-700);
+        border-color: var(--gray-600);
+        color: white;
+    }
+    
+    .search-input:focus {
+        outline: none;
+        border-color: var(--primary-400);
+        box-shadow: 0 0 0 1px var(--primary-400);
+    }
+    
+    .dark .search-input:focus {
+        box-shadow: 0 0 0 1px var(--primary-500);
+    }
+    
+    .search-input::placeholder {
+        color: var(--gray-500);
+    }
+    
+    .dark .search-input::placeholder {
+        color: var(--gray-400);
+    }
+    
+    .search-button {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background-color: var(--primary-600);
+        color: white;
+        border: none;
+        border-radius: 0 0.5rem 0.5rem 0;
+        padding: 0 1.25rem;
+        font-size: 0.875rem;
+        transition: all 0.2s ease;
+    }
+    
+    .search-button:hover {
+        background-color: var(--primary-700);
+    }
+    
+    /* 移动设备优化 */
+    @media (max-width: 768px) {
+        .search-button {
+            padding: 0 1rem;
+            min-width: 3rem;
+            min-height: 2.75rem;
+        }
+        
+        .search-button i {
+            font-size: 1.1rem;
+        }
+    }
+    
+    .clear-button {
+        margin-left: 0.75rem;
+        padding: 0.75rem 1rem;
+        background-color: white;
+        border: 1px solid var(--gray-300);
+        border-radius: 0.5rem;
+        font-size: 0.875rem;
+        color: var(--gray-700);
+        display: flex;
+        align-items: center;
+        transition: all 0.2s ease;
+    }
+    
+    .dark .clear-button {
+        background-color: var(--gray-700);
+        border-color: var(--gray-600);
+        color: var(--gray-300);
+    }
+    
+    .clear-button:hover {
+        background-color: var(--gray-100);
+    }
+    
+    .dark .clear-button:hover {
+        background-color: var(--gray-600);
+    }
+    
+    .clear-button i {
+        margin-right: 0.375rem;
+    }
+    
+    /* Empty state */
+    .empty-state {
+        background-color: white;
+        border-radius: 1rem;
+        padding: 4rem 2rem;
+        text-align: center;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        border: 1px solid var(--gray-200);
+        margin-top: 2rem;
+    }
+    
+    .dark .empty-state {
+        background-color: var(--gray-800);
+        border-color: var(--gray-700);
+    }
+    
+    .empty-icon {
+        font-size: 4rem;
+        color: var(--primary-400);
+        margin-bottom: 1.5rem;
+        opacity: 0.8;
+    }
+    
+    .empty-title {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: var(--gray-900);
+        margin-bottom: 1rem;
+    }
+    
+    .dark .empty-title {
+        color: white;
+    }
+    
+    .empty-description {
+        font-size: 1rem;
+        color: var(--gray-600);
+        max-width: 500px;
+        margin: 0 auto 2rem;
+        line-height: 1.6;
+    }
+    
+    .dark .empty-description {
+        color: var(--gray-400);
+    }
+    
+    /* Video group cards */
+    .video-group {
+        background-color: white;
+        border-radius: 1rem;
+        overflow: hidden;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        border: 1px solid var(--gray-200);
+        margin-bottom: 1.5rem;
+        transition: all 0.3s ease;
+    }
+    
+    .dark .video-group {
+        background-color: var(--gray-800);
+        border-color: var(--gray-700);
+    }
+    
+    .video-group:hover {
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
+        transform: translateY(-2px);
+    }
+    
+    .video-header {
+        display: flex;
+        align-items: center;
+        padding: 1.25rem;
+        cursor: pointer;
+        border-bottom: 1px solid var(--gray-200);
+        transition: all 0.2s ease;
+    }
+    
+    .dark .video-header {
+        border-color: var(--gray-700);
+    }
+    
+    .video-header:hover {
+        background-color: var(--gray-50);
+    }
+    
+    .dark .video-header:hover {
+        background-color: var(--gray-700);
+    }
+    
+    .video-thumbnail {
+        width: 140px;
+        height: 80px;
+        border-radius: 0.5rem;
+        object-fit: cover;
+        flex-shrink: 0;
+        margin-right: 1.25rem;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        transition: all 0.3s ease;
+        border: 2px solid rgba(255, 255, 255, 0.1);
+    }
+    
+    .video-header:hover .video-thumbnail {
+        transform: scale(1.05);
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+    }
+    
+    .video-info {
+        flex: 1;
+    }
+    
+    .video-title {
+        font-size: 1.125rem;
+        font-weight: 600;
+        color: var(--gray-900);
+        margin-bottom: 0.5rem;
+        line-height: 1.4;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+    
+    .dark .video-title {
+        color: white;
+    }
+    
+    .video-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1rem;
+    }
+    
+    .video-badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.375rem 0.75rem;
+        background-color: var(--primary-50);
+        color: var(--primary-700);
+        border-radius: 1rem;
+        font-size: 0.75rem;
+        font-weight: 500;
+    }
+    
+    .dark .video-badge {
+        background-color: rgba(59, 130, 246, 0.2);
+        color: var(--primary-400);
+    }
+    
+    .video-badge i {
+        margin-right: 0.375rem;
+    }
+    
+    .video-date {
+        display: inline-flex;
+        align-items: center;
+        color: var(--gray-600);
+        font-size: 0.75rem;
+    }
+    
+    .dark .video-date {
+        color: var(--gray-400);
+    }
+    
+    .video-date i {
+        margin-right: 0.375rem;
+        color: var(--gray-500);
+    }
+    
+    .toggle-icon {
+        margin-left: auto;
+        width: 2rem;
+        height: 2rem;
+        border-radius: 50%;
+        background-color: var(--gray-100);
+        color: var(--gray-600);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.3s ease;
+    }
+    
+    .dark .toggle-icon {
+        background-color: var(--gray-700);
+        color: var(--gray-400);
+    }
+    
+    .video-header:hover .toggle-icon {
+        background-color: var(--primary-50);
+        color: var(--primary-600);
+        transform: translateY(-2px);
+    }
+    
+    .dark .video-header:hover .toggle-icon {
+        background-color: rgba(59, 130, 246, 0.2);
+        color: var(--primary-400);
+    }
+    
+    .video-header.active .toggle-icon {
+        transform: rotate(180deg);
+        background-color: var(--primary-100);
+        color: var(--primary-600);
+    }
+    
+    .dark .video-header.active .toggle-icon {
+        background-color: rgba(59, 130, 246, 0.3);
+        color: var(--primary-400);
+    }
+    
+    /* Sentences list */
+    .content-panel {
+        display: none;
+        padding: 0 1.25rem;
+        transition: all 0.3s ease;
+    }
+    
+    .content-panel.show {
+        display: block;
+        animation: fadeIn 0.3s ease;
+    }
+    
+    @keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+    }
+    
+    .sentences-list {
+        padding: 1.25rem 0;
+        margin: 0;
+        list-style: none;
+        max-height: 500px;
+        overflow-y: auto;
+        scrollbar-width: thin;
+        scrollbar-color: var(--gray-300) transparent;
+    }
+    
+    .sentences-list::-webkit-scrollbar {
+        width: 5px;
+    }
+    
+    .sentences-list::-webkit-scrollbar-track {
+        background: transparent;
+    }
+    
+    .sentences-list::-webkit-scrollbar-thumb {
+        background-color: var(--gray-300);
+        border-radius: 3px;
+    }
+    
+    .dark .sentences-list::-webkit-scrollbar-thumb {
+        background-color: var(--gray-600);
+    }
+    
+    .sentence-item {
+        background-color: var(--gray-50);
+        border-radius: 0.75rem;
+        padding: 1.25rem;
+        margin-bottom: 1rem;
+        transition: all 0.3s ease;
+        border: 1px solid var(--gray-200);
+        position: relative;
+    }
+    
+    .dark .sentence-item {
+        background-color: var(--gray-700);
+        border-color: var(--gray-600);
+    }
+    
+    .sentence-item:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+        border-color: var(--primary-200);
+    }
+    
+    .dark .sentence-item:hover {
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        border-color: var(--primary-500);
+    }
+    
+    .sentence-item.active {
+        background-color: var(--primary-50);
+        border-color: var(--primary-300);
+    }
+    
+    .dark .sentence-item.active {
+        background-color: rgba(59, 130, 246, 0.15);
+        border-color: rgba(59, 130, 246, 0.4);
+    }
+    
+    .sentence-text {
+        font-size: 1rem;
+        line-height: 1.6;
+        color: var(--gray-900);
+        margin-bottom: 1rem;
+    }
+    
+    .dark .sentence-text {
+        color: white;
+    }
+    
+    .sentence-translation {
+        font-size: 0.875rem;
+        color: var(--gray-600);
+        font-style: italic;
+        padding-bottom: 1rem;
+        margin-bottom: 1rem;
+        border-bottom: 1px dashed var(--gray-200);
+    }
+    
+    .dark .sentence-translation {
+        color: var(--gray-400);
+        border-color: var(--gray-600);
+    }
+    
+    .sentence-meta {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    
+    .time-badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.375rem 0.75rem;
+        background-color: var(--primary-50);
+        color: var(--primary-700);
+        border-radius: 1rem;
+        font-size: 0.75rem;
+        font-weight: 500;
+        transition: all 0.2s ease;
+    }
+    
+    .dark .time-badge {
+        background-color: rgba(59, 130, 246, 0.2);
+        color: var(--primary-400);
+    }
+    
+    .time-badge i {
+        margin-right: 0.375rem;
+    }
+    
+    .sentence-item:hover .time-badge {
+        background-color: var(--primary-100);
+    }
+    
+    .dark .sentence-item:hover .time-badge {
+        background-color: rgba(59, 130, 246, 0.3);
+    }
+    
+    .sentence-date {
+        font-size: 0.75rem;
+        color: var(--gray-600);
+        display: flex;
+        align-items: center;
+    }
+    
+    .dark .sentence-date {
+        color: var(--gray-400);
+    }
+    
+    .sentence-date i {
+        margin-right: 0.375rem;
+    }
+    
+    /* Delete button */
+    .delete-btn {
+        position: absolute;
+        top: 0.75rem;
+        right: 0.75rem;
+        width: 2rem;
+        height: 2rem;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background-color: var(--gray-100);
+        color: var(--gray-500);
+        border: none;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        opacity: 0;
+    }
+    
+    .dark .delete-btn {
+        background-color: var(--gray-600);
+        color: var(--gray-400);
+    }
+    
+    .sentence-item:hover .delete-btn {
+        opacity: 1;
+    }
+    
+    .delete-btn:hover {
+        background-color: rgba(239, 68, 68, 0.1);
+        color: #EF4444;
+        transform: rotate(15deg);
+    }
+    
+    .dark .delete-btn:hover {
+        background-color: rgba(239, 68, 68, 0.2);
+    }
+    
+    /* YouTube Player section */
+    .player-section {
+        flex-shrink: 0;
+    }
+    
+    .player-wrapper {
+        width: 100%;
+        padding-top: 56.25%; /* 16:9 aspect ratio */
+        position: relative;
+        background-color: #000;
+        border-radius: 0.75rem;
+        overflow: hidden;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+    }
+    
+    .youtube-player {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        border: none;
+    }
+    
+    /* Content section layout */
+    .content-section {
+        display: grid;
+        grid-template-columns: 1fr 480px;
+        gap: 1.5rem;
+    }
+    
+    /* Modal styles */
+    .modal-backdrop {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: rgba(0, 0, 0, 0.5);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 1050;
+        opacity: 0;
+        visibility: hidden;
+        transition: all 0.3s ease;
+        backdrop-filter: blur(3px);
+    }
+    
+    .modal-backdrop.show {
+        opacity: 1;
+        visibility: visible;
+    }
+    
+    .modal-content {
+        background-color: white;
+        border-radius: 0.75rem;
+        max-width: 500px;
+        width: 90%;
+        box-shadow: 0 25px 50px rgba(0, 0, 0, 0.25);
+        transform: translateY(20px);
+        transition: all 0.3s ease;
+        overflow: hidden;
+    }
+    
+    .dark .modal-content {
+        background-color: var(--gray-800);
+    }
+    
+    .modal-backdrop.show .modal-content {
+        transform: translateY(0);
+    }
+    
+    .modal-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 1.25rem;
+        border-bottom: 1px solid var(--gray-200);
+    }
+    
+    .dark .modal-header {
+        border-color: var(--gray-700);
+    }
+    
+    .modal-title {
+        font-weight: 600;
+        color: var(--gray-900);
+        font-size: 1.125rem;
+        margin: 0;
+    }
+    
+    .dark .modal-title {
+        color: white;
+    }
+    
+    .modal-close {
+        background: none;
+        border: none;
+        color: var(--gray-500);
+        font-size: 1.5rem;
+        line-height: 1;
+        cursor: pointer;
+    }
+    
+    .dark .modal-close {
+        color: var(--gray-400);
+    }
+    
+    .modal-body {
+        padding: 1.25rem;
+    }
+    
+    .modal-text {
+        margin-bottom: 1rem;
+        color: var(--gray-700);
+    }
+    
+    .dark .modal-text {
+        color: var(--gray-300);
+    }
+    
+    .sentence-preview {
+        background-color: var(--gray-50);
+        border-radius: 0.5rem;
+        padding: 1rem;
+        color: var(--gray-900);
+        margin-bottom: 1rem;
+        font-style: italic;
+        border: 1px solid var(--gray-200);
+    }
+    
+    .dark .sentence-preview {
+        background-color: var(--gray-700);
+        color: white;
+        border-color: var(--gray-600);
+    }
+    
+    .modal-footer {
+        display: flex;
+        justify-content: flex-end;
+        gap: 1rem;
+        padding: 1.25rem;
+        border-top: 1px solid var(--gray-200);
+        background-color: var(--gray-50);
+    }
+    
+    .dark .modal-footer {
+        border-color: var(--gray-700);
+        background-color: var(--gray-700);
+    }
+    
+    .btn-cancel {
+        padding: 0.625rem 1.25rem;
+        background-color: white;
+        border: 1px solid var(--gray-300);
+        color: var(--gray-700);
+        border-radius: 0.5rem;
+        font-size: 0.875rem;
+        font-weight: 500;
+        transition: all 0.2s ease;
+        display: flex;
+        align-items: center;
+    }
+    
+    .dark .btn-cancel {
+        background-color: var(--gray-800);
+        border-color: var(--gray-600);
+        color: var(--gray-300);
+    }
+    
+    .btn-cancel:hover {
+        background-color: var(--gray-100);
+    }
+    
+    .dark .btn-cancel:hover {
+        background-color: var(--gray-600);
+    }
+    
+    .btn-cancel i {
+        margin-right: 0.5rem;
+    }
+    
+    .btn-delete {
+        padding: 0.625rem 1.25rem;
+        background-color: #EF4444;
+        color: white;
+        border: none;
+        border-radius: 0.5rem;
+        font-size: 0.875rem;
+        font-weight: 500;
+        transition: all 0.2s ease;
+        display: flex;
+        align-items: center;
+    }
+    
+    .btn-delete:hover {
+        background-color: #DC2626;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(239, 68, 68, 0.25);
+    }
+    
+    .btn-delete i {
+        margin-right: 0.5rem;
+    }
+    
+    /* For smaller screens */
+    @media (max-width: 992px) {
+        .content-section {
+            grid-template-columns: 1fr;
+        }
+        
+        .player-section {
+            order: -1;
+            margin-bottom: 1.5rem;
+        }
+    }
+    
+    @media (max-width: 768px) {
+        .video-header {
+            flex-direction: row;
+            padding: 0.75rem;
+            position: relative;
+        }
+        
+        .video-thumbnail {
+            width: 100px;
+            height: 60px;
+            min-width: 100px;
+            margin-right: 0.75rem;
+            margin-bottom: 0;
+        }
+        
+        .video-title {
+            font-size: 0.95rem;
+            margin-bottom: 0.25rem;
+            -webkit-line-clamp: 2;
+        }
+        
+        .video-info {
+            width: calc(100% - 120px);
+            padding-right: 1.5rem;
+        }
+        
+        .video-meta {
+            margin-bottom: 0;
+            gap: 0.5rem;
+        }
+        
+        .video-badge {
+            padding: 0.25rem 0.5rem;
+            font-size: 0.7rem;
+        }
+        
+        .video-date {
+            font-size: 0.7rem;
+        }
+        
+        .toggle-icon {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            right: 0.75rem;
+            width: 1.75rem;
+            height: 1.75rem;
+        }
+        
+        .video-header.active .toggle-icon {
+            transform: translateY(-50%) rotate(180deg);
+        }
+        
+        .video-header:hover .toggle-icon {
+            transform: translateY(-50%);
+        }
+        
+        .video-header.active:hover .toggle-icon {
+            transform: translateY(-50%) rotate(180deg);
+        }
+    }
+    
+    @media (max-width: 576px) {
+        .search-form {
+            flex-wrap: wrap;
+        }
+        
+        .search-input {
+            border-radius: 0.5rem;
+            border-right: 1px solid var(--gray-300);
+            margin-bottom: 0.75rem;
+        }
+        
+        .search-button {
+            border-radius: 0.5rem;
+            width: 100%;
+            margin-bottom: 0.75rem;
+        }
+        
+        .clear-button {
+            margin-left: 0;
+            width: 100%;
+            justify-content: center;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-container">
+    <!-- Page header -->
+    <div class="page-header">
+        <h1 class="page-title">我的句子</h1>
+        <p class="page-description">收集和管理你学习过程中遇到的句子，加深语言理解</p>
+    </div>
+    
+    <!-- Search section -->
+    <div class="search-section">
+        <form class="search-form">
+            <input type="text" class="search-input" placeholder="搜索句子内容..." id="sentenceSearch">
+            <button type="button" class="search-button" id="searchBtn">
+                <i class="bi bi-search"></i>
+            </button>
+            {% if search_query %}
+            <a href="{% url 'sentence_list' %}" class="clear-button">
+                <i class="bi bi-x-lg"></i> 清除
+            </a>
+            {% endif %}
+        </form>
+    </div>
+    
+    {% if video_sentences %}
+        {% for item in video_sentences %}
+        <div class="video-group" data-video-id="{{ item.video.id }}">
+            <div class="video-header">
+                <img src="https://i.ytimg.com/vi/{{ item.youtube_id }}/mqdefault.jpg" 
+                     alt="{{ item.video.title }}" 
+                     class="video-thumbnail"
+                     onerror="this.src='https://via.placeholder.com/140x80?text=无缩略图'">
+                
+                <div class="video-info">
+                    <h2 class="video-title">{{ item.video.title }}</h2>
+                    <div class="video-meta">
+                        <span class="video-badge">
+                            <i class="bi bi-chat-quote"></i> {{ item.sentence_count }} 个句子
+                        </span>
+                        <span class="video-date">
+                            <i class="bi bi-calendar3"></i> {{ item.video.created_at|date:"Y-m-d" }}
+                        </span>
+                    </div>
+                </div>
+                
+                <div class="toggle-icon">
+                    <i class="bi bi-chevron-down"></i>
+                </div>
+            </div>
+            
+            <div class="content-panel">
+                <div class="content-section">
+                    <div class="sentences-list-container">
+                        <ul class="sentences-list">
+                            {% for sentence in item.sentences %}
+                            <li class="sentence-item" 
+                                data-video-id="{{ item.youtube_id }}" 
+                                data-start-time="{{ sentence.start_time|floatformat:1 }}"
+                                data-end-time="{{ sentence.end_time|floatformat:1 }}"
+                                data-text="{{ sentence.text|escapejs }}">
+                                
+                                <button class="delete-btn" title="删除这个句子" data-sentence-id="{{ sentence.id }}" data-sentence-text="{{ sentence.text|escapejs }}">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                                
+                                <p class="sentence-text">{{ sentence.text }}</p>
+                                
+                                {% if sentence.translation %}
+                                <p class="sentence-translation">{{ sentence.translation }}</p>
+                                {% endif %}
+                                
+                                <div class="sentence-meta">
+                                    <span class="time-badge">
+                                        <i class="bi bi-stopwatch"></i> {{ sentence.formatted_time }}
+                                    </span>
+                                    <span class="sentence-date">
+                                        <i class="bi bi-calendar-check"></i> {{ sentence.created_at|date:"Y-m-d" }}
+                                    </span>
+                                </div>
+                            </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                    
+                    <div class="player-section">
+                        <div class="player-wrapper">
+                            <div id="player-{{ item.video.id }}" class="youtube-player"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    {% else %}
+        <div class="empty-state">
+            <div class="empty-icon">
+                <i class="bi bi-chat-quote"></i>
+            </div>
+            <h3 class="empty-title">您还没有收藏句子</h3>
+            <p class="empty-description">当您在观看视频时标记重要句子，它们将在这里显示。通过收集有用的句子来加速您的语言学习。</p>
+            <a href="{% url 'dashboard' %}" class="btn btn-primary">
+                <i class="bi bi-collection-play me-2"></i> 浏览视频
+            </a>
+        </div>
+    {% endif %}
+</div>
+
+<!-- Delete Modal -->
+<div class="modal-backdrop" id="deleteModal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h5 class="modal-title">确认删除</h5>
+            <button type="button" class="modal-close" id="closeModal">&times;</button>
+        </div>
+        <div class="modal-body">
+            <p class="modal-text">您确定要删除以下句子吗？此操作无法撤销。</p>
+            <div class="sentence-preview" id="deleteText"></div>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn-cancel" id="cancelDelete">
+                <i class="bi bi-x-circle"></i> 取消
+            </button>
+            <form method="post" id="deleteForm" action="">
+                {% csrf_token %}
+                <button type="submit" class="btn-delete">
+                    <i class="bi bi-trash"></i> 确认删除
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://www.youtube.com/iframe_api"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Store all players
+        const players = {};
+        let activeSentenceEl = null;
+        
+        // Toggle video sections
+        const videoHeaders = document.querySelectorAll('.video-header');
+        
+        videoHeaders.forEach(header => {
+            header.addEventListener('click', function() {
+                const videoGroup = this.closest('.video-group');
+                const contentPanel = videoGroup.querySelector('.content-panel');
+                const videoId = videoGroup.dataset.videoId;
+                
+                // Close other open panels
+                if (!this.classList.contains('active')) {
+                    document.querySelectorAll('.video-header.active').forEach(activeHeader => {
+                        if (activeHeader !== this) {
+                            activeHeader.classList.remove('active');
+                            const panel = activeHeader.closest('.video-group').querySelector('.content-panel');
+                            panel.classList.remove('show');
+                        }
+                    });
+                }
+                
+                // Toggle current panel
+                this.classList.toggle('active');
+                
+                if (this.classList.contains('active')) {
+                    contentPanel.classList.add('show');
+                    // Initialize the player
+                    initializePlayer(videoId);
+                    
+                    // Load the first sentence if available
+                    const firstSentence = videoGroup.querySelector('.sentence-item');
+                    if (firstSentence) {
+                        setTimeout(() => {
+                            firstSentence.click();
+                        }, 500);
+                    }
+                } else {
+                    contentPanel.classList.remove('show');
+                    // Pause the player if it exists
+                    if (players[`player-${videoId}`]) {
+                        players[`player-${videoId}`].pauseVideo();
+                    }
+                }
+            });
+        });
+        
+        // Initialize YouTube player
+        function initializePlayer(videoDbId) {
+            const playerId = `player-${videoDbId}`;
+            
+            // If player already exists, don't recreate
+            if (players[playerId]) {
+                return;
+            }
+            
+            // Get the first sentence's YouTube video ID
+            const videoGroup = document.querySelector(`.video-group[data-video-id="${videoDbId}"]`);
+            const firstSentence = videoGroup.querySelector('.sentence-item');
+            if (!firstSentence) return;
+            
+            const youtubeId = firstSentence.dataset.videoId;
+            
+            // Create player
+            players[playerId] = new YT.Player(playerId, {
+                height: '100%',
+                width: '100%',
+                videoId: youtubeId,
+                playerVars: {
+                    'playsinline': 1,
+                    'modestbranding': 1,
+                    'rel': 0,
+                    'controls': 1
+                },
+                events: {
+                    'onStateChange': onPlayerStateChange
+                }
+            });
+        }
+        
+        // Player state change event
+        function onPlayerStateChange(event) {
+            // Optional: Add code to handle player state changes
+        }
+        
+        // Sentence click to play
+        const sentenceItems = document.querySelectorAll('.sentence-item');
+        
+        sentenceItems.forEach(item => {
+            item.addEventListener('click', function(e) {
+                // If click was on delete button, don't handle the play
+                if (e.target.closest('.delete-btn')) {
+                    return;
+                }
+                
+                // Remove active state from other sentences
+                document.querySelectorAll('.sentence-item.active').forEach(el => {
+                    if (el !== this) {
+                        el.classList.remove('active');
+                    }
+                });
+                
+                // Activate current sentence
+                this.classList.add('active');
+                activeSentenceEl = this;
+                
+                // Get video info
+                const youtubeId = this.dataset.videoId;
+                const startTime = parseFloat(this.dataset.startTime);
+                const videoGroup = this.closest('.video-group');
+                const videoDbId = videoGroup.dataset.videoId;
+                const playerId = `player-${videoDbId}`;
+                
+                // Load and play video
+                if (players[playerId]) {
+                    players[playerId].loadVideoById({
+                        'videoId': youtubeId,
+                        'startSeconds': startTime
+                    });
+                }
+            });
+        });
+        
+        // Delete functionality
+        const deleteBtns = document.querySelectorAll('.delete-btn');
+        const deleteModal = document.getElementById('deleteModal');
+        const closeModal = document.getElementById('closeModal');
+        const cancelDelete = document.getElementById('cancelDelete');
+        const deleteForm = document.getElementById('deleteForm');
+        const deleteText = document.getElementById('deleteText');
+        
+        deleteBtns.forEach(btn => {
+            btn.addEventListener('click', function(e) {
+                e.stopPropagation(); // Prevent event bubbling
+                
+                const sentenceId = this.dataset.sentenceId;
+                const sentenceText = this.dataset.sentenceText;
+                
+                // Set delete form and preview text
+                deleteForm.action = `/api/web/sentences/${sentenceId}/delete/`;
+                deleteText.textContent = sentenceText;
+                
+                // Show modal
+                deleteModal.classList.add('show');
+            });
+        });
+        
+        // Close modal
+        function closeDeleteModal() {
+            deleteModal.classList.remove('show');
+        }
+        
+        closeModal.addEventListener('click', closeDeleteModal);
+        cancelDelete.addEventListener('click', closeDeleteModal);
+        
+        // Click outside to close
+        deleteModal.addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeDeleteModal();
+            }
+        });
+        
+        // Search functionality
+        const searchInput = document.getElementById('sentenceSearch');
+        const searchBtn = document.getElementById('searchBtn');
+        
+        function performSearch() {
+            const searchTerm = searchInput.value.toLowerCase().trim();
+            
+            if (searchTerm === '') {
+                // If search term is empty, show all sentences
+                document.querySelectorAll('.sentence-item').forEach(item => {
+                    item.style.display = 'block';
+                });
+                
+                // Reset video groups
+                document.querySelectorAll('.video-group').forEach(card => {
+                    card.style.display = 'block';
+                });
+                
+                return;
+            }
+            
+            // Hide sentences that don't match
+            document.querySelectorAll('.sentence-item').forEach(item => {
+                const text = item.querySelector('.sentence-text').textContent.toLowerCase();
+                const translation = item.querySelector('.sentence-translation')?.textContent.toLowerCase() || '';
+                
+                if (text.includes(searchTerm) || translation.includes(searchTerm)) {
+                    item.style.display = 'block';
+                    
+                    // Ensure the video group is expanded
+                    const videoGroup = item.closest('.video-group');
+                    const videoHeader = videoGroup.querySelector('.video-header');
+                    const contentPanel = videoGroup.querySelector('.content-panel');
+                    
+                    videoGroup.style.display = 'block';
+                    videoHeader.classList.add('active');
+                    contentPanel.classList.add('show');
+                    
+                    // Initialize player
+                    initializePlayer(videoGroup.dataset.videoId);
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+            
+            // Hide video groups with no matching sentences
+            document.querySelectorAll('.video-group').forEach(group => {
+                const hasVisibleSentences = Array.from(group.querySelectorAll('.sentence-item')).some(
+                    item => item.style.display !== 'none'
+                );
+                
+                if (!hasVisibleSentences) {
+                    group.style.display = 'none';
+                }
+            });
+        }
+        
+        searchBtn.addEventListener('click', performSearch);
+        
+        searchInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                performSearch();
+            }
+        });
+        
+        // Background interaction for a subtle effect
+        document.addEventListener('mousemove', function(e) {
+            const moveX = (e.clientX - window.innerWidth / 2) / 50;
+            const moveY = (e.clientY - window.innerHeight / 2) / 50;
+            
+            document.querySelectorAll('.video-thumbnail').forEach(thumb => {
+                thumb.style.transform = `translate(${moveX}px, ${moveY}px)`;
+            });
+        });
+    });
+</script>
+{% endblock %}
