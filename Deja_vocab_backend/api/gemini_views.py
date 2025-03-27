@@ -36,7 +36,7 @@ logger = logging.getLogger(__name__)
 
 # Gemini API Configuration
 # TODO: Replace with your actual API key
-GEMINI_API_KEY = "YOUR-GEMINI_KEY"  # Replace with your actual API key
+GEMINI_API_KEY = "YOUR_GEMINI_KEY"  # Replace with your actual API key
 GEMINI_MODEL = "gemini-2.0-flash"  # Use the latest available model
 
 # Cache settings
