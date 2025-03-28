@@ -1,36 +1,22 @@
 import { browser } from 'wxt/browser';
 import { ref, onMounted } from 'vue';
-import { VideoInfo, getCurrentVideoInfo } from './useVideoStorage';
+import { getCurrentVideoInfo } from './StorageVideo';
+import { VideoInfo } from './InfoVideo';
 import { useVideoNavigation } from './useVideoNavigation';
+import { 
+  Subtitle, 
+  ApiSubtitle, 
+  convertApiSubtitleToInternal
+} from './InfoSubtitles';
+import {
+  hasLocalSubtitles,
+  saveSubtitlesToStorage
+} from './StorageSubtitles';
 
 /**
  * Auto Subtitle Collection Hook
  * Automatically collects subtitles and saves them to localStorage when a YouTube page loads
  */
-
-// Define subtitle interface
-export interface Subtitle {
-  startTime: number;
-  endTime: number;
-  text: string;
-}
-
-// Define storage data interface
-interface StorageData {
-  currentSubtitles?: Subtitle[];
-  currentVideoInfo?: VideoInfo;
-  autoCollectEnabled?: boolean;
-  apiUrl?: string;
-  authToken?: string;
-}
-
-interface ApiSubtitle {
-  text: string;
-  start?: number;
-  end?: number;
-  start_time?: number;
-  end_time?: number;
-}
 
 // Default API configuration (production environment only)
 const DEFAULT_API_URL = 'http://localhost:8000/';
@@ -47,7 +33,7 @@ export function useAutoSubtitles() {
   onMounted(async () => {
     // Check if auto collection is enabled
     try {
-      const storage = await browser.storage.local.get('autoCollectEnabled') as StorageData;
+      const storage = await browser.storage.local.get('autoCollectEnabled') as { autoCollectEnabled?: boolean };
       isAutoCollectEnabled.value = storage.autoCollectEnabled !== false; // Default is enabled
       
       // Set up video navigation listener
@@ -71,7 +57,7 @@ export function useAutoSubtitles() {
   // Get API base URL
   async function getApiBaseUrl(): Promise<{ baseUrl: string, authToken: string | null }> {
     // Get API configuration from local storage
-    const storage = await browser.storage.local.get(['apiUrl', 'authToken']) as StorageData;
+    const storage = await browser.storage.local.get(['apiUrl', 'authToken']) as { apiUrl?: string, authToken?: string };
     let apiUrl = storage.apiUrl || '';
     const authToken = storage.authToken || '';
     
@@ -112,20 +98,8 @@ export function useAutoSubtitles() {
       
       // Check if subtitles are already saved in local storage
       console.log('[Auto Subtitle] Checking if subtitles are already saved locally:', videoInfo.videoId);
-      const localData = await browser.storage.local.get(['currentSubtitles', 'currentVideoInfo']);
-      const currentSubtitles = localData.currentSubtitles || [];
-      const currentVideoInfo = localData.currentVideoInfo as VideoInfo | undefined;
-      
-      // Check if local subtitles are valid
-      const isLocalSubtitlesValid = 
-        currentSubtitles && 
-        Array.isArray(currentSubtitles) && 
-        currentSubtitles.length > 0 &&
-        currentVideoInfo && 
-        currentVideoInfo.videoId === videoInfo.videoId;
-      
-      if (isLocalSubtitlesValid) {
-        console.log('[Auto Subtitle] Subtitles already exist locally, skipping collection, count:', currentSubtitles.length);
+      if (await hasLocalSubtitles(videoInfo.videoId)) {
+        console.log('[Auto Subtitle] Subtitles already exist locally, skipping collection');
         isLoading.value = false;
         return;
       }
@@ -160,13 +134,6 @@ export function useAutoSubtitles() {
           // 404 error usually means no subtitles found or video doesn't exist
           console.log('[Auto Subtitle] No subtitles available for this video');
           
-          // Clear subtitle data in local storage to prevent incorrectly saving subtitles from other videos
-          await browser.storage.local.remove(['currentSubtitles']);
-          console.log('[Auto Subtitle] Cleared subtitle data from local storage');
-          
-          // Optional: Display a notification on the page
-          showNotification('No subtitles available for this video, you may need to collect manually or use third-party tools.');
-          
           // Record to local storage to avoid repeated attempts
           const noSubtitleVideos = await browser.storage.local.get(['noSubtitleVideos']) as { noSubtitleVideos?: string[] };
           const videos = noSubtitleVideos.noSubtitleVideos || [];
@@ -199,14 +166,10 @@ export function useAutoSubtitles() {
       
       if (data.subtitles && Array.isArray(data.subtitles)) {
         // Convert subtitle format
-        const formattedSubtitles: Subtitle[] = data.subtitles.map((sub: any) => ({
-          text: sub.text,
-          startTime: sub.start || sub.start_time || 0,
-          endTime: sub.end || sub.end_time || 0
-        }));
+        const formattedSubtitles: Subtitle[] = data.subtitles.map((sub: ApiSubtitle) => convertApiSubtitleToInternal(sub));
         
         // Save to local storage
-        await saveSubtitlesToLocalStorage(formattedSubtitles, videoInfo);
+        await saveSubtitlesToStorage({ subtitles: formattedSubtitles, videoInfo });
         
         console.log('[Auto Subtitle] Successfully collected:', formattedSubtitles.length, 'subtitles');
       } else {
@@ -245,40 +208,6 @@ export function useAutoSubtitles() {
     
     // Start observing document subtree changes
     observer.observe(document, { childList: true, subtree: true });
-  }
-  
-  // Save subtitles to local storage
-  async function saveSubtitlesToLocalStorage(subtitles: Subtitle[], videoInfo: VideoInfo): Promise<void> {
-    try {
-      if (!subtitles || subtitles.length === 0 || !videoInfo || !videoInfo.videoId) {
-        console.error('[Auto Subtitle] Save to local storage failed: Missing video info or subtitle data');
-        return;
-      }
-      
-      // To prevent overwriting more accurate video info from useVideoNavigation, first get current stored video info
-      const storage = await browser.storage.local.get(['currentVideoInfo']) as StorageData;
-      const existingVideoInfo = storage.currentVideoInfo;
-      
-      // If video info already exists in storage and video ID matches, only update subtitle data, not video info
-      if (existingVideoInfo && existingVideoInfo.videoId === videoInfo.videoId) {
-        // Only update subtitle data, don't modify video info
-        await browser.storage.local.set({
-          currentSubtitles: subtitles
-        });
-        
-        console.log(`[Auto Subtitle] Subtitles saved to local storage, count: ${subtitles.length}, keeping existing video info`);
-      } else {
-        // If no existing video info or video ID doesn't match, update both subtitles and video info
-        await browser.storage.local.set({
-          currentSubtitles: subtitles,
-          currentVideoInfo: videoInfo
-        });
-        
-        console.log(`[Auto Subtitle] Subtitles and video info saved to local storage, count: ${subtitles.length}`);
-      }
-    } catch (error) {
-      console.error('[Auto Subtitle] Error saving subtitles to local storage:', error);
-    }
   }
   
   // Display notification message

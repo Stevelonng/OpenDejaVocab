@@ -1,5 +1,6 @@
 import { ref, onUnmounted } from 'vue';
 import browser from 'webextension-polyfill';
+import { getCurrentVideoTitle } from './InfoVideo';
 
 export function useYouTubePlayer() {
   // Check if there is a YouTube video on the page
@@ -315,7 +316,7 @@ export function useYouTubePlayer() {
    * @returns Video title
    */
   const getVideoTitle = () => {
-    return typeof document !== 'undefined' ? document.title.replace(' - YouTube', '') : '';
+    return getCurrentVideoTitle();
   };
 
   /**

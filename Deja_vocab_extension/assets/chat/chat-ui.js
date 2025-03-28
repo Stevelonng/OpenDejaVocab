@@ -884,13 +884,18 @@ class ChatUI {
     // Set processing state
     this.isProcessing = true;
     
-    // Show typing indicator (with clean animation)
-    this.showTypingIndicator();
-    
-    // Start subtitle collection in the background - don't await it
-    this.collectSubtitlesInBackground().catch(error => {
+    // Wait for the subtitle collection to be completed, but do not display a prompt message.
+    try {
+      // Wait for subtitle collection to complete, do not display any prompt messages
+      const subtitlesCollected = await this.collectSubtitlesInBackground();
+      
+      // If subtitle collection fails, do not display warning messages, only log
+      if (!subtitlesCollected) {
+        console.log('[WARN] Could not collect subtitles, but will proceed with the request');
+      }
+    } catch (error) {
       console.error('[ERROR] Background subtitle collection failed:', error);
-    });
+    }
     
     try {
       // Always directly fetch the latest subtitle data from browser storage - do not depend on previous results
@@ -926,10 +931,11 @@ class ChatUI {
         console.log('[WARN] No subtitles found in storage or invalid format');
       }
       
-      // Process video info
+      // Process video info data
       if (storageData.currentVideoInfo) {
+        currentVideoId = storageData.currentVideoInfo.videoId;
         currentVideoTitle = storageData.currentVideoInfo.title || '';
-        currentVideoId = storageData.currentVideoInfo.videoId || '';
+        
         console.log('[INFO] Current video info:', currentVideoId, currentVideoTitle);
         
         // Check if video has changed
@@ -960,6 +966,9 @@ class ChatUI {
           console.log('[INFO] Updated lastVideoId to:', currentVideoId);
         }
       }
+      
+      // 处理完系统消息后，再显示助手的打字指示器
+      const assistantTypingElement = this.showTypingIndicator();
       
       // Initialize AbortController for canceling request
       this.currentRequest = new AbortController();
@@ -1038,40 +1047,11 @@ class ChatUI {
       const reader = response.body.getReader();
       const decoder = new TextDecoder();
       
-      // Create message element for assistant response
-      const messageElement = document.createElement('div');
-      messageElement.className = 'message assistant-message';
+      // 使用之前创建的元素
+      const messageElement = assistantTypingElement;
+      let contentElement = messageElement.querySelector('.message-content');
       
-      const avatarElement = document.createElement('div');
-      avatarElement.className = 'message-avatar';
-      avatarElement.textContent = 'D';
-      
-      const contentElement = document.createElement('div');
-      contentElement.className = 'message-content message-appear';
-      
-      // Create loading animation
-      const dotsContainer = document.createElement('div');
-      dotsContainer.className = 'message-dots';
-      
-      // Create three animation dots
-      for (let i = 0; i < 3; i++) {
-        const dot = document.createElement('div');
-        dot.className = 'message-dot';
-        dotsContainer.appendChild(dot);
-      }
-      
-      contentElement.appendChild(dotsContainer);
-      
-      messageElement.appendChild(avatarElement);
-      messageElement.appendChild(contentElement);
-      
-      // Hide typing indicator before showing response
-      this.hideTypingIndicator();
-      
-      // Don't add the message element to the DOM until we have actual content
-      // This prevents the brief flash of an empty message with just the avatar
-      let messageAddedToDOM = false;
-
+      // 显示助手头像和三个点动画
       // Stream reading loop
       let chunkBuffer = '';
       let updateInterval = 50; // Update interval reduced to 50ms for smoother display
@@ -1089,8 +1069,11 @@ class ChatUI {
         
         // Process any complete data chunks
         if (chunkBuffer.includes('\n\n')) {
+          // Split data into events
           const parts = chunkBuffer.split('\n\n');
-          chunkBuffer = parts.pop() || ''; // Keep any incomplete parts
+          
+          // Save the last incomplete part, if any
+          chunkBuffer = parts.pop() || '';
           
           for (const part of parts) {
             if (part.startsWith('data: ')) {
@@ -1110,25 +1093,19 @@ class ChatUI {
                   // Throttle UI updates to prevent flickering
                   const now = Date.now();
                   if (now - lastUpdateTime > updateInterval) {
-                    // Remove loading animation
-                    const dotsContainer = contentElement.querySelector('.message-dots');
+                    // 移除三个点动画，替换为实际内容
+                    const dotsContainer = contentElement.querySelector('.typing-dots');
                     if (dotsContainer) {
-                      dotsContainer.remove();
+                      contentElement.innerHTML = this.renderMarkdown(fullContent);
+                    } else {
+                      // 已经显示了内容，继续更新
+                      contentElement.innerHTML = this.renderMarkdown(fullContent);
                     }
                     
-                    // Replace with actual content
-                    contentElement.innerHTML = this.renderMarkdown(fullContent);
                     lastUpdateTime = now;
                     
                     // Always keep a small update interval to make the streaming effect more visible
                     updateInterval = fullContent.length > 2000 ? 100 : 50;
-                    
-                    // Only add message to DOM once we have actual content
-                    if (!messageAddedToDOM && fullContent.trim().length > 0) {
-                      // Now that we have content, add the message element to the messages container
-                      this.messagesContainer.appendChild(messageElement);
-                      messageAddedToDOM = true;
-                    }
                     
                     // Scroll to bottom if near bottom
                     const isNearBottom = this.messagesContainer.scrollHeight - this.messagesContainer.scrollTop - this.messagesContainer.clientHeight < 150;
@@ -1229,65 +1206,62 @@ class ChatUI {
    * Show typing indicator with enhanced animation
    */
   showTypingIndicator() {
-    // Remove existing indicator if present
-    this.hideTypingIndicator();
+    // 创建一个只有头像的助手消息元素
+    const messageElement = document.createElement('div');
+    messageElement.className = 'message assistant-message';
+    messageElement.id = 'assistant-typing'; // 添加ID方便后续查找
     
-    // Create but don't immediately add the indicator to prevent brief flashing
-    const indicatorElement = document.createElement('div');
-    indicatorElement.className = 'typing-indicator';  // Remove message-appear to avoid animation until we're ready
-    indicatorElement.id = 'typing-indicator';
-    
+    // 添加头像
     const avatarElement = document.createElement('div');
     avatarElement.className = 'message-avatar';
     avatarElement.textContent = 'D';
     
-    // Create chat bubble element
-    const bubbleElement = document.createElement('div');
-    bubbleElement.className = 'message-content typing-bubble';
+    // 添加消息内容容器
+    const contentElement = document.createElement('div');
+    contentElement.className = 'message-content message-appear';
     
-    // Create animation container
+    // 创建打字指示器（三个点动画）
     const dotsContainer = document.createElement('div');
-    dotsContainer.className = 'bubble-dots';
+    dotsContainer.className = 'typing-dots';
     
-    // Create three animation dots
+    // 创建三个动画点
     for (let i = 0; i < 3; i++) {
       const dot = document.createElement('div');
-      dot.className = 'bubble-dot';
+      dot.className = 'typing-dot';
       dotsContainer.appendChild(dot);
     }
     
-    bubbleElement.appendChild(dotsContainer);
+    // 组装元素
+    contentElement.appendChild(dotsContainer);
+    messageElement.appendChild(avatarElement);
+    messageElement.appendChild(contentElement);
     
-    indicatorElement.appendChild(avatarElement);
-    indicatorElement.appendChild(bubbleElement);
+    // 立即添加到DOM中
+    this.messagesContainer.appendChild(messageElement);
     
-    // Store indicator as property but don't add to DOM yet
-    this.typingIndicator = indicatorElement;
+    // 存储元素引用
+    this.typingIndicator = messageElement;
     
-    // Add after a short delay to prevent flickering
-    setTimeout(() => {
-      // Check if the indicator is still needed (user might have cancelled)
-      if (this.typingIndicator === indicatorElement && this.isProcessing) {
-        this.messagesContainer.appendChild(indicatorElement);
-        // Add animation class after it's in the DOM to trigger animation
-        setTimeout(() => indicatorElement.classList.add('message-appear'), 10);
-        this.scrollToBottom(true);
-      }
-    }, 300); // Small delay to prevent brief flash
+    // 滚动到底部
+    this.scrollToBottom(true);
+    
+    console.log('[INFO] Assistant typing indicator displayed');
+    return messageElement;
   }
 
   /**
    * Hide typing indicator with smooth transition
    */
   hideTypingIndicator() {
-    // Clear any pending indicator
+    // 由于我们使用相同的元素来显示内容，不再需要移除元素
+    // 只需要清除引用
     this.typingIndicator = null;
     
-    // Force remove all previous indicators to prevent duplicates
-    const indicators = document.querySelectorAll('.typing-indicator');
+    // 移除所有孤立的指示器元素（以防万一）
+    const indicators = document.querySelectorAll('#assistant-typing:empty');
     indicators.forEach(indicator => {
       if (indicator && indicator.parentNode) {
-        indicator.remove();
+        indicator.parentNode.removeChild(indicator);
       }
     });
   }
@@ -1850,6 +1824,18 @@ class ChatUI {
         videoChanged
       });
       
+      // 如果已经有有效字幕且视频未改变，直接返回成功
+      if (hasValidSubtitles && !videoChanged) {
+        console.log('[INFO] Current video already has subtitles, and video has not changed, skipping collection');
+        return true;
+      }
+      
+      // 如果没有视频ID，无法收集字幕
+      if (!currentVideoId) {
+        console.log('[WARN] No current video ID, cannot collect subtitles');
+        return false;
+      }
+      
       // Trigger subtitle collection only when needed
       if (currentVideoId && (!hasValidSubtitles || videoChanged)) {
         console.log('[INFO] Need to collect subtitles, looking for YouTube tab...');
@@ -1891,21 +1877,49 @@ class ChatUI {
           
           if (!collectionTriggered) {
             console.log('[WARN] All tabs failed to trigger subtitle collection');
+            return false;
           }
+          
+          // 添加：等待字幕收集完成
+          console.log('[INFO] Waiting for subtitles to be collected and stored...');
+          
+          // 使用轮询检查字幕是否已收集并存储
+          const maxAttempts = 20; // 最大尝试次数
+          const pollInterval = 500; // 每次检查间隔（毫秒）
+          
+          for (let attempt = 0; attempt < maxAttempts; attempt++) {
+            console.log(`[INFO] Waiting for subtitles... Attempt ${attempt + 1}/${maxAttempts}`);
+            
+            // 等待指定时间
+            await new Promise(resolve => setTimeout(resolve, pollInterval));
+            
+            // 检查字幕是否已存储在本地
+            const updatedStorage = await browser.storage.local.get(['currentSubtitles', 'currentVideoInfo']);
+            
+            const nowHasSubtitles = updatedStorage.currentSubtitles && 
+                                    Array.isArray(updatedStorage.currentSubtitles) && 
+                                    updatedStorage.currentSubtitles.length > 0 &&
+                                    updatedStorage.currentVideoInfo?.videoId === currentVideoId;
+            
+            if (nowHasSubtitles) {
+              console.log('[INFO] Subtitles successfully collected and stored:', updatedStorage.currentSubtitles.length, 'items');
+              return true; // 字幕收集成功
+            }
+          }
+          
+          console.log('[WARN] Timed out waiting for subtitles to be collected');
+          return false; // 超时，字幕收集失败
         } else {
           console.log('[WARN] No YouTube tabs found, unable to trigger subtitle collection');
+          return false;
         }
-      } else if (hasValidSubtitles && !videoChanged) {
-        console.log('[INFO] Current video already has subtitles, and video has not changed, skipping collection');
       } else {
-        console.log('[WARN] Unable to determine if subtitle collection is needed:', {
-          currentVideoId,
-          hasValidSubtitles,
-          videoChanged
-        });
+        console.log('[WARN] Unable to determine if subtitle collection is needed');
+        return false;
       }
     } catch (error) {
-      console.error('[ERROR] Failed to check subtitle status:', error);
+      console.error('[ERROR] Failed to collect subtitles in background:', error);
+      return false;
     }
   }
 }

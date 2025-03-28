@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 
 # Get Gemini API key from environment variables
 import os
-GEMINI_API_KEY = "YOUR_GEMINI_KEY"  # Use the same API key as in gemini_views.py
+GEMINI_API_KEY = "AIzaSyDD__wLMduNZ8q0M4eC013vIBrm4zuaU-Q"  # Use the same API key as in gemini_views.py
 
 # Directly instantiate the client without using the configure method
 client = genai.Client(api_key=GEMINI_API_KEY)

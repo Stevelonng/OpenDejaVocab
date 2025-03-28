@@ -1,26 +1,9 @@
-import os
-import time
-import json
-import uuid
-import logging
-import traceback
-from threading import Thread
-
-import google.generativeai as genai
-from django.core.cache import cache
-from django.http import StreamingHttpResponse
-from rest_framework import status
-from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import IsAuthenticated
-from rest_framework.response import Response
-from .models import Video
+from .models import Video, UserActivity
 from .chat_models import ChatMessage
 from .chat_views import get_or_create_chat_session
-import json
 import uuid
 import logging
 import time
-import os
 import traceback
 from django.core.cache import cache
 from rest_framework import status
@@ -36,7 +19,7 @@ logger = logging.getLogger(__name__)
 
 # Gemini API Configuration
 # TODO: Replace with your actual API key
-GEMINI_API_KEY = "YOUR_GEMINI_KEY"  # Replace with your actual API key
+GEMINI_API_KEY = "AIzaSyDD__wLMduNZ8q0M4eC013vIBrm4zuaU-Q"  # Replace with your actual API key
 GEMINI_MODEL = "gemini-2.0-flash"  # Use the latest available model
 
 # Cache settings

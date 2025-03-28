@@ -146,7 +146,27 @@ class ChatListener {
       
       // Only trigger collection if no valid subtitles exist
       console.log('[ChatListener] No subtitles found for current video, triggering collection:', this.currentVideoId);
-      await this.triggerSubtitleCollection();
+      
+      // 等待字幕收集完成
+      const subtitlesCollected = await this.triggerSubtitleCollection();
+      
+      // 如果字幕收集失败，向用户显示消息
+      if (!subtitlesCollected) {
+        console.log('[ChatListener] Unable to collect subtitles, sending chat message anyway');
+        // 这里可以添加向用户界面发送提示的代码
+        
+        // 创建并分发事件通知UI层
+        const errorEvent = new CustomEvent('chat-subtitle-error', {
+          detail: { message: 'No subtitles could be loaded for this video.' }
+        });
+        document.dispatchEvent(errorEvent);
+      } else {
+        console.log('[ChatListener] Subtitles successfully collected, proceeding with chat message');
+        
+        // 创建并分发事件通知UI层字幕加载完成
+        const successEvent = new CustomEvent('chat-subtitle-loaded');
+        document.dispatchEvent(successEvent);
+      }
     } catch (error) {
       console.error('[ChatListener] Failed to handle chat message:', error);
     }
@@ -188,12 +208,13 @@ class ChatListener {
   
   /**
    * Trigger subtitle collection
+   * @returns {Promise<boolean>} 指示字幕是否成功收集的Promise
    */
   async triggerSubtitleCollection() {
     try {
       if (!this.currentVideoId) {
         console.error('[ChatListener] Failed to trigger subtitle collection: no current video ID');
-        return;
+        return false;
       }
       
       console.log('[ChatListener] Triggering subtitle collection:', this.currentVideoId);
@@ -203,7 +224,7 @@ class ChatListener {
       
       if (tabs.length === 0) {
         console.log('[ChatListener] No YouTube tabs found, cannot trigger subtitle collection');
-        return;
+        return false;
       }
       
       // Try to send message to each YouTube tab
@@ -233,9 +254,42 @@ class ChatListener {
       
       if (!collectionTriggered) {
         console.log('[ChatListener] Failed to trigger subtitle collection in all tabs');
+        return false;
       }
+      
+      // 等待字幕收集和存储完成
+      console.log('[ChatListener] Waiting for subtitles to be collected and stored...');
+      
+      // 使用轮询检查字幕是否已经收集和存储
+      const maxAttempts = 10; // 最大尝试次数
+      const pollInterval = 1000; // 每次检查间隔（毫秒）
+      
+      for (let attempt = 0; attempt < maxAttempts; attempt++) {
+        // 等待指定时间
+        await new Promise(resolve => setTimeout(resolve, pollInterval));
+        
+        // 检查字幕是否已存储在本地
+        const storage = await this.browser.storage.local.get(['currentVideoInfo', 'currentSubtitles']);
+        
+        const hasValidSubtitles = storage.currentVideoInfo && 
+                                 storage.currentSubtitles && 
+                                 storage.currentVideoInfo.videoId === this.currentVideoId &&
+                                 Array.isArray(storage.currentSubtitles) && 
+                                 storage.currentSubtitles.length > 0;
+        
+        if (hasValidSubtitles) {
+          console.log('[ChatListener] Subtitles successfully collected and stored:', storage.currentSubtitles.length, 'items');
+          return true; // 字幕收集成功
+        }
+        
+        console.log(`[ChatListener] Waiting for subtitles... Attempt ${attempt + 1}/${maxAttempts}`);
+      }
+      
+      console.log('[ChatListener] Timed out waiting for subtitles to be collected');
+      return false; // 超时，字幕收集失败
     } catch (error) {
       console.error('[ChatListener] Failed to trigger subtitle collection:', error);
+      return false;
     }
   }
 }

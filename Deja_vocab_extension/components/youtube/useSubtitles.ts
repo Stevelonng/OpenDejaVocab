@@ -1,21 +1,8 @@
 import { ref, watch, nextTick, Ref, onMounted, computed } from 'vue';
-import { browser } from 'wxt/browser';
-
-// Subtitle interface definition
-export interface Subtitle {
-  id?: number;
-  startTime: number;
-  endTime: number;
-  text: string;
-  saved?: boolean;
-}
-
-// Video information interface definition
-interface VideoInfo {
-  videoId: string;
-  title: string;
-  url: string;
-}
+import browser from 'webextension-polyfill';
+import { VideoInfo, extractVideoInfo, getYouTubeVideoId } from './InfoVideo';
+import { Subtitle, ApiSubtitle, convertApiSubtitleToInternal } from './InfoSubtitles';
+import { hasLocalSubtitles, getLocalSubtitles, saveSubtitlesToStorage, removeSubtitlesFromStorage } from './StorageSubtitles';
 
 /**
  * Subtitle control and navigation functionality
@@ -30,33 +17,6 @@ export function useSubtitles(currentVideoTime: Ref<number>) {
   const currentVideoInfo = ref<VideoInfo | null>(null);
   const processedVideoIds = ref<Record<string, boolean | string>>({});
   
-  // Get video ID from YouTube URL
-  const getYouTubeVideoId = (url: string): string | null => {
-    const match = url.match(/(?:youtube\.com\/watch\?v=|\/videos\/|youtu\.be\/|embed\/|\?v=)([^&?\n]+)/);
-    return match ? match[1] : null;
-  };
-
-  // Extract video information from current page
-  const extractVideoInfo = (): VideoInfo | null => {
-    // Check if we are on a YouTube video page
-    if (!window.location.href.includes('youtube.com/watch')) {
-      return null;
-    }
-    
-    const videoId = getYouTubeVideoId(window.location.href);
-    if (!videoId) return null;
-    
-    // Get original title, no longer add video ID suffix
-    const rawTitle = document.title.replace(' - YouTube', '');
-    
-    // In internal we still use video ID for unique identification, but do not display this ID in the frontend
-    return {
-      videoId,
-      title: rawTitle, // Use original title, no longer add video ID suffix
-      url: window.location.href
-    };
-  };
-
   // Check if backend has existing subtitles
   const checkExistingSubtitles = async (videoId: string): Promise<boolean> => {
     try {
@@ -184,13 +144,7 @@ export function useSubtitles(currentVideoTime: Ref<number>) {
       }
       
       // Return formatted subtitles
-      return subtitlesData.map((sub: any) => ({
-        id: sub.id,
-        startTime: sub.start_time,
-        endTime: sub.end_time,
-        text: sub.text,
-        saved: sub.saved || false
-      }));
+      return subtitlesData.map((sub: ApiSubtitle) => convertApiSubtitleToInternal(sub));
     } catch (error: any) {
       throw error;
     }
@@ -308,7 +262,7 @@ export function useSubtitles(currentVideoTime: Ref<number>) {
         try {
           // First check if storage API is available
           if (browser?.storage?.local) {
-            await browser.storage.local.remove(['currentSubtitles']);
+            await removeSubtitlesFromStorage();
           }
         } catch (error) {
           // If storage operation fails, log warning but continue execution
@@ -356,6 +310,22 @@ export function useSubtitles(currentVideoTime: Ref<number>) {
         processedVideoIds.value[videoInfo.videoId] = true;
         loading.value = false;
       } else if (shouldCollect) {
+        // Check if we have local subtitles first
+        if (await hasLocalSubtitles(videoInfo.videoId)) {
+          // We have local subtitles, try to send them to backend
+          const localSubtitleData = await getLocalSubtitles();
+          if (localSubtitleData && localSubtitleData.videoInfo.videoId === videoInfo.videoId) {
+            // Use local subtitles
+            subtitles.value = localSubtitleData.subtitles;
+            const localSubtitleResult = await sendLocalSubtitlesToBackend(videoInfo);
+            if (localSubtitleResult) {
+              processedVideoIds.value[videoInfo.videoId] = true;
+              loading.value = false;
+              return;
+            }
+          }
+        }
+        
         // Only try to collect and send subtitles when shouldCollect is true
         const localSubtitleResult = await sendLocalSubtitlesToBackend(videoInfo);
         
@@ -449,16 +419,15 @@ export function useSubtitles(currentVideoTime: Ref<number>) {
       }
 
       // Get subtitles from local storage
-      const data = await browser.storage.local.get('currentSubtitles') as { currentSubtitles?: Subtitle[] };
-      const videoInfoData = await browser.storage.local.get('currentVideoInfo') as { currentVideoInfo?: VideoInfo };
+      const data = await getLocalSubtitles();
       
       // Validate subtitle data
       if (
-        !data.currentSubtitles || 
-        !Array.isArray(data.currentSubtitles) || 
-        data.currentSubtitles.length === 0 ||
-        !videoInfoData.currentVideoInfo ||
-        videoInfoData.currentVideoInfo.videoId !== videoInfo.videoId
+        !data || 
+        !Array.isArray(data.subtitles) || 
+        data.subtitles.length === 0 ||
+        !data.videoInfo ||
+        data.videoInfo.videoId !== videoInfo.videoId
       ) {
         return false;
       }
@@ -476,15 +445,15 @@ export function useSubtitles(currentVideoTime: Ref<number>) {
       const baseUrl = apiUrl.endsWith('/') ? apiUrl.slice(0, -1) : apiUrl;
       const normalizedUrl = baseUrl.includes('/api') ? baseUrl : `${baseUrl}/api`;
       
-      const formattedSubtitles = data.currentSubtitles.map(sub => ({
+      const formattedSubtitles = data.subtitles.map(sub => ({
         text: sub.text,
         start_time: sub.startTime,
         end_time: sub.endTime
       }));
       
       const requestData = {
-        video_id: videoInfoData.currentVideoInfo.videoId,
-        video_title: videoInfoData.currentVideoInfo.title, // Add video title
+        video_id: data.videoInfo.videoId,
+        video_title: data.videoInfo.title, // Add video title
         subtitles: formattedSubtitles
       };
       
@@ -532,9 +501,9 @@ export function useSubtitles(currentVideoTime: Ref<number>) {
           
           const responseData = await response.json();
           
-          const subs = await fetchSubtitlesFromBackend(videoInfoData.currentVideoInfo.videoId);
+          const subs = await fetchSubtitlesFromBackend(data.videoInfo.videoId);
           subtitles.value = subs;
-          processedVideoIds.value[videoInfoData.currentVideoInfo.videoId] = true;
+          processedVideoIds.value[data.videoInfo.videoId] = true;
           loading.value = false;
           return true;
         } catch (err: any) {
@@ -574,13 +543,9 @@ export function useSubtitles(currentVideoTime: Ref<number>) {
       endTime: sub.endTime
     }));
     
-    return browser.storage.local.set({
-      currentSubtitles: simplifiedSubtitles,
-      currentVideoInfo: {
-        videoId: currentVideoInfo.value.videoId,
-        title: currentVideoInfo.value.title,
-        url: currentVideoInfo.value.url
-      }
+    return saveSubtitlesToStorage({
+      videoInfo: currentVideoInfo.value,
+      subtitles: simplifiedSubtitles
     });
   };
 

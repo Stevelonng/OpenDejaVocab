@@ -1,5 +1,6 @@
 import { ref, onMounted, onUnmounted } from 'vue';
-import { updateVideoInfoStorage } from './useVideoStorage';
+import { updateVideoInfoStorage } from './StorageVideo';
+import { getYouTubeVideoId, cleanYouTubeTitle } from './InfoVideo';
 
 /**
  * Handles YouTube video navigation and URL changes
@@ -11,20 +12,11 @@ export function useVideoNavigation(onVideoChange?: (videoId: string, videoTitle:
   const currentVideoId = ref<string>('');
   const currentVideoTitle = ref<string>('');
 
-  // Extract YouTube video ID from URL
-  const extractVideoId = (url: string): string | null => {
-    const urlObj = new URL(url);
-    if (urlObj.hostname.includes('youtube.com')) {
-      return urlObj.searchParams.get('v');
-    }
-    return null;
-  };
-
   // Update current video information
   const updateCurrentVideo = () => {
       const url = window.location.href;
-      const videoId = extractVideoId(url);
-      const title = document.title.replace(' - YouTube', '');
+      const videoId = getYouTubeVideoId(url);
+      const title = typeof document !== 'undefined' ? cleanYouTubeTitle(document.title) : '';
 
       // Update condition: check if video ID or title has changed
       if (videoId && (videoId !== currentVideoId.value || title !== currentVideoTitle.value)) {
@@ -105,7 +97,19 @@ export function useVideoNavigation(onVideoChange?: (videoId: string, videoTitle:
 
   // Initialize observers on mount
   onMounted(() => {
-    initObservers();
+    console.log('[VideoNavigation] Component mounted, initializing observers...');
+    
+    // Wait a short time to ensure YouTube page is fully loaded
+    setTimeout(() => {
+      console.log('[VideoNavigation] Starting delayed initialization');
+      initObservers();
+      
+      // Force an immediate update attempt after a small delay
+      setTimeout(() => {
+        console.log('[VideoNavigation] Forcing initial video info update');
+        updateCurrentVideo();
+      }, 500);
+    }, 1000);
   });
 
   // Cleanup observers on unmount
