@@ -2,7 +2,7 @@
 <p align="center"><i>Created entirely with Vibe Coding - not a single line handwritten because I'm still learning! 😭</i></p>
 
 <p align="center">
-  <img src="Deja_vocab_backend/static/images/logo.JPG" alt="Déjà Vocab Logo" width="200">
+  <img src="backend/static/images/logo.JPG" alt="Déjà Vocab Logo" width="200">
 </p>
 
 <div align="center">
@@ -99,15 +99,15 @@ Whether you're watching entertainment videos, educational content, or documentar
 
 3. Run database migrations
    ```
-   cd Deja_vocab_backend
+   cd backend
    python manage.py migrate
    ```
 
 4. Configure Google Gemini API key
-   - Open `Deja_vocab_backend/api/gemini_views.py` file
+   - Open `backend/api/gemini_views.py` file
    - Find the line `GEMINI_API_KEY = "YOUR_API_KEY"`
    - Replace `YOUR_API_KEY` with your actual Google Gemini API key (obtainable from [Google AI Studio](https://makersuite.google.com/app/apikey))
-   - Make the same replacement in the `Deja_vocab_backend/api/gemini_default_view.py` file
+   - Make the same replacement in the `backend/api/gemini_default_view.py` file
 
 5. Start the Django server
    ```
@@ -117,7 +117,7 @@ Whether you're watching entertainment videos, educational content, or documentar
 ### Chrome Extension Setup
 1. Navigate to the extension directory
    ```
-   cd Deja_vocab_extension
+   cd extension
    ```
 
 2. Install dependencies

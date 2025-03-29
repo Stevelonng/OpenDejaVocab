@@ -1,0 +1,1798 @@
+{% extends "api/base.html" %}
+
+{% block title %}{{ word.text }} | 词典 | Déjà Vocab{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* 背景装饰 */
+    .bg-decoration {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        pointer-events: none;
+        z-index: -1;
+        overflow: hidden;
+    }
+    
+    .bg-blob {
+        position: absolute;
+        border-radius: 50%;
+        filter: blur(80px);
+        opacity: 0.05;
+    }
+    
+    .blob-primary {
+        background: var(--primary);
+        width: 600px;
+        height: 600px;
+        top: -200px;
+        right: -200px;
+    }
+    
+    .blob-accent {
+        background: var(--accent);
+        width: 500px;
+        height: 500px;
+        bottom: -200px;
+        left: -200px;
+    }
+    
+    .dark .bg-blob {
+        opacity: 0.03;
+    }
+    
+    /* 页面容器 */
+    .word-detail-container {
+        position: relative;
+        padding: 2rem 0;
+        max-width: 1200px;
+        margin: 0 auto;
+        padding-top: calc(var(--header-height) + 1.5rem);
+    }
+    
+
+    
+    /* 单词卡片 */
+    .word-card {
+        background: white;
+        border-radius: 20px;
+        box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+        padding: 2rem;
+        margin-bottom: 2rem;
+        position: relative;
+        overflow: hidden;
+        border: 1px solid var(--gray-200);
+        transition: all 0.3s ease;
+    }
+    
+    .dark .word-card {
+        background: var(--gray-800);
+        border-color: var(--gray-700);
+    }
+    
+    .word-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 5px;
+        background: linear-gradient(90deg, var(--primary-500), var(--primary-700));
+        background-size: 200% auto;
+        animation: gradient-shift 3s ease infinite;
+    }
+    
+    @keyframes gradient-shift {
+        0% { background-position: 0% 50%; }
+        50% { background-position: 100% 50%; }
+        100% { background-position: 0% 50%; }
+    }
+    
+    /* 单词标题和操作区 */
+    .word-header {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        margin-bottom: 1.5rem;
+    }
+    
+    .word-title-container {
+        flex: 1;
+    }
+    
+    .word-title {
+        display: flex;
+        align-items: center;
+    }
+    
+    .word-text {
+        font-size: 3rem;
+        font-weight: 800;
+        color: var(--text-color);
+        margin: 0;
+        line-height: 1.1;
+        letter-spacing: -0.02em;
+        background: linear-gradient(to right, var(--primary-600), var(--primary-400));
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        background-size: 200% auto;
+    }
+    
+    .play-button {
+        margin-left: 1rem;
+        background: rgba(14, 165, 233, 0.1);
+        border: none;
+        width: 48px;
+        height: 48px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        color: var(--primary-600);
+        box-shadow: 0 4px 12px rgba(14, 165, 233, 0.15);
+    }
+    
+    .play-button i {
+        font-size: 1.2rem;
+        margin-left: 2px;
+    }
+    
+    .play-button:hover {
+        background: var(--primary-600);
+        color: white;
+        transform: translateY(-2px) scale(1.05);
+        box-shadow: 0 8px 20px rgba(14, 165, 233, 0.3);
+    }
+    
+    .play-button:active {
+        transform: translateY(0) scale(0.98);
+    }
+    
+    /* 音标展示 */
+    .phonetics {
+        display: flex;
+        gap: 1.5rem;
+        color: var(--gray-600);
+        font-size: 1.1rem;
+        margin: 0.75rem 0 1rem;
+    }
+    
+    .dark .phonetics {
+        color: var(--gray-400);
+    }
+    
+    .phonetic {
+        display: flex;
+        align-items: center;
+    }
+    
+    .phonetic-label {
+        font-size: 0.75rem;
+        background: rgba(14, 165, 233, 0.1);
+        padding: 0.25rem 0.625rem;
+        border-radius: 1rem;
+        margin-right: 0.5rem;
+        color: var(--primary-600);
+        font-weight: 600;
+        letter-spacing: 0.03em;
+    }
+    
+    .dark .phonetic-label {
+        background: rgba(14, 165, 233, 0.2);
+        color: var(--primary-400);
+    }
+    
+    /* 统计徽章 */
+    .stats-badges {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+        margin: 1rem 0;
+    }
+    
+    .badge {
+        padding: 0.5rem 0.875rem;
+        border-radius: 2rem;
+        font-size: 0.85rem;
+        font-weight: 600;
+        letter-spacing: 0.01em;
+        display: inline-flex;
+        align-items: center;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        transition: all 0.3s ease;
+    }
+    
+    .badge:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+    
+    .badge i {
+        margin-right: 0.5rem;
+        font-size: 0.9rem;
+    }
+    
+    .badge-primary {
+        background-color: rgba(14, 165, 233, 0.1);
+        color: var(--primary-600);
+    }
+    
+    .dark .badge-primary {
+        background-color: rgba(14, 165, 233, 0.15);
+        color: var(--primary-400);
+    }
+    
+    .badge-accent {
+        background-color: rgba(59, 130, 246, 0.1);
+        color: var(--primary-700);
+    }
+    
+    .dark .badge-accent {
+        background-color: rgba(59, 130, 246, 0.2);
+        color: var(--primary-400);
+    }
+    
+    .badge-neutral {
+        background-color: rgba(0, 0, 0, 0.05);
+        color: var(--gray-700);
+    }
+    
+    .dark .badge-neutral {
+        background-color: rgba(255, 255, 255, 0.1);
+        color: var(--gray-300);
+    }
+    
+    /* 操作按钮组 */
+    .action-buttons {
+        display: flex;
+        gap: 0.75rem;
+    }
+    
+    .btn {
+        padding: 0.75rem 1.25rem;
+        border-radius: 0.75rem;
+        font-size: 0.95rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        border: none;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        letter-spacing: 0.01em;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    }
+    
+    .btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+    }
+    
+    .btn:active {
+        transform: translateY(0);
+    }
+    
+    .btn-outline {
+        background: white;
+        border: 1px solid var(--gray-300);
+        color: var(--gray-700);
+    }
+    
+    .dark .btn-outline {
+        background: var(--gray-800);
+        border-color: var(--gray-700);
+        color: var(--gray-300);
+    }
+    
+    .btn-outline:hover {
+        background: var(--gray-50);
+        border-color: var(--gray-400);
+    }
+    
+    .dark .btn-outline:hover {
+        background: var(--gray-700);
+    }
+    
+    .btn-warning,
+    .btn-outline-warning {
+        display: flex;
+        align-items: center;
+    }
+    
+    .btn-warning {
+        background-color: rgba(245, 158, 11, 0.2);
+        color: #D97706;
+    }
+    
+    .dark .btn-warning {
+        background-color: rgba(245, 158, 11, 0.3);
+        color: #FBBF24;
+    }
+    
+    .btn-warning:hover {
+        background-color: rgba(245, 158, 11, 0.3);
+        color: #B45309;
+    }
+    
+    .dark .btn-warning:hover {
+        background-color: rgba(245, 158, 11, 0.4);
+        color: #FCD34D;
+    }
+    
+    .btn-outline-warning {
+        background: white;
+        border: 1px solid rgba(245, 158, 11, 0.3);
+        color: #D97706;
+    }
+    
+    .dark .btn-outline-warning {
+        background: rgba(45, 45, 45, 0.8);
+        border-color: rgba(245, 158, 11, 0.3);
+        color: #FBBF24;
+    }
+    
+    .btn-outline-warning:hover {
+        background: rgba(245, 158, 11, 0.1);
+        color: #B45309;
+    }
+    
+    .dark .btn-outline-warning:hover {
+        background: rgba(245, 158, 11, 0.2);
+        color: #FCD34D;
+    }
+    
+    .btn-danger {
+        color: #dc3545;
+        border: 1px solid rgba(220, 53, 69, 0.3);
+        background-color: rgba(220, 53, 69, 0.05);
+    }
+    
+    .dark .btn-danger {
+        color: #ef4444;
+        border-color: rgba(239, 68, 68, 0.3);
+        background-color: rgba(239, 68, 68, 0.1);
+    }
+    
+    .btn-danger:hover {
+        background-color: #dc3545;
+        color: white;
+    }
+    
+    .dark .btn-danger:hover {
+        background-color: #ef4444;
+        color: white;
+    }
+    
+    .icon {
+        margin-right: 0.5rem;
+        font-size: 1rem;
+    }
+    
+    /* 折叠面板 */
+    .collapsible {
+        background: white;
+        border-radius: 1rem;
+        overflow: hidden;
+        transition: all 0.3s ease;
+        margin-bottom: 2rem;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+        border: 1px solid var(--gray-200);
+    }
+    
+    .dark .collapsible {
+        background: var(--gray-800);
+        border-color: var(--gray-700);
+    }
+    
+    .collapsible:hover {
+        box-shadow: 0 8px 25px rgba(14, 165, 233, 0.1);
+    }
+    
+    .collapsible-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 1.25rem 1.5rem;
+        cursor: pointer;
+        background: var(--gray-100);
+        transition: all 0.3s ease;
+    }
+    
+    .dark .collapsible-header {
+        background: var(--gray-700);
+    }
+    
+    .collapsible-header:hover {
+        background: var(--gray-200);
+    }
+    
+    .dark .collapsible-header:hover {
+        background: var(--gray-600);
+    }
+    
+    .collapsible-title {
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: var(--gray-800);
+        margin: 0;
+        display: flex;
+        align-items: center;
+    }
+    
+    .dark .collapsible-title {
+        color: white;
+    }
+    
+    .collapsible-title i {
+        margin-right: 0.75rem;
+        color: var(--primary-500);
+        font-size: 1.2rem;
+    }
+    
+    .dark .collapsible-title i {
+        color: var(--primary-400);
+    }
+    
+    .collapsible-icon {
+        transition: transform 0.3s ease;
+        color: var(--gray-500);
+        font-size: 1.1rem;
+    }
+    
+    .dark .collapsible-icon {
+        color: var(--gray-400);
+    }
+    
+    .content-area {
+        max-height: 0;
+        overflow: hidden;
+        transition: max-height 0.4s cubic-bezier(0, 1, 0, 1);
+    }
+    
+    .collapsible.expanded .collapsible-icon {
+        transform: rotate(180deg);
+    }
+    
+    .collapsible.expanded .content-area {
+        max-height: 2000px;
+        transition: max-height 0.4s cubic-bezier(1, 0, 1, 0);
+    }
+    
+    .content-inner {
+        padding: 1.5rem;
+    }
+    
+    /* 翻译内容 */
+    .translation-content {
+        color: var(--gray-800);
+        line-height: 1.7;
+    }
+    
+    .dark .translation-content {
+        color: var(--gray-200);
+    }
+    
+    .translation-section {
+        background: rgba(255, 255, 255, 0.7);
+        border-radius: 0.75rem;
+        padding: 1.25rem;
+        margin-bottom: 1.25rem;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.03);
+        transition: all 0.3s ease;
+    }
+    
+    .dark .translation-section {
+        background: var(--gray-800);
+        border-color: rgba(255, 255, 255, 0.05);
+    }
+    
+    .translation-section:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 8px 20px rgba(14, 165, 233, 0.08);
+    }
+    
+    .translation-section-title {
+        font-size: 0.9rem;
+        color: var(--gray-600);
+        font-weight: 600;
+        margin-bottom: 0.75rem;
+        display: flex;
+        align-items: center;
+    }
+    
+    .dark .translation-section-title {
+        color: var(--gray-400);
+    }
+    
+    .translation-section-title i {
+        margin-right: 0.5rem;
+        font-size: 1rem;
+        color: var(--primary-500);
+    }
+    
+    .dark .translation-section-title i {
+        color: var(--primary-400);
+    }
+    
+    .text-muted {
+        color: var(--gray-500);
+        font-style: italic;
+    }
+    
+    .dark .text-muted {
+        color: var(--gray-400);
+    }
+    
+    /* 主内容区域 */
+    .section-header {
+        margin: 1.5rem 0;
+        display: flex;
+        align-items: center;
+        font-size: 1.4rem;
+        font-weight: 700;
+        color: var(--gray-800);
+    }
+    
+    .dark .section-header {
+        color: white;
+    }
+    
+    .section-header i {
+        margin-right: 0.75rem;
+        color: var(--primary-500);
+    }
+    
+    .dark .section-header i {
+        color: var(--primary-400);
+    }
+    
+    .content-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1.5rem;
+        margin-top: 1.5rem;
+    }
+    
+    /* 上下文列表样式 */
+    .context-column {
+        max-height: calc(100vh - 220px);
+        overflow-y: auto;
+        scrollbar-width: thin;
+        padding-right: 0.5rem;
+    }
+    
+    .context-column::-webkit-scrollbar {
+        width: 6px;
+    }
+    
+    .context-column::-webkit-scrollbar-track {
+        background: rgba(14, 165, 233, 0.05);
+        border-radius: 10px;
+    }
+    
+    .context-column::-webkit-scrollbar-thumb {
+        background: rgba(14, 165, 233, 0.2);
+        border-radius: 10px;
+    }
+    
+    .context-column::-webkit-scrollbar-thumb:hover {
+        background: rgba(14, 165, 233, 0.4);
+    }
+    
+    .dark .context-column::-webkit-scrollbar-track {
+        background: rgba(255, 255, 255, 0.05);
+    }
+    
+    .dark .context-column::-webkit-scrollbar-thumb {
+        background: rgba(255, 255, 255, 0.1);
+    }
+    
+    .dark .context-column::-webkit-scrollbar-thumb:hover {
+        background: rgba(255, 255, 255, 0.2);
+    }
+    
+    /* 视频分组 */
+    .video-group {
+        background: white;
+        border-radius: 1rem;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+        margin-bottom: 1.5rem;
+        overflow: hidden;
+        transition: all 0.3s ease;
+        border: 1px solid var(--gray-200);
+    }
+    
+    .dark .video-group {
+        background: var(--gray-800);
+        border-color: var(--gray-700);
+    }
+    
+    .video-group:hover {
+        box-shadow: 0 10px 25px rgba(14, 165, 233, 0.12);
+        transform: translateY(-3px);
+    }
+    
+    .video-header {
+        display: flex;
+        padding: 1.25rem;
+        border-bottom: 1px solid var(--gray-200);
+        align-items: center;
+        gap: 1rem;
+        background: var(--gray-100);
+        cursor: pointer;
+        position: relative;
+    }
+    
+    .dark .video-header {
+        background: var(--gray-700);
+        border-bottom: 1px solid var(--gray-700);
+    }
+    
+    .toggle-icon {
+        margin-left: auto;
+        color: var(--gray-500);
+        transition: all 0.3s ease;
+    }
+    
+    .dark .toggle-icon {
+        color: var(--gray-400);
+    }
+    
+    .video-group.collapsed .toggle-icon i {
+        transform: rotate(180deg);
+    }
+    
+    .video-group.collapsed .sentences-list {
+        display: none;
+    }
+    
+    .video-thumbnail {
+        width: 140px;
+        height: 80px;
+        border-radius: 0.75rem;
+        object-fit: cover;
+        flex-shrink: 0;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        transition: all 0.3s ease;
+        border: 2px solid rgba(255, 255, 255, 0.3);
+    }
+    
+    .dark .video-thumbnail {
+        border-color: rgba(255, 255, 255, 0.1);
+    }
+    
+    .video-header:hover .video-thumbnail {
+        transform: scale(1.05) rotate(1deg);
+        box-shadow: 0 8px 20px rgba(14, 165, 233, 0.15);
+    }
+    
+    .video-info {
+        flex-grow: 1;
+    }
+    
+    .video-title {
+        font-size: 1.05rem;
+        font-weight: 700;
+        color: var(--gray-800);
+        margin: 0 0 6px 0;
+        display: -webkit-box;
+        -webkit-line-clamp: 1;
+        line-clamp: 1;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+    
+    .dark .video-title {
+        color: white;
+    }
+    
+    .sentence-counter {
+        font-size: 0.85rem;
+        color: var(--gray-600);
+        display: flex;
+        align-items: center;
+    }
+    
+    .dark .sentence-counter {
+        color: var(--gray-400);
+    }
+    
+    .sentence-counter i {
+        margin-right: 0.5rem;
+        color: var(--primary-500);
+    }
+    
+    .dark .sentence-counter i {
+        color: var(--primary-400);
+    }
+    
+    .sentences-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        max-height: 300px;
+        overflow-y: auto;
+        overflow-x: hidden;
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+        transition: all 0.3s ease;
+    }
+    
+    .sentences-list::-webkit-scrollbar {
+        display: none;
+    }
+    
+    .sentence-item {
+        padding: 1rem 1.25rem;
+        border-bottom: 1px solid rgba(14, 165, 233, 0.1);
+        cursor: pointer;
+        transition: all 0.3s ease;
+        position: relative;
+        background-color: white;
+    }
+    
+    .dark .sentence-item {
+        border-bottom-color: var(--gray-800);
+        background-color: var(--gray-800);
+    }
+    
+    .sentence-item:last-child {
+        border-bottom: none;
+    }
+    
+    .sentence-item:hover {
+        background-color: var(--gray-100);
+        transform: translateX(5px);
+    }
+    
+    .dark .sentence-item:hover {
+        background-color: var(--gray-700);
+    }
+    
+    .sentence-item.active {
+        background-color: var(--primary-50);
+        border-left: 4px solid var(--primary-500);
+        padding-left: 1rem;
+    }
+    
+    .dark .sentence-item.active {
+        background-color: rgba(14, 165, 233, 0.15);
+        border-left-color: var(--primary-400);
+    }
+    
+    .sentence-text {
+        margin-bottom: 0.75rem;
+        line-height: 1.7;
+        font-size: 1rem;
+        color: var(--gray-800);
+    }
+    
+    .dark .sentence-text {
+        color: var(--gray-200);
+    }
+    
+    .sentence-text strong {
+        color: var(--primary-600);
+        font-weight: 700;
+        background-color: rgba(14, 165, 233, 0.1);
+        padding: 0 3px;
+        border-radius: 3px;
+    }
+    
+    .dark .sentence-text strong {
+        color: var(--primary-400);
+        background-color: rgba(14, 165, 233, 0.2);
+    }
+    
+    .timestamp-tag {
+        display: inline-flex;
+        align-items: center;
+        background: rgba(14, 165, 233, 0.1);
+        padding: 0.25rem 0.75rem;
+        border-radius: 1rem;
+        font-size: 0.8rem;
+        color: var(--primary-600);
+        font-weight: 600;
+        transition: all 0.3s ease;
+        box-shadow: 0 2px 5px rgba(14, 165, 233, 0.1);
+    }
+    
+    .dark .timestamp-tag {
+        background: rgba(14, 165, 233, 0.2);
+        color: var(--primary-400);
+    }
+    
+    .timestamp-tag i {
+        margin-right: 0.375rem;
+    }
+    
+    .sentence-item:hover .timestamp-tag {
+        background: rgba(14, 165, 233, 0.2);
+        transform: scale(1.05);
+    }
+    
+    .dark .sentence-item:hover .timestamp-tag {
+        background: rgba(14, 165, 233, 0.3);
+    }
+    
+    /* 播放器区域 */
+    .player-section {
+        position: sticky;
+        top: 1.5rem;
+        max-height: calc(100vh - 3rem);
+        display: flex;
+        flex-direction: column;
+    }
+    
+    .player-card {
+        background: rgba(255, 255, 255, 0.9);
+        border-radius: 1rem;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+        overflow: hidden;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        transition: all 0.3s ease;
+    }
+    
+    .dark .player-card {
+        background: rgba(45, 45, 45, 0.8);
+        border-color: rgba(255, 255, 255, 0.05);
+    }
+    
+    .player-card:hover {
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.12);
+    }
+    
+    .player-container {
+        width: 100%;
+        background: #000;
+        position: relative;
+        padding-top: 56.25%;
+        overflow: hidden;
+    }
+    
+    #youtube-player,
+    .youtube-player {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100% !important;
+        height: 100% !important;
+    }
+    
+    .current-context {
+        padding: 1.25rem;
+        border-top: 1px solid var(--gray-200);
+        background: white;
+        color: var(--gray-800);
+        font-size: 0.95rem;
+        line-height: 1.6;
+    }
+    
+    .dark .current-context {
+        background: var(--gray-800);
+        border-top-color: var(--gray-700);
+        color: var(--gray-200);
+    }
+    
+    .context-placeholder {
+        color: var(--gray-500);
+        font-style: italic;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .dark .context-placeholder {
+        color: var(--gray-400);
+    }
+    
+    .context-placeholder i {
+        margin-right: 0.75rem;
+    }
+    
+    /* 删除确认对话框 */
+    .modal-backdrop {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5);
+        z-index: 1000;
+        backdrop-filter: blur(3px);
+        -webkit-backdrop-filter: blur(3px);
+    }
+    
+    .modal-content {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background-color: white;
+        border-radius: 1rem;
+        width: 90%;
+        max-width: 500px;
+        box-shadow: 0 25px 50px rgba(0, 0, 0, 0.25);
+        overflow: hidden;
+    }
+    
+    .dark .modal-content {
+        background-color: var(--gray-800);
+    }
+    
+    .modal-header {
+        padding: 1.25rem 1.5rem;
+        border-bottom: 1px solid var(--gray-200);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+    
+    .dark .modal-header {
+        border-bottom-color: var(--gray-700);
+    }
+    
+    .modal-title {
+        font-size: 1.25rem;
+        font-weight: 700;
+        margin: 0;
+        color: var(--gray-800);
+    }
+    
+    .dark .modal-title {
+        color: white;
+    }
+    
+    .modal-close {
+        background: none;
+        border: none;
+        font-size: 1.5rem;
+        cursor: pointer;
+        color: var(--gray-500);
+        transition: color 0.2s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 2rem;
+        height: 2rem;
+        border-radius: 50%;
+    }
+    
+    .modal-close:hover {
+        color: var(--gray-800);
+        background-color: var(--gray-100);
+    }
+    
+    .dark .modal-close {
+        color: var(--gray-400);
+    }
+    
+    .dark .modal-close:hover {
+        color: white;
+        background-color: var(--gray-700);
+    }
+    
+    .modal-body {
+        padding: 1.5rem;
+        color: var(--gray-700);
+        font-size: 1rem;
+        line-height: 1.6;
+    }
+    
+    .dark .modal-body {
+        color: var(--gray-300);
+    }
+    
+    .modal-footer {
+        padding: 1.25rem 1.5rem;
+        border-top: 1px solid var(--gray-200);
+        display: flex;
+        justify-content: flex-end;
+        gap: 1rem;
+        background-color: var(--gray-50);
+    }
+    
+    .dark .modal-footer {
+        border-top-color: var(--gray-700);
+        background-color: var(--gray-700);
+    }
+    
+    /* 通知和提示 */
+    .alert {
+        border-radius: 0.75rem;
+        padding: 1rem 1.25rem;
+        margin-bottom: 1.5rem;
+        border: 1px solid transparent;
+        background-color: white;
+        color: var(--gray-800);
+        font-size: 0.95rem;
+        display: flex;
+        align-items: flex-start;
+    }
+    
+    .dark .alert {
+        background-color: var(--gray-800);
+        color: var(--gray-200);
+    }
+    
+    .alert i {
+        margin-right: 0.75rem;
+        font-size: 1.1rem;
+    }
+    
+    .info-message {
+        background-color: rgba(14, 165, 233, 0.1);
+        border-left: 4px solid var(--primary-500);
+    }
+    
+    .dark .info-message {
+        background-color: rgba(14, 165, 233, 0.15);
+        border-left-color: var(--primary-400);
+    }
+    
+    .info-message i {
+        color: var(--primary-500);
+    }
+    
+    .dark .info-message i {
+        color: var(--primary-400);
+    }
+    
+    /* 高亮单词样式 */
+    .highlighted-word {
+        color: var(--primary-600);
+        background-color: rgba(14, 165, 233, 0.1);
+        padding: 0 3px;
+        border-radius: 3px;
+        font-weight: bold;
+    }
+    
+    .dark .highlighted-word {
+        color: var(--primary-400);
+        background-color: rgba(14, 165, 233, 0.2);
+    }
+    
+    /* 响应式调整 */
+    @media (max-width: 1100px) {
+        .content-grid {
+            grid-template-columns: 1fr;
+        }
+        
+        .player-section {
+            position: static;
+            order: -1;
+            margin-bottom: 1.5rem;
+        }
+    }
+    
+    @media (max-width: 768px) {
+        .word-header {
+            flex-direction: column;
+        }
+        
+        .word-text {
+            font-size: 2.5rem;
+        }
+        
+        .action-buttons {
+            margin-top: 1.5rem;
+            width: 100%;
+            justify-content: space-between;
+        }
+        
+        .phonetics {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 0.5rem;
+        }
+    }
+    
+    @media (max-width: 480px) {
+        .word-card {
+            padding: 1.5rem;
+        }
+        
+        .word-text {
+            font-size: 2rem;
+        }
+        
+        .play-button {
+            width: 40px;
+            height: 40px;
+        }
+        
+        .badge {
+            padding: 0.375rem 0.75rem;
+            font-size: 0.8rem;
+        }
+        
+        .btn {
+            padding: 0.625rem 1rem;
+            font-size: 0.85rem;
+        }
+        
+        .video-thumbnail {
+            width: 100px;
+            height: 60px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="word-detail-container">
+    <!-- 背景装饰 -->
+    <div class="bg-decoration">
+        <div class="bg-blob blob-primary"></div>
+        <div class="bg-blob blob-accent"></div>
+    </div>
+    
+    <!-- 单词卡片 -->
+    <div class="word-card">
+        <div class="word-header">
+            <div class="word-title-container">
+                <div class="word-title">
+                    <h1 class="word-text">{{ word.text }}</h1>
+                    {% if word.has_audio %}
+                    <button type="button" class="play-button" id="play-pronunciation" title="播放发音">
+                        <i class="bi bi-volume-up"></i>
+                    </button>
+                    {% endif %}
+                </div>
+                
+                <div class="phonetics">
+                    {% if word.uk_phonetic %}
+                    <div class="phonetic">
+                        <span class="phonetic-label">英</span>
+                        [{{ word.uk_phonetic }}]
+                    </div>
+                    {% endif %}
+                    
+                    {% if word.us_phonetic %}
+                    <div class="phonetic">
+                        <span class="phonetic-label">美</span>
+                        [{{ word.us_phonetic }}]
+                    </div>
+                    {% endif %}
+                    
+                    {% if word.phonetic and not word.uk_phonetic and not word.us_phonetic %}
+                    <div class="phonetic">
+                        [{{ word.phonetic }}]
+                    </div>
+                    {% endif %}
+                </div>
+                
+                <div class="stats-badges">
+                    <span class="badge badge-primary"><i class="bi bi-bar-chart-line"></i>出现 {{ word.frequency }} 次</span>
+                    <span class="badge badge-accent"><i class="bi bi-play-circle"></i>{{ video_count }} 个视频</span>
+                    <span class="badge badge-neutral"><i class="bi bi-globe2"></i>{{ word.language }}</span>
+                </div>
+            </div>
+            
+            <div class="action-buttons">
+                <a href="{% url 'dictionary' %}" class="btn btn-outline">
+                    <i class="bi bi-arrow-left icon"></i>返回
+                </a>
+                {% if is_favorite %}
+                <button id="favoriteBtn" class="btn btn-warning" data-word-id="{{ word.id }}" data-action="remove-favorite">
+                    <i class="bi bi-star-fill icon"></i>取消收藏
+                </button>
+                {% else %}
+                <button id="favoriteBtn" class="btn btn-outline-warning" data-word-id="{{ word.id }}" data-action="add-favorite">
+                    <i class="bi bi-star icon"></i>收藏
+                </button>
+                {% endif %}
+                <button id="deleteBtn" class="btn btn-danger">
+                    <i class="bi bi-trash icon"></i>删除
+                </button>
+            </div>
+        </div>
+        
+        <!-- 翻译折叠面板 -->
+        <div class="collapsible" id="contentPanel">
+            <div class="collapsible-header">
+                <h3 class="collapsible-title"><i class="bi bi-translate"></i>翻译与释义</h3>
+                <i class="bi bi-chevron-down collapsible-icon"></i>
+            </div>
+            <div class="content-area">
+                <div class="content-inner">
+                    <div class="translation-content">
+                        {% if word.translation %}
+                            <div class="translation-section">
+                                <div class="translation-section-title"><i class="bi bi-book"></i>基本释义</div>
+                                <div class="translation-content">
+                                    {{ word.translation|linebreaksbr }}
+                                </div>
+                            </div>
+                            
+                            {% if word.web_translation %}
+                            <div class="translation-section">
+                                <div class="translation-section-title"><i class="bi bi-globe"></i>网络释义</div>
+                                <div class="translation-content">
+                                    {{ word.web_translation|linebreaksbr }}
+                                </div>
+                            </div>
+                            {% endif %}
+                        {% else %}
+                            <p class="text-muted">尚未添加翻译</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 上下文引用标题 -->
+    <h2 class="section-header"><i class="bi bi-quote"></i>上下文引用</h2>
+    
+    <!-- 主内容区：上下文和播放器 -->
+    <div class="content-grid">
+        <!-- 左侧：上下文列表 -->
+        <div class="context-column">
+            {% if video_url_map and video_url_map|length > 0 %}
+                {# 使用预先分组的引用数据 #}
+                {% for video_id, refs in video_url_map.items %}
+                    {# 使用第一个引用的视频信息 #}
+                    {% with video=refs.0.subtitle.video %}
+                    <div class="video-group collapsed" data-video-id="{{ video.id }}">
+                        <div class="video-header toggle-sentences">
+                            <img 
+                                src="https://i.ytimg.com/vi/{{ video_id|default:'dQw4w9WgXcQ' }}/mqdefault.jpg" 
+                                alt="视频缩略图" 
+                                class="video-thumbnail"
+                                onerror="this.src='https://via.placeholder.com/140x80?text=缩略图'"
+                            >
+                            <div class="video-info">
+                                <div class="video-title">{{ video.title|truncatechars:60 }}</div>
+                                <div class="sentence-counter">
+                                    <i class="bi bi-chat-quote"></i>{{ refs|length }} 个句子
+                                </div>
+                            </div>
+                            <div class="toggle-icon">
+                                <i class="bi bi-chevron-down"></i>
+                            </div>
+                        </div>
+                        <ul class="sentences-list">
+                            {% for ref in refs|dictsort:"subtitle.start_time" %}
+                            <li class="sentence-item" 
+                                data-video-id="{{ video_id }}" 
+                                data-start-time="{{ ref.subtitle.start_time|floatformat:1 }}"
+                                data-end-time="{{ ref.subtitle.end_time|floatformat:1 }}"
+                                data-subtitle-id="{{ ref.subtitle.id }}"
+                            >
+                                <div class="sentence-text">{{ ref.get_highlighted_context|safe }}</div>
+                                <span class="timestamp-tag">
+                                    <i class="bi bi-stopwatch"></i>{{ ref.subtitle.start_time|floatformat:1 }}s
+                                </span>
+                            </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                    {% endwith %}
+                {% endfor %}
+            {% elif references and references|length > 0 %}
+                {# 后备方法：如果没有预处理的映射，则使用原始方法 #}
+                {% regroup references by subtitle.video.title|slugify as normalized_groups %}
+                {% for norm_group in normalized_groups %}
+                    {# 使用组内第一个元素的视频信息 #}
+                    {% with video=norm_group.list.0.subtitle.video %}
+                    <div class="video-group collapsed" data-video-id="{{ video.id }}">
+                        <div class="video-header toggle-sentences">
+                            <img 
+                                src="https://i.ytimg.com/vi/{{ video.youtube_id|default:video.url|slice:'32:'|default:'dQw4w9WgXcQ' }}/mqdefault.jpg" 
+                                alt="视频缩略图" 
+                                class="video-thumbnail"
+                                onerror="this.src='https://via.placeholder.com/140x80?text=缩略图'"
+                            >
+                            <div class="video-info">
+                                <div class="video-title">{{ video.title|truncatechars:60 }}</div>
+                                <div class="sentence-counter">
+                                    <i class="bi bi-chat-quote"></i>{{ norm_group.list|length }} 个句子
+                                </div>
+                            </div>
+                            <div class="toggle-icon">
+                                <i class="bi bi-chevron-down"></i>
+                            </div>
+                        </div>
+                        <ul class="sentences-list">
+                            {% for ref in norm_group.list|dictsort:"subtitle.start_time" %}
+                            <li class="sentence-item" 
+                                data-video-id="{{ ref.subtitle.video.youtube_id|default:ref.subtitle.video.url|slice:'32:' }}" 
+                                data-start-time="{{ ref.subtitle.start_time|floatformat:1 }}"
+                                data-end-time="{{ ref.subtitle.end_time|floatformat:1 }}"
+                                data-subtitle-id="{{ ref.subtitle.id }}"
+                            >
+                                <div class="sentence-text">{{ ref.get_highlighted_context|safe }}</div>
+                                <span class="timestamp-tag">
+                                    <i class="bi bi-stopwatch"></i>{{ ref.subtitle.start_time|floatformat:1 }}s
+                                </span>
+                            </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                    {% endwith %}
+                {% endfor %}
+            {% else %}
+                <div class="alert">
+                    没有找到该单词的上下文引用。
+                </div>
+            {% endif %}
+        </div>
+        
+        <!-- 右侧：视频播放器 -->
+        <div class="player-section">
+            <div class="player-card">
+                <div class="player-container">
+                    <div id="youtube-player"></div>
+                </div>
+                <div class="current-context">
+                    <p class="context-placeholder" id="contextDisplay">
+                        <i class="bi bi-arrow-left-circle"></i>点击左侧句子播放相应视频片段
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 删除确认对话框 -->
+<div id="deleteModal" class="modal-backdrop">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h5 class="modal-title">确认删除</h5>
+            <button type="button" class="modal-close" id="closeModal">&times;</button>
+        </div>
+        <div class="modal-body">
+            <p>您确定要删除单词"{{ word.text }}"及其所有引用吗？此操作无法撤销。</p>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-outline" id="cancelDelete">
+                <i class="bi bi-x-circle icon"></i>取消
+            </button>
+            <form method="post" action="{% url 'delete_word' word.id %}">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-danger">
+                    <i class="bi bi-trash icon"></i>确认删除
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://www.youtube.com/iframe_api"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // YouTube播放器初始化
+        let player;
+        let currentVideoId = null;
+        let allSubtitles = {};
+        
+        function onYouTubeIframeAPIReady() {
+            // 初始化播放器，但不加载任何视频
+            player = new YT.Player('youtube-player', {
+                height: '100%',
+                width: '100%',
+                playerVars: {
+                    'playsinline': 1,
+                    'rel': 0,
+                    'modestbranding': 1,
+                    'autoplay': 0,
+                    'origin': window.location.origin
+                },
+                events: {
+                    'onReady': onPlayerReady,
+                    'onStateChange': onPlayerStateChange
+                }
+            });
+        }
+        
+        // 确保YouTube API已加载
+        if (typeof YT !== 'undefined' && YT.Player) {
+            onYouTubeIframeAPIReady();
+        } else {
+            window.onYouTubeIframeAPIReady = onYouTubeIframeAPIReady;
+        }
+        
+        // 视频组折叠/展开功能
+        const videoHeaders = document.querySelectorAll('.toggle-sentences');
+        
+        videoHeaders.forEach(header => {
+            header.addEventListener('click', function(e) {
+                const videoGroup = this.closest('.video-group');
+                videoGroup.classList.toggle('collapsed');
+                e.stopPropagation();
+            });
+        });
+        
+        // 确保视频组正确折叠/展开
+        document.querySelectorAll('.video-group').forEach((group, index) => {
+            // 所有视频组都保持折叠状态
+            group.classList.add('collapsed');
+        });
+        
+        // 准备字幕数据以便按时间同步显示
+        let currentVideoSubtitles = []; 
+        let lastLoggedTime = 0;  
+        const sentenceItems = document.querySelectorAll('.sentence-item');
+        const contextDisplay = document.getElementById('contextDisplay');
+        
+        // 从数据库获取视频的所有字幕
+        function fetchAllSubtitles(videoDbId) {
+            const url = `/api/web/videos/${videoDbId}/subtitles/`;
+            
+            return fetch(url, {
+                headers: {
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]')?.value
+                }
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`获取字幕失败，状态码: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.subtitles && data.subtitles.length > 0) {
+                    return data.subtitles.map(s => ({
+                        start_time: parseFloat(s.start_time),
+                        end_time: parseFloat(s.end_time),
+                        text: s.text
+                    }));
+                } else {
+                    return [];
+                }
+            })
+            .catch(error => {
+                return [];
+            });
+        }
+        
+        // 初始化所有视频的字幕映射 - A按需加载
+        const videoGroups = document.querySelectorAll('.video-group');
+        const videoMapping = {}; 
+        
+        videoGroups.forEach(group => {
+            const dbId = group.getAttribute('data-video-id');
+            const youtubeIdEl = group.querySelector('.sentence-item');
+            if (youtubeIdEl) {
+                const youtubeId = youtubeIdEl.getAttribute('data-video-id');
+                videoMapping[youtubeId] = dbId;
+            }
+        });
+        
+        // 当前播放的视频ID
+        currentVideoId = null;
+        
+        // 句子点击事件
+        sentenceItems.forEach(item => {
+            item.addEventListener('click', function() {
+                sentenceItems.forEach(el => el.classList.remove('active'));
+                
+                this.classList.add('active');
+                
+                const videoId = this.getAttribute('data-video-id'); 
+                const startTime = parseFloat(this.getAttribute('data-start-time'));
+                
+                const dbVideoId = videoMapping[videoId];
+                
+                currentVideoId = videoId;
+                
+                contextDisplay.className = '';
+                contextDisplay.innerHTML = this.querySelector('.sentence-text').innerHTML;
+                
+                if (dbVideoId && (!allSubtitles[videoId] || allSubtitles[videoId].length === 0)) {
+                    fetchAllSubtitles(dbVideoId).then(subtitles => {
+                        if (subtitles && subtitles.length > 0) {
+                            allSubtitles[videoId] = subtitles;
+                            currentVideoSubtitles = subtitles;
+                        }
+                    });
+                } else if (allSubtitles[videoId]) {
+                    currentVideoSubtitles = allSubtitles[videoId];
+                }
+                
+                if (player && player.loadVideoById) {
+                    player.loadVideoById({
+                        'videoId': videoId,
+                        'startSeconds': startTime
+                    });
+                }
+                
+                // 点击句子时，确保视频组展开
+                const videoGroup = this.closest('.video-group');
+                if (videoGroup && videoGroup.classList.contains('collapsed')) {
+                    videoGroup.classList.remove('collapsed');
+                }
+            });
+        });
+        
+        // 如果有句子，默认选中第一个
+        if (sentenceItems.length > 0) {
+            setTimeout(() => {
+                sentenceItems[0].click();
+            }, 1000);
+        }
+        
+        // 发音播放功能
+        const playButton = document.getElementById('play-pronunciation');
+        if (playButton) {
+            playButton.addEventListener('click', function() {
+                const originalIcon = this.innerHTML;
+                this.innerHTML = '<i class="bi bi-circle-fill"></i>';
+                
+                const audioUrl = '{% url "word_pronunciation" word.text %}';
+                const audio = new Audio();
+                
+                audio.addEventListener('canplaythrough', () => {
+                    this.innerHTML = originalIcon;
+                    audio.play();
+                });
+                
+                audio.addEventListener('error', (error) => {
+                    this.innerHTML = originalIcon;
+                    alert('播放发音失败，请重试');
+                });
+                
+                audio.addEventListener('ended', () => {
+                    this.innerHTML = originalIcon;
+                });
+                
+                const timeoutId = setTimeout(() => {
+                    if (audio.readyState < 3) { 
+                        this.innerHTML = originalIcon;
+                        alert('音频加载超时，请重试');
+                        audio.src = ''; 
+                    }
+                }, 5000); 
+                
+                audio.addEventListener('canplaythrough', () => clearTimeout(timeoutId));
+                audio.addEventListener('error', () => clearTimeout(timeoutId));
+                
+                audio.src = audioUrl;
+                audio.load();
+            });
+        }
+        
+        // 折叠面板功能
+        const collapsibles = document.querySelectorAll('.collapsible');
+        
+        collapsibles.forEach(collapsible => {
+            const header = collapsible.querySelector('.collapsible-header');
+            
+            header.addEventListener('click', function() {
+                collapsible.classList.toggle('expanded');
+            });
+        });
+        
+        // 删除对话框逻辑
+        const deleteBtn = document.getElementById('deleteBtn');
+        const deleteModal = document.getElementById('deleteModal');
+        const closeModal = document.getElementById('closeModal');
+        const cancelDelete = document.getElementById('cancelDelete');
+        
+        deleteBtn.addEventListener('click', function() {
+            deleteModal.style.display = 'block';
+        });
+        
+        function hideModal() {
+            deleteModal.style.display = 'none';
+        }
+        
+        closeModal.addEventListener('click', hideModal);
+        cancelDelete.addEventListener('click', hideModal);
+        
+        deleteModal.addEventListener('click', function(e) {
+            if (e.target === deleteModal) {
+                hideModal();
+            }
+        });
+        
+        // 收藏功能
+        const favoriteBtn = document.getElementById('favoriteBtn');
+        if (favoriteBtn) {
+            favoriteBtn.addEventListener('click', function() {
+                const wordId = this.getAttribute('data-word-id');
+                const action = this.getAttribute('data-action');
+                
+                const authToken = '{{ request.session.auth_token }}';
+                
+                if (!authToken) {
+                    alert('请先登录再进行收藏操作');
+                    return;
+                }
+                
+                fetch('/api/web/toggle-favorite/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]')?.value,
+                        'Authorization': `Token ${authToken}`
+                    },
+                    body: `word_id=${wordId}&action=${action}`
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        if (data.is_favorite) {
+                            this.innerHTML = '<i class="bi bi-star-fill icon"></i>取消收藏';
+                            this.className = 'btn btn-warning';
+                            this.setAttribute('data-action', 'remove-favorite');
+                        } else {
+                            this.innerHTML = '<i class="bi bi-star icon"></i>收藏';
+                            this.className = 'btn btn-outline-warning';
+                            this.setAttribute('data-action', 'add-favorite');
+                        }
+                        
+                        const toastContainer = document.createElement('div');
+                        toastContainer.className = 'toast-container position-fixed bottom-0 end-0 p-3';
+                        toastContainer.style.zIndex = '5';
+                        
+                        const toast = document.createElement('div');
+                        toast.className = 'toast align-items-center text-white bg-primary border-0';
+                        toast.setAttribute('role', 'alert');
+                        toast.setAttribute('aria-live', 'assertive');
+                        toast.setAttribute('aria-atomic', 'true');
+                        
+                        toast.innerHTML = `
+                            <div class="d-flex">
+                                <div class="toast-body">
+                                    ${data.message}
+                                </div>
+                                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+                            </div>
+                        `;
+                        
+                        toastContainer.appendChild(toast);
+                        document.body.appendChild(toastContainer);
+                        
+                        const bsToast = new bootstrap.Toast(toast);
+                        bsToast.show();
+                        
+                        setTimeout(() => {
+                            toastContainer.remove();
+                        }, 3000);
+                        
+                        try {
+                            const message = {
+                                action: 'update-favorites',
+                                word: {
+                                    id: wordId,
+                                    text: '{{ word.text }}',
+                                    is_favorite: data.is_favorite
+                                }
+                            };
+                            
+                            if (window.chrome && chrome.runtime && chrome.runtime.sendMessage) {
+                                chrome.runtime.sendMessage('fbkhlnenfchhkkmcodebhiiklcpdjehj', message);
+                            } else {
+                                window.parent.postMessage({
+                                    source: 'youtube-subtitle-collector',
+                                    ...message
+                                }, '*');
+                            }
+                        } catch (e) {
+                            console.log('扩展通信错误', e);
+                        }
+                    } else {
+                        alert('操作失败: ' + data.message);
+                    }
+                })
+                .catch(error => {
+                    alert('请求出错，请稍后重试');
+                });
+            });
+        }
+        
+        function onPlayerReady(event) {
+            // 播放器准备就绪
+            console.log("YouTube播放器准备就绪");
+        }
+        
+        let intervalId = null;
+        
+        function onPlayerStateChange(event) {
+            if (event.data === YT.PlayerState.PLAYING) {
+                updateSubtitleByTime();
+                if (intervalId === null) {
+                    intervalId = setInterval(updateSubtitleByTime, 300); 
+                }
+            } else if (event.data === YT.PlayerState.PAUSED || event.data === YT.PlayerState.ENDED) {
+                if (intervalId !== null) {
+                    clearInterval(intervalId);
+                    intervalId = null;
+                }
+            }
+        }
+        
+        function updateSubtitleByTime() {
+            if (!player || !currentVideoId) {
+                return;
+            }
+            
+            try {
+                const currentTime = player.getCurrentTime();
+                
+                if (currentVideoSubtitles && currentVideoSubtitles.length > 0) {
+                    if (Math.floor(currentTime) !== Math.floor(lastLoggedTime || 0)) {
+                        lastLoggedTime = currentTime;
+                    }
+                    
+                    let foundSubtitle = null;
+                    for (const subtitle of currentVideoSubtitles) {
+                        if (currentTime >= subtitle.start_time && currentTime < subtitle.end_time) {
+                            foundSubtitle = subtitle;
+                            break;
+                        }
+                    }
+                    
+                    if (foundSubtitle) {
+                        document.getElementById('contextDisplay').innerHTML = foundSubtitle.text;
+                        document.getElementById('contextDisplay').className = '';
+                        
+                        sentenceItems.forEach(el => {
+                            const itemStartTime = parseFloat(el.getAttribute('data-start-time'));
+                            const itemEndTime = parseFloat(el.getAttribute('data-end-time'));
+                            
+                            if (Math.abs(itemStartTime - foundSubtitle.start_time) < 0.1 && 
+                                Math.abs(itemEndTime - foundSubtitle.end_time) < 0.1) {
+                                el.classList.add('active');
+                            } else {
+                                el.classList.remove('active');
+                            }
+                        });
+                        
+                        return; 
+                    }
+                }
+                
+                const refItems = document.querySelectorAll('.sentence-item[data-video-id="' + currentVideoId + '"]');
+                let closestItem = null;
+                let minTimeDiff = Infinity;
+                
+                refItems.forEach(item => {
+                    const startTime = parseFloat(item.getAttribute('data-start-time'));
+                    const timeDiff = Math.abs(currentTime - startTime);
+                    
+                    if (timeDiff < minTimeDiff) {
+                        minTimeDiff = timeDiff;
+                        closestItem = item;
+                    }
+                });
+                
+                if (closestItem && minTimeDiff < 5) { 
+                    sentenceItems.forEach(el => el.classList.remove('active'));
+                    closestItem.classList.add('active');
+                    
+                    document.getElementById('contextDisplay').innerHTML = closestItem.querySelector('.sentence-text').innerHTML;
+                    document.getElementById('contextDisplay').className = '';
+                }
+            } catch (error) {
+                console.error("更新字幕时出错:", error);
+            }
+        }
+        
+        // 背景交互效果
+        document.addEventListener('mousemove', function(e) {
+            const moveX = (e.clientX - window.innerWidth / 2) / 50;
+            const moveY = (e.clientY - window.innerHeight / 2) / 50;
+            
+            document.querySelectorAll('.bg-blob').forEach(blob => {
+                blob.style.transform = `translate(${moveX}px, ${moveY}px)`;
+            });
+        });
+    });
+</script>
+{% endblock %}

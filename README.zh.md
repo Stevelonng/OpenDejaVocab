@@ -2,7 +2,7 @@
 <p align="center"><i>全靠Vibe Coding，没有一行是手写的，因为我还不会😭</i></p>
 
 <p align="center">
-  <img src="Deja_vocab_backend/static/images/logo.JPG" alt="Déjà Vocab Logo" width="200">
+  <img src="backend/static/images/logo.JPG" alt="Déjà Vocab Logo" width="200">
 </p>
 
 <div align="center">
@@ -91,7 +91,7 @@ Déjà Vocab由两个主要部分组成：
 1. 克隆代码库
    ```bash
    git clone https://github.com/Stevelonng/OpenDejaVocab.git
-   cd OpenDejaVocab/Deja_vocab_backend
+   cd OpenDejaVocab/backend
    ```
 
 2. 创建虚拟环境
@@ -108,10 +108,10 @@ Déjà Vocab由两个主要部分组成：
    ```
 
 4. 配置Google Gemini API密钥
-   - 打开 `Deja_vocab_backend/api/gemini_views.py` 文件
+   - 打开 `backend/api/gemini_views.py` 文件
    - 找到 `GEMINI_API_KEY = "YOUR_API_KEY"` 行
    - 将 `YOUR_API_KEY` 替换为您的实际Google Gemini API密钥（可从[Google AI Studio](https://makersuite.google.com/app/apikey)获取）
-   - 同样在 `Deja_vocab_backend/api/gemini_default_view.py` 文件中也进行相同的替换
+   - 同样在 `backend/api/gemini_default_view.py` 文件中也进行相同的替换
 
 5. 创建和应用数据库迁移
    ```bash
@@ -135,7 +135,7 @@ Déjà Vocab由两个主要部分组成：
 
 1. 进入扩展目录
    ```bash
-   cd ../Deja_vocab_extension
+   cd ../extension
    ```
 
 2. 安装依赖

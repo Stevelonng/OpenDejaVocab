@@ -1,0 +1,27 @@
+{
+  "name": "deja-vocab",
+  "description": "Déjà Vocab - 智能YouTube学习助手。自动收集视频字幕，构建个人词典，AI实时解答问题，提供个性化学习建议，边看视频边轻松提升语言能力。",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "wxt",
+    "dev:firefox": "wxt -b firefox",
+    "build": "wxt build",
+    "build:firefox": "wxt build -b firefox",
+    "zip": "wxt zip",
+    "zip:firefox": "wxt zip -b firefox",
+    "compile": "vue-tsc --noEmit",
+    "postinstall": "wxt prepare"
+  },
+  "dependencies": {
+    "vue": "^3.5.12"
+  },
+  "devDependencies": {
+    "@types/chrome": "^0.0.280",
+    "@wxt-dev/module-vue": "^1.0.1",
+    "typescript": "5.6.3",
+    "vue-tsc": "^2.1.10",
+    "wxt": "^0.19.29"
+  }
+}

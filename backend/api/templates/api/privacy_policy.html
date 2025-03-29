@@ -1,0 +1,514 @@
+{% extends "api/base.html" %}
+
+{% block title %}隐私政策 - DejaVocab{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* 背景装饰 */
+    .bg-decoration {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        pointer-events: none;
+        z-index: -1;
+        overflow: hidden;
+    }
+    
+    .bg-blob {
+        position: absolute;
+        border-radius: 50%;
+        filter: blur(80px);
+        opacity: 0.05;
+    }
+    
+    .blob-primary {
+        background: var(--primary-600);
+        width: 600px;
+        height: 600px;
+        top: -200px;
+        right: -200px;
+        animation: float 25s infinite alternate ease-in-out;
+    }
+    
+    .blob-accent {
+        background: var(--primary-400);
+        width: 500px;
+        height: 500px;
+        bottom: -200px;
+        left: -200px;
+        animation: float 20s infinite alternate-reverse ease-in-out;
+    }
+    
+    .dark .bg-blob {
+        opacity: 0.03;
+    }
+    
+    @keyframes float {
+        0% { transform: translate(0, 0) rotate(0deg); }
+        50% { transform: translate(2%, 3%) rotate(2deg); }
+        100% { transform: translate(-1%, -1%) rotate(-1deg); }
+    }
+    
+    /* 页面容器 */
+    .privacy-container {
+        max-width: 900px;
+        margin: 0 auto;
+        padding: 3rem 1.5rem;
+        position: relative;
+    }
+    
+    /* 页面标题 */
+    .page-header {
+        margin-bottom: 2.5rem;
+        text-align: center;
+    }
+    
+    .page-title {
+        font-size: 2.75rem;
+        font-weight: 800;
+        margin-bottom: 1rem;
+        background: linear-gradient(to right, var(--primary-600), var(--primary-400));
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        letter-spacing: -0.02em;
+    }
+    
+    .dark .page-title {
+        background: linear-gradient(to right, var(--primary-400), var(--primary-300));
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+    
+    .last-updated {
+        color: var(--gray-500);
+        font-size: 0.95rem;
+        margin-top: 0.5rem;
+    }
+    
+    .dark .last-updated {
+        color: var(--gray-400);
+    }
+    
+    /* 政策内容卡片 */
+    .policy-card {
+        background: rgba(255, 255, 255, 0.95);
+        border-radius: 1.25rem;
+        box-shadow: 0 8px 30px rgba(0, 0, 0, 0.06);
+        padding: 2.5rem;
+        margin-bottom: 1.75rem;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .dark .policy-card {
+        background: var(--gray-800);
+        border-color: rgba(255, 255, 255, 0.05);
+        box-shadow: 0 8px 30px rgba(0, 0, 0, 0.2);
+    }
+    
+    .policy-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 15px 40px rgba(14, 165, 233, 0.1);
+    }
+    
+    .dark .policy-card:hover {
+        box-shadow: 0 15px 40px rgba(0, 0, 0, 0.3);
+    }
+    
+    .policy-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 5px;
+        height: 100%;
+        background: linear-gradient(to bottom, var(--primary-500), var(--primary-400));
+        opacity: 0.7;
+    }
+    
+    .dark .policy-card::before {
+        background: linear-gradient(to bottom, var(--primary-400), var(--primary-300));
+    }
+    
+    /* 部分标题 */
+    .section-title {
+        font-size: 1.6rem;
+        font-weight: 700;
+        color: var(--gray-900);
+        margin-bottom: 1.25rem;
+        position: relative;
+        padding-bottom: 0.75rem;
+    }
+    
+    .dark .section-title {
+        color: white;
+    }
+    
+    .section-title::after {
+        content: '';
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        width: 60px;
+        height: 3px;
+        background: linear-gradient(to right, var(--primary-500), var(--primary-400));
+        border-radius: 1.5px;
+    }
+    
+    .dark .section-title::after {
+        background: linear-gradient(to right, var(--primary-400), var(--primary-300));
+    }
+    
+    /* 子部分标题 */
+    .subsection-title {
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: var(--gray-800);
+        margin: 2rem 0 1rem;
+    }
+    
+    .dark .subsection-title {
+        color: var(--gray-100);
+    }
+    
+    /* 内容文本 */
+    .policy-card p {
+        color: var(--gray-700);
+        line-height: 1.7;
+        margin-bottom: 1.25rem;
+        font-size: 1.05rem;
+    }
+    
+    .dark .policy-card p {
+        color: var(--gray-300);
+    }
+    
+    .policy-card ul {
+        color: var(--gray-700);
+        line-height: 1.7;
+        margin-bottom: 1.5rem;
+        padding-left: 1.5rem;
+    }
+    
+    .dark .policy-card ul {
+        color: var(--gray-300);
+    }
+    
+    .policy-card li {
+        margin-bottom: 0.75rem;
+    }
+    
+    .policy-card strong {
+        color: var(--gray-900);
+        font-weight: 600;
+    }
+    
+    .dark .policy-card strong {
+        color: white;
+    }
+    
+    /* 联系信息 */
+    .contact-info {
+        background: rgba(14, 165, 233, 0.05);
+        border-radius: 0.75rem;
+        padding: 1.25rem;
+        margin-top: 1.5rem;
+        box-shadow: 0 4px 15px rgba(14, 165, 233, 0.06);
+        border: 1px solid rgba(14, 165, 233, 0.1);
+    }
+    
+    .dark .contact-info {
+        background: rgba(14, 165, 233, 0.1);
+        border-color: rgba(14, 165, 233, 0.2);
+    }
+    
+    .contact-info p {
+        margin-bottom: 0.75rem;
+    }
+    
+    .contact-info p:last-child {
+        margin-bottom: 0;
+    }
+    
+    .contact-email {
+        font-weight: 600;
+        color: var(--primary-600);
+    }
+    
+    .dark .contact-email {
+        color: var(--primary-400);
+    }
+    
+    /* 动画效果 */
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    
+    .policy-card {
+        animation: fadeInUp 0.6s ease-out forwards;
+        animation-delay: calc(var(--animation-order) * 0.1s);
+        opacity: 0;
+    }
+    
+    /* 响应式调整 */
+    @media (max-width: 768px) {
+        .privacy-container {
+            padding: 2rem 1.25rem;
+        }
+        
+        .page-title {
+            font-size: 2rem;
+        }
+        
+        .policy-card {
+            padding: 1.75rem;
+        }
+        
+        .section-title {
+            font-size: 1.4rem;
+        }
+        
+        .subsection-title {
+            font-size: 1.15rem;
+        }
+    }
+    
+    @media (max-width: 480px) {
+        .page-title {
+            font-size: 1.75rem;
+        }
+        
+        .policy-card {
+            padding: 1.5rem;
+        }
+        
+        .section-title {
+            font-size: 1.25rem;
+        }
+        
+        .policy-card p, 
+        .policy-card ul {
+            font-size: 1rem;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="privacy-container">
+    <!-- 背景装饰 -->
+    <div class="bg-decoration">
+        <div class="bg-blob blob-primary"></div>
+        <div class="bg-blob blob-accent"></div>
+    </div>
+    
+    <!-- 页面标题 -->
+    <div class="page-header">
+        <h1 class="page-title">隐私政策</h1>
+        <p class="last-updated">最后更新日期: 2025年3月27日</p>
+    </div>
+    
+    <!-- 介绍 -->
+    <div class="policy-card" style="--animation-order: 1">
+        <h2 class="section-title">介绍</h2>
+        <p>DejaVocab（"我们"，"我们的"或"本服务"）尊重您的隐私，并致力于保护您在使用我们的网站（dejavocab.com）和Chrome扩展程序时提供的个人信息。本隐私政策旨在告知您我们可能收集的信息类型以及我们如何使用这些信息。</p>
+    </div>
+    
+    <!-- 信息收集 -->
+    <div class="policy-card" style="--animation-order: 2">
+        <h2 class="section-title">信息收集</h2>
+        
+        <h3 class="subsection-title">我们收集的信息</h3>
+        <p>当您使用DejaVocab服务时，我们可能会收集以下类型的信息：</p>
+        <ul>
+            <li><strong>账户信息</strong>：当您注册账户时，我们会收集您的用户名、电子邮件地址和密码（经加密存储）。</li>
+            <li><strong>学习数据</strong>：
+                <ul>
+                    <li>您保存的单词及其定义</li>
+                    <li>您标记的视频句子及其翻译</li>
+                    <li>您收藏的视频及其元数据（URL、标题、平台信息）</li>
+                    <li>视频字幕及其时间戳</li>
+                </ul>
+            </li>
+            <li><strong>会话数据</strong>：
+                <ul>
+                    <li>登录会话信息（开始和结束时间）</li>
+                    <li>会话期间的活动记录</li>
+                    <li>聊天会话内容及相关设置</li>
+                </ul>
+            </li>
+            <li><strong>使用数据</strong>：我们记录您在平台上的活动，如：
+                <ul>
+                    <li>登录和登出时间</li>
+                    <li>视频查看记录</li>
+                    <li>字幕保存操作</li>
+                    <li>单词查询记录</li>
+                    <li>句子添加活动</li>
+                    <li>扩展使用情况</li>
+                </ul>
+            </li>
+            <li><strong>设备信息</strong>：
+                <ul>
+                    <li>IP地址</li>
+                    <li>浏览器类型和版本</li>
+                    <li>操作系统</li>
+                    <li>设备类型（桌面、移动设备或平板）</li>
+                </ul>
+            </li>
+            <li><strong>使用指标</strong>：为了改进服务，我们统计：
+                <ul>
+                    <li>登录次数</li>
+                    <li>总会话时间</li>
+                    <li>保存的视频数量</li>
+                    <li>收藏的单词数量</li>
+                    <li>保存的句子数量</li>
+                    <li>最近活跃时间</li>
+                </ul>
+            </li>
+        </ul>
+        
+        <h3 class="subsection-title">Chrome扩展收集的信息</h3>
+        <p>我们的Chrome扩展会收集以下信息：</p>
+        <ul>
+            <li>您在YouTube视频中选择的单词和句子</li>
+            <li>您正在观看的视频的元数据（标题、URL、平台类型）</li>
+            <li>视频字幕内容及其时间戳</li>
+            <li>您的扩展设置和配置信息</li>
+            <li>扩展使用过程中的活动记录</li>
+        </ul>
+        
+        <p>我们的扩展<strong>不会</strong>：</p>
+        <ul>
+            <li>监控或收集您访问的所有网站</li>
+            <li>读取或收集您的浏览历史</li>
+            <li>在未经您授权的情况下访问或收集数据</li>
+            <li>分享您的个人数据给不相关的第三方</li>
+        </ul>
+    </div>
+    
+    <!-- 信息使用 -->
+    <div class="policy-card" style="--animation-order: 3">
+        <h2 class="section-title">信息使用</h2>
+        <p>我们使用收集的信息来：</p>
+        <ul>
+            <li><strong>提供核心功能</strong>：
+                <ul>
+                    <li>存储和管理您的学习材料（视频、字幕、单词、句子）</li>
+                    <li>提供单词定义和翻译服务</li>
+                    <li>支持视频学习和回顾功能</li>
+                </ul>
+            </li>
+            <li><strong>个性化您的体验</strong>：
+                <ul>
+                    <li>根据您的学习历史提供相关推荐</li>
+                    <li>保存您的学习进度和偏好设置</li>
+                    <li>优化内容呈现方式</li>
+                </ul>
+            </li>
+            <li><strong>改进我们的服务</strong>：
+                <ul>
+                    <li>分析功能使用模式以识别改进机会</li>
+                    <li>诊断技术问题</li>
+                    <li>研发新功能</li>
+                </ul>
+            </li>
+            <li><strong>提供用户支持</strong>：解答问题和解决问题</li>
+            <li><strong>确保安全</strong>：防止欺诈和滥用</li>
+            <li><strong>生成聚合统计数据</strong>：了解整体使用情况（不包含可识别个人身份的信息）</li>
+        </ul>
+    </div>
+    
+    <!-- 信息共享 -->
+    <div class="policy-card" style="--animation-order: 4">
+        <h2 class="section-title">信息共享</h2>
+        <p>我们不会出售、出租或交易您的个人信息给第三方。我们可能会在以下情况下共享您的信息：</p>
+        <ul>
+            <li><strong>服务提供商</strong>：我们可能会与帮助我们运营服务的可信第三方服务提供商共享信息（如托管服务提供商或分析服务提供商）。</li>
+            <li><strong>法律要求</strong>：如果法律要求或为了保护我们的权利，我们可能会披露您的信息。</li>
+            <li><strong>经您同意</strong>：在获得您的明确同意后，我们可能会与第三方共享您的个人信息。</li>
+        </ul>
+    </div>
+    
+    <!-- 数据安全 -->
+    <div class="policy-card" style="--animation-order: 5">
+        <h2 class="section-title">数据安全</h2>
+        <p>我们采取合理的技术和组织措施来保护您的个人信息免受未经授权的访问、使用或披露。这些措施包括数据加密、安全访问控制和定期安全评估。然而，请注意，互联网上的任何传输方式或电子存储方法都不是100%安全的。</p>
+    </div>
+    
+    <!-- 您的权利 -->
+    <div class="policy-card" style="--animation-order: 6">
+        <h2 class="section-title">您的权利</h2>
+        <p>根据您所在地区适用的数据保护法律，您可能拥有以下权利：</p>
+        <ul>
+            <li>访问您的个人信息</li>
+            <li>更正不准确的信息</li>
+            <li>删除您的个人信息</li>
+            <li>限制或反对处理您的个人信息</li>
+            <li>数据可携带性</li>
+        </ul>
+        <p>如需行使这些权利，请通过以下联系方式与我们联系。</p>
+    </div>
+    
+    <!-- Cookie使用 -->
+    <div class="policy-card" style="--animation-order: 7">
+        <h2 class="section-title">Cookie使用</h2>
+        <p>我们使用Cookie和类似技术来改善用户体验、记住您的偏好并分析网站使用情况。您可以通过浏览器设置控制Cookie的使用。</p>
+    </div>
+    
+    <!-- 儿童隐私 -->
+    <div class="policy-card" style="--animation-order: 8">
+        <h2 class="section-title">儿童隐私</h2>
+        <p>我们的服务不面向13岁以下的儿童。我们不会故意收集13岁以下儿童的个人信息。如果您是父母或监护人，并且您认为您的孩子向我们提供了个人信息，请联系我们，我们将采取措施从我们的系统中删除这些信息。</p>
+    </div>
+    
+    <!-- 隐私政策更新 -->
+    <div class="policy-card" style="--animation-order: 9">
+        <h2 class="section-title">隐私政策更新</h2>
+        <p>我们可能会不时更新本隐私政策。我们将通过在网站上发布新版本来通知您任何变更。建议您定期查看本页面以了解最新信息。您继续使用我们的服务将视为您接受任何修改后的隐私政策。</p>
+    </div>
+    
+    <!-- 联系我们 -->
+    <div class="policy-card" style="--animation-order: 10">
+        <h2 class="section-title">联系我们</h2>
+        <p>如果您对本隐私政策有任何疑问或意见，请通过以下方式联系我们：</p>
+        
+        <div class="contact-info">
+            <p>电子邮件：<span class="contact-email">tcytcy111@gmail.com</span></p>
+            <p>微信：<span class="contact-email">349972023</span></p>
+        </div>
+    </div>
+</div>
+
+<!-- 背景交互效果脚本 -->
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // 背景交互效果
+        document.addEventListener('mousemove', function(e) {
+            const moveX = (e.clientX - window.innerWidth / 2) / 50;
+            const moveY = (e.clientY - window.innerHeight / 2) / 50;
+            
+            document.querySelectorAll('.bg-blob').forEach(blob => {
+                blob.style.transform = `translate(${moveX}px, ${moveY}px)`;
+            });
+        });
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,1036 @@
+{% extends "api/base.html" %}
+
+{% block title %}学习统计 | Déjà Vocab{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* 背景装饰 */
+    .bg-decoration {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        pointer-events: none;
+        z-index: -1;
+        overflow: hidden;
+    }
+    
+    .bg-blob {
+        position: absolute;
+        border-radius: 50%;
+        filter: blur(80px);
+        opacity: 0.05;
+    }
+    
+    .blob-primary {
+        background: var(--primary-600);
+        width: 600px;
+        height: 600px;
+        top: -200px;
+        right: -200px;
+    }
+    
+    .blob-accent {
+        background: var(--primary-400);
+        width: 500px;
+        height: 500px;
+        bottom: -200px;
+        left: -200px;
+    }
+    
+    .dark .bg-blob {
+        opacity: 0.03;
+    }
+    
+    @keyframes float {
+        0%, 100% { transform: translate(0, 0) rotate(0deg); }
+        50% { transform: translate(2%, 3%) rotate(2deg); }
+        100% { transform: translate(-1%, -1%) rotate(-1deg); }
+    }
+    
+    /* 页面容器 */
+    .statistics-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        position: relative;
+    }
+    
+    /* 页面标题 */
+    .page-header {
+        margin-bottom: 2rem;
+    }
+    
+    .page-title {
+        font-size: 2.25rem;
+        font-weight: 800;
+        color: var(--gray-900);
+        margin-bottom: 0.75rem;
+        letter-spacing: -0.025em;
+        background: linear-gradient(to right, var(--primary-600), var(--primary-400));
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        display: inline-block;
+    }
+    
+    .dark .page-title {
+        background: linear-gradient(to right, var(--primary-400), var(--primary-300));
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+    
+    .page-description {
+        font-size: 1.1rem;
+        color: var(--gray-600);
+        max-width: 600px;
+    }
+    
+    .dark .page-description {
+        color: var(--gray-400);
+    }
+    
+    /* 筛选区域 */
+    .filter-section {
+        background-color: white;
+        border-radius: 1rem;
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        border: 1px solid var(--gray-200);
+        transition: all 0.3s ease;
+    }
+    
+    .dark .filter-section {
+        background-color: var(--gray-800);
+        border-color: var(--gray-700);
+    }
+    
+    .filter-section:hover {
+        box-shadow: 0 12px 32px rgba(14, 165, 233, 0.1);
+        transform: translateY(-2px);
+    }
+    
+    /* 日期范围按钮 */
+    .range-buttons {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+        gap: 0.75rem;
+        width: 100%;
+        margin-bottom: 1.25rem;
+    }
+    
+    .range-btn {
+        border: none;
+        background: rgba(14, 165, 233, 0.1);
+        color: var(--primary-600);
+        padding: 0.75rem 1rem;
+        border-radius: 0.75rem;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        font-size: 0.95rem;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    }
+    
+    .range-btn:hover {
+        background: rgba(14, 165, 233, 0.2);
+        transform: translateY(-2px);
+        box-shadow: 0 6px 16px rgba(14, 165, 233, 0.15);
+    }
+    
+    .range-btn.active {
+        background: var(--primary-600);
+        color: white;
+        box-shadow: 0 8px 16px rgba(14, 165, 233, 0.25);
+    }
+    
+    .dark .range-btn {
+        background: rgba(14, 165, 233, 0.15);
+        color: var(--primary-400);
+    }
+    
+    .dark .range-btn:hover {
+        background: rgba(14, 165, 233, 0.25);
+        box-shadow: 0 6px 16px rgba(14, 165, 233, 0.1);
+    }
+    
+    .dark .range-btn.active {
+        background: var(--primary-500);
+        color: white;
+    }
+    
+    .back-button {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        color: var(--primary-600);
+        background: rgba(14, 165, 233, 0.1);
+        border: none;
+        padding: 0.75rem 1.25rem;
+        border-radius: 0.75rem;
+        font-weight: 600;
+        font-size: 0.95rem;
+        transition: all 0.3s ease;
+        text-decoration: none;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        width: fit-content;
+    }
+    
+    .back-button:hover {
+        background: rgba(14, 165, 233, 0.2);
+        color: var(--primary-700);
+        transform: translateY(-2px);
+        box-shadow: 0 6px 16px rgba(14, 165, 233, 0.15);
+    }
+    
+    .dark .back-button {
+        background: rgba(14, 165, 233, 0.15);
+        color: var(--primary-400);
+    }
+    
+    .dark .back-button:hover {
+        background: rgba(14, 165, 233, 0.25);
+        color: var(--primary-300);
+    }
+    
+    /* 统计卡片 */
+    .stats-row {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 1rem;
+        margin-bottom: 2rem;
+    }
+    
+    .stats-card {
+        background-color: white;
+        border-radius: 0.75rem;
+        padding: 1.25rem;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        border: 1px solid var(--gray-200);
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .dark .stats-card {
+        background-color: var(--gray-800);
+        border-color: var(--gray-700);
+    }
+    
+    .stats-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 15px 30px rgba(14, 165, 233, 0.15);
+    }
+    
+    .stats-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 4px;
+        height: 100%;
+        background: linear-gradient(to bottom, var(--primary-500), var(--primary-700));
+        opacity: 0.8;
+    }
+    
+    .dark .stats-card::before {
+        background: linear-gradient(to bottom, var(--primary-400), var(--primary-600));
+    }
+    
+    .stats-header {
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: var(--gray-600);
+        margin-bottom: 1rem;
+        display: flex;
+        align-items: center;
+    }
+    
+    .dark .stats-header {
+        color: var(--gray-400);
+    }
+    
+    .stats-header i {
+        margin-right: 0.75rem;
+        color: var(--primary-500);
+        font-size: 1.25rem;
+    }
+    
+    .dark .stats-header i {
+        color: var(--primary-400);
+    }
+    
+    .stats-value {
+        font-size: 3rem;
+        font-weight: 800;
+        color: var(--gray-900);
+        margin-bottom: 0.75rem;
+        background: linear-gradient(to right, var(--primary-600), var(--primary-400));
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+    
+    .dark .stats-value {
+        background: linear-gradient(to right, var(--primary-400), var(--primary-300));
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+    
+    /* 选项卡 */
+    .custom-tabs {
+        display: flex;
+        margin-bottom: 1.5rem;
+        border-bottom: 2px solid rgba(14, 165, 233, 0.1);
+    }
+    
+    .dark .custom-tabs {
+        border-bottom-color: rgba(14, 165, 233, 0.2);
+    }
+    
+    .custom-tab {
+        padding: 1rem 1.5rem;
+        cursor: pointer;
+        position: relative;
+        font-weight: 600;
+        font-size: 1rem;
+        color: var(--gray-600);
+        transition: all 0.3s ease;
+        opacity: 0.7;
+        white-space: nowrap;
+    }
+    
+    .dark .custom-tab {
+        color: var(--gray-400);
+    }
+    
+    .custom-tab:after {
+        content: '';
+        position: absolute;
+        bottom: -2px;
+        left: 0;
+        width: 100%;
+        height: 2px;
+        background: transparent;
+        transform: scaleX(0);
+        transition: all 0.3s ease;
+    }
+    
+    .custom-tab:hover {
+        color: var(--primary-600);
+        opacity: 0.9;
+    }
+    
+    .dark .custom-tab:hover {
+        color: var(--primary-400);
+    }
+    
+    .custom-tab.active {
+        color: var(--primary-600);
+        opacity: 1;
+    }
+    
+    .dark .custom-tab.active {
+        color: var(--primary-400);
+    }
+    
+    .custom-tab.active:after {
+        background: var(--primary-600);
+        transform: scaleX(1);
+    }
+    
+    .dark .custom-tab.active:after {
+        background: var(--primary-400);
+    }
+    
+    .custom-tab-content {
+        display: none;
+    }
+    
+    .custom-tab-content.active {
+        display: block;
+        animation: fadeIn 0.5s ease;
+    }
+    
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    
+    /* 单词列表 */
+    .word-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+    
+    .word-item {
+        background: rgba(255, 255, 255, 0.9);
+        border-radius: 1rem;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        padding: 1.25rem;
+        margin-bottom: 1rem;
+        transition: all 0.3s ease;
+        position: relative;
+    }
+    
+    .dark .word-item {
+        background: var(--gray-800);
+        border-color: rgba(255, 255, 255, 0.05);
+    }
+    
+    .word-item:hover {
+        transform: translateY(-3px) translateX(2px);
+        box-shadow: 0 8px 20px rgba(14, 165, 233, 0.1);
+        border-color: rgba(14, 165, 233, 0.2);
+    }
+    
+    .dark .word-item:hover {
+        border-color: rgba(14, 165, 233, 0.3);
+    }
+    
+    .word-text {
+        font-size: 1.25rem;
+        font-weight: 700;
+        margin-bottom: 0.75rem;
+        color: var(--gray-900);
+    }
+    
+    .dark .word-text {
+        color: white;
+    }
+    
+    .word-info {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.75rem;
+    }
+    
+    .word-translation {
+        font-size: 1rem;
+        color: var(--gray-600);
+        flex: 1;
+        margin-right: 0.75rem;
+    }
+    
+    .dark .word-translation {
+        color: var(--gray-400);
+    }
+    
+    .word-badges-actions {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 0.75rem;
+    }
+    
+    .word-badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.375rem 0.75rem;
+        border-radius: 2rem;
+        font-size: 0.8rem;
+        font-weight: 600;
+        background: rgba(14, 165, 233, 0.1);
+        color: var(--primary-600);
+        transition: all 0.3s ease;
+    }
+    
+    .dark .word-badge {
+        background: rgba(14, 165, 233, 0.15);
+        color: var(--primary-400);
+    }
+    
+    .word-badge i {
+        margin-right: 0.375rem;
+    }
+    
+    .badge-primary {
+        background: rgba(14, 165, 233, 0.1);
+        color: var(--primary-600);
+    }
+    
+    .dark .badge-primary {
+        background: rgba(14, 165, 233, 0.15);
+        color: var(--primary-400);
+    }
+    
+    .badge-secondary {
+        background: rgba(139, 92, 246, 0.1);
+        color: #7c3aed;
+    }
+    
+    .dark .badge-secondary {
+        background: rgba(139, 92, 246, 0.15);
+        color: #a78bfa;
+    }
+    
+    .badge-accent {
+        background: rgba(16, 185, 129, 0.1);
+        color: #059669;
+    }
+    
+    .dark .badge-accent {
+        background: rgba(16, 185, 129, 0.15);
+        color: #34d399;
+    }
+    
+    .word-action {
+        display: inline-flex;
+        align-items: center;
+        text-decoration: none;
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: var(--primary-600);
+        transition: all 0.3s ease;
+    }
+    
+    .dark .word-action {
+        color: var(--primary-400);
+    }
+    
+    .word-action:hover {
+        color: var(--primary-700);
+        transform: translateX(2px);
+    }
+    
+    .dark .word-action:hover {
+        color: var(--primary-300);
+    }
+    
+    .word-action i {
+        margin-right: 0.375rem;
+    }
+    
+    /* 空状态 */
+    .empty-state {
+        background: rgba(255, 255, 255, 0.9);
+        border-radius: 1rem;
+        padding: 3rem 2rem;
+        margin: 2rem 0;
+        text-align: center;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+    
+    .dark .empty-state {
+        background: rgba(45, 45, 45, 0.8);
+        border-color: rgba(255, 255, 255, 0.05);
+    }
+    
+    .empty-state-icon {
+        font-size: 3rem;
+        color: var(--primary-400);
+        margin-bottom: 1.5rem;
+        opacity: 0.8;
+    }
+    
+    .empty-state-title {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: var(--gray-900);
+        margin-bottom: 1rem;
+    }
+    
+    .dark .empty-state-title {
+        color: white;
+    }
+    
+    .empty-state-text {
+        font-size: 1rem;
+        color: var(--gray-600);
+        margin-bottom: 1.5rem;
+    }
+    
+    .dark .empty-state-text {
+        color: var(--gray-400);
+    }
+    
+    /* 分页 */
+    .pagination {
+        display: flex;
+        justify-content: center;
+        gap: 0.5rem;
+        margin: 2rem 0 1rem;
+    }
+    
+    .pagination-btn {
+        padding: 0.5rem 1rem;
+        border-radius: 0.75rem;
+        background: rgba(14, 165, 233, 0.1);
+        color: var(--primary-600);
+        border: none;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    }
+    
+    .dark .pagination-btn {
+        background: rgba(14, 165, 233, 0.15);
+        color: var(--primary-400);
+    }
+    
+    .pagination-btn:hover {
+        background: rgba(14, 165, 233, 0.2);
+        transform: translateY(-2px);
+        box-shadow: 0 6px 16px rgba(14, 165, 233, 0.15);
+    }
+    
+    .dark .pagination-btn:hover {
+        background: rgba(14, 165, 233, 0.25);
+    }
+    
+    .pagination-btn.active {
+        background: var(--primary-600);
+        color: white;
+        box-shadow: 0 4px 12px rgba(14, 165, 233, 0.25);
+    }
+    
+    .dark .pagination-btn.active {
+        background: var(--primary-500);
+    }
+    
+    .pagination-btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+        transform: none;
+        box-shadow: none;
+    }
+    
+    .pagination-info {
+        font-size: 0.9rem;
+        color: var(--gray-600);
+        text-align: center;
+        margin-top: 0.75rem;
+    }
+    
+    .dark .pagination-info {
+        color: var(--gray-400);
+    }
+    
+    /* 加载和错误状态 */
+    .loading-item, .error-item {
+        text-align: center;
+        padding: 3rem 2rem;
+    }
+    
+    .loading-item::after {
+        content: '';
+        display: inline-block;
+        width: 1.5rem;
+        height: 1.5rem;
+        border: 3px solid rgba(14, 165, 233, 0.3);
+        border-radius: 50%;
+        border-top-color: var(--primary-600);
+        animation: spin 1s ease-in-out infinite;
+        margin-left: 0.5rem;
+        vertical-align: middle;
+    }
+    
+    @keyframes spin {
+        to { transform: rotate(360deg); }
+    }
+    
+    .error-item {
+        color: #dc2626;
+    }
+    
+    .dark .error-item {
+        color: #ef4444;
+    }
+    
+    /* 响应式调整 */
+    @media (max-width: 768px) {
+        .page-title {
+            font-size: 1.75rem;
+        }
+        
+        .stats-row {
+            grid-template-columns: 1fr;
+        }
+        
+        .stats-value {
+            font-size: 2.5rem;
+        }
+        
+        .word-item {
+            padding: 1rem;
+        }
+        
+        .word-info {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+        
+        .word-translation {
+            margin-right: 0;
+            margin-bottom: 0.5rem;
+            width: 100%;
+        }
+        
+        .word-badges-actions {
+            width: 100%;
+            justify-content: space-between;
+        }
+        
+        .custom-tab {
+            padding: 0.75rem 1rem;
+            font-size: 0.9rem;
+        }
+    }
+    
+    @media (max-width: 480px) {
+        .range-buttons {
+            grid-template-columns: 1fr 1fr;
+        }
+        
+        .stats-header {
+            font-size: 1rem;
+        }
+        
+        .stats-value {
+            font-size: 2rem;
+        }
+        
+        .word-text {
+            font-size: 1.1rem;
+        }
+        
+        .word-badge {
+            font-size: 0.75rem;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="statistics-container">
+    <!-- 背景装饰 -->
+    <div class="bg-decoration">
+        <div class="bg-blob blob-primary"></div>
+        <div class="bg-blob blob-accent"></div>
+    </div>
+    
+    <!-- 页面标题 -->
+    <div class="page-header">
+        <h1 class="page-title">学习统计</h1>
+        <p class="page-description">追踪您的单词学习进度与趋势，了解自己的词汇量增长情况</p>
+    </div>
+    
+    <!-- 日期筛选 -->
+    <div class="filter-section">
+        <form method="get" id="dateRangeForm">
+            <div class="d-flex flex-column">
+                <div class="range-buttons">
+                    <button type="button" class="range-btn {% if days == 1 %}active{% endif %}" data-days="1">今天</button>
+                    <button type="button" class="range-btn {% if days == 7 %}active{% endif %}" data-days="7">最近7天</button>
+                    <button type="button" class="range-btn {% if days == 30 %}active{% endif %}" data-days="30">最近30天</button>
+                    <button type="button" class="range-btn {% if days == 0 or days == None %}active{% endif %}" data-days="0">全部时间</button>
+                </div>
+                <input type="hidden" name="days" id="daysInput" value="{{ days }}">
+            </div>
+        </form>
+    </div>
+    
+    <!-- 统计卡片 -->
+    <div class="stats-row">
+        <div class="stats-card">
+            <div class="stats-header">
+                <i class="bi bi-collection"></i> 总单词数
+            </div>
+            <div class="stats-value">{{ total_unique_words }}</div>
+        </div>
+        
+        <div class="stats-card">
+            <div class="stats-header">
+                <i class="bi bi-plus-circle"></i> 新词数量
+            </div>
+            <div class="stats-value">{{ new_words_count }}</div>
+        </div>
+        
+        <div class="stats-card">
+            <div class="stats-header">
+                <i class="bi bi-lightning-charge"></i> 唯一词数
+            </div>
+            <div class="stats-value">{{ unique_words_count }}</div>
+        </div>
+    </div>
+    
+    <!-- 单词列表选项卡 -->
+    <div class="custom-tabs">
+        <div class="custom-tab" data-tab="unique-tab">唯一单词 ({{ unique_words_count }})</div>
+        <div class="custom-tab active" data-tab="new-tab">新词 ({{ new_words_count }})</div>
+    </div>
+    
+    <!-- 唯一单词列表 -->
+    <div class="custom-tab-content" id="unique-tab">
+        <div>
+            <ul class="word-list" id="unique-words-list">
+                <!-- 内容将通过AJAX动态加载 -->
+                <li class="word-item loading-item">
+                    <div>加载中...</div>
+                </li>
+            </ul>
+            <div class="pagination" id="unique-pagination">
+                <!-- 分页按钮会通过JavaScript动态生成 -->
+            </div>
+            <div class="pagination-info" id="unique-pagination-info">正在加载...</div>
+        </div>
+    </div>
+    
+    <!-- 新词列表 -->
+    <div class="custom-tab-content active" id="new-tab">
+        <div>
+            <ul class="word-list" id="new-words-list">
+                <!-- 内容将通过AJAX动态加载 -->
+                <li class="word-item loading-item">
+                    <div>加载中...</div>
+                </li>
+            </ul>
+            <div class="pagination" id="new-pagination">
+                <!-- 分页按钮会通过JavaScript动态生成 -->
+            </div>
+            <div class="pagination-info" id="new-pagination-info">正在加载...</div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // 时间范围选择器
+        const rangeBtns = document.querySelectorAll('.range-btn');
+        const daysInput = document.getElementById('daysInput');
+        const dateRangeForm = document.getElementById('dateRangeForm');
+        
+        rangeBtns.forEach(btn => {
+            btn.addEventListener('click', function() {
+                // 更新按钮状态
+                rangeBtns.forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+                
+                // 更新隐藏输入并提交表单
+                daysInput.value = this.getAttribute('data-days');
+                dateRangeForm.submit();
+            });
+        });
+        
+        // 选项卡切换
+        const tabs = document.querySelectorAll('.custom-tab');
+        const tabContents = document.querySelectorAll('.custom-tab-content');
+        
+        tabs.forEach(tab => {
+            tab.addEventListener('click', function() {
+                const tabId = this.getAttribute('data-tab');
+                
+                // 移除所有标签和内容的激活状态
+                tabs.forEach(t => t.classList.remove('active'));
+                tabContents.forEach(c => c.classList.remove('active'));
+                
+                // 激活当前标签和内容
+                this.classList.add('active');
+                document.getElementById(tabId).classList.add('active');
+
+                // 当切换选项卡时重置分页
+                if (tabId === 'unique-tab') {
+                    loadWordListFromAPI('unique', 1, daysInput.value || '0');
+                } else if (tabId === 'new-tab') {
+                    loadWordListFromAPI('new', 1, daysInput.value || '0');
+                }
+            });
+        });
+        
+        // 背景交互效果
+        document.addEventListener('mousemove', function(e) {
+            const moveX = (e.clientX - window.innerWidth / 2) / 50;
+            const moveY = (e.clientY - window.innerHeight / 2) / 50;
+            
+            document.querySelectorAll('.bg-blob').forEach(blob => {
+                blob.style.transform = `translate(${moveX}px, ${moveY}px)`;
+            });
+        });
+
+        // AJAX加载函数 - 从API获取单词数据
+        function loadWordListFromAPI(type, page, days) {
+            const wordList = document.getElementById(type === 'unique' ? 'unique-words-list' : 'new-words-list');
+            const paginationContainer = document.getElementById(type === 'unique' ? 'unique-pagination' : 'new-pagination');
+            const infoContainer = document.getElementById(type === 'unique' ? 'unique-pagination-info' : 'new-pagination-info');
+            
+            // 显示加载状态
+            wordList.innerHTML = '<li class="word-item loading-item"><div>加载中...</div></li>';
+            infoContainer.textContent = '正在加载...';
+            
+            // 计算每页数量
+            const pageSize = 10;
+            
+            // 发送AJAX请求获取数据
+            fetch(`/api/web/word-list-api/?type=${type}&page=${page}&page_size=${pageSize}&days=${days}`)
+                .then(response => response.json())
+                .then(data => {
+                    // 清空列表
+                    wordList.innerHTML = '';
+                    
+                    if (data.words.length === 0) {
+                        // 显示空状态
+                        if (type === 'unique') {
+                            wordList.innerHTML = `
+                                <li class="word-item empty-item">
+                                    <div class="empty-state">
+                                        <div class="empty-state-icon"><i class="bi bi-bar-chart"></i></div>
+                                        <h3 class="empty-state-title">暂无单词数据</h3>
+                                        <p class="empty-state-text">在选定的时间范围内没有记录到唯一单词</p>
+                                        <a href="/api/web/" class="btn btn-primary">
+                                            <i class="bi bi-collection-play"></i> 浏览视频
+                                        </a>
+                                    </div>
+                                </li>`;
+                        } else {
+                            wordList.innerHTML = `
+                                <li class="word-item empty-item">
+                                    <div class="empty-state">
+                                        <div class="empty-state-icon"><i class="bi bi-plus-circle"></i></div>
+                                        <h3 class="empty-state-title">暂无新词数据</h3>
+                                        <p class="empty-state-text">在选定的时间范围内没有遇到新词</p>
+                                        <a href="/api/web/" class="btn btn-primary">
+                                            <i class="bi bi-collection-play"></i> 浏览视频
+                                        </a>
+                                    </div>
+                                </li>`;
+                        }
+                        paginationContainer.innerHTML = '';
+                        infoContainer.textContent = '没有单词数据';
+                        return;
+                    }
+                    
+                    // 添加单词项
+                    data.words.forEach(word => {
+                        const li = document.createElement('li');
+                        li.className = 'word-item';
+                        
+                        // 构建单词项HTML
+                        if (type === 'unique') {
+                            li.innerHTML = `
+                                <div class="word-text">${word.text}</div>
+                                <div class="word-info">
+                                    ${word.translation ? `<div class="word-translation">${word.translation}</div>` : '<div class="word-translation">暂无翻译</div>'}
+                                    <div class="word-badges-actions">
+                                        <span class="word-badge badge-primary">
+                                            <i class="bi bi-graph-up"></i> 出现 ${word.occurrence_count} 次
+                                        </span>
+                                        ${word.is_new ? `<span class="word-badge badge-secondary"><i class="bi bi-stars"></i> 新词</span>` : ''}
+                                        <a href="/api/web/words/${word.id}/" class="word-action">
+                                            <i class="bi bi-info-circle"></i> 查看详情
+                                        </a>
+                                    </div>
+                                </div>`;
+                        } else {
+                            li.innerHTML = `
+                                <div class="word-text">${word.text}</div>
+                                <div class="word-info">
+                                    ${word.translation ? `<div class="word-translation">${word.translation}</div>` : '<div class="word-translation">暂无翻译</div>'}
+                                    <div class="word-badges-actions">
+                                        <span class="word-badge badge-accent">
+                                            <i class="bi bi-calendar-check"></i> ${word.created_at}
+                                        </span>
+                                        <a href="/api/web/words/${word.id}/" class="word-action">
+                                            <i class="bi bi-info-circle"></i> 查看详情
+                                        </a>
+                                    </div>
+                                </div>`;
+                        }
+                        
+                        wordList.appendChild(li);
+                    });
+                    
+                    // 创建分页控件
+                    createPaginationControls(type, data.current_page, data.total_pages, days);
+                    
+                    // 更新分页信息
+                    infoContainer.textContent = `显示 ${(data.current_page - 1) * pageSize + 1}-${Math.min(data.total_count, data.current_page * pageSize)} / 共 ${data.total_count} 个单词`;
+                })
+                .catch(error => {
+                    console.error('加载数据失败:', error);
+                    wordList.innerHTML = '<li class="word-item error-item"><div>加载失败，请刷新页面重试</div></li>';
+                    infoContainer.textContent = '加载失败';
+                });
+        }
+        
+        // 创建分页控件
+        function createPaginationControls(type, currentPage, totalPages, days) {
+            const paginationContainer = document.getElementById(type === 'unique' ? 'unique-pagination' : 'new-pagination');
+            if (!paginationContainer) return;
+            
+            paginationContainer.innerHTML = '';
+            
+            if (totalPages <= 1) {
+                return; // 只有一页不需要分页
+            }
+            
+            // 上一页按钮
+            const prevBtn = document.createElement('button');
+            prevBtn.className = 'pagination-btn';
+            prevBtn.innerHTML = '<i class="bi bi-chevron-left"></i>';
+            prevBtn.disabled = currentPage <= 1;
+            prevBtn.addEventListener('click', () => {
+                if (currentPage > 1) {
+                    loadWordListFromAPI(type, currentPage - 1, days);
+                }
+            });
+            paginationContainer.appendChild(prevBtn);
+            
+            // 页码按钮
+            const maxVisiblePages = 5;
+            let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
+            let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+            
+            if (endPage - startPage + 1 < maxVisiblePages) {
+                startPage = Math.max(1, endPage - maxVisiblePages + 1);
+            }
+            
+            for (let i = startPage; i <= endPage; i++) {
+                const pageBtn = document.createElement('button');
+                pageBtn.className = i === currentPage ? 'pagination-btn active' : 'pagination-btn';
+                pageBtn.textContent = i;
+                pageBtn.addEventListener('click', () => {
+                    if (i !== currentPage) {
+                        loadWordListFromAPI(type, i, days);
+                    }
+                });
+                paginationContainer.appendChild(pageBtn);
+            }
+            
+            // 下一页按钮
+            const nextBtn = document.createElement('button');
+            nextBtn.className = 'pagination-btn';
+            nextBtn.innerHTML = '<i class="bi bi-chevron-right"></i>';
+            nextBtn.disabled = currentPage >= totalPages;
+            nextBtn.addEventListener('click', () => {
+                if (currentPage < totalPages) {
+                    loadWordListFromAPI(type, currentPage + 1, days);
+                }
+            });
+            paginationContainer.appendChild(nextBtn);
+        }
+
+        // 初始化函数
+        function initWordStatistics() {
+            // 获取当前选择的天数
+            const days = document.getElementById('daysInput').value || '0';
+            
+            // 初始加载第一页数据
+            loadWordListFromAPI('unique', 1, days);
+            loadWordListFromAPI('new', 1, days);
+        }
+
+        // 初始化页面
+        initWordStatistics();
+    });
+</script>
+{% endblock %}

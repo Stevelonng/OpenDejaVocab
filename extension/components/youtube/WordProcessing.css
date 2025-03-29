@@ -1,0 +1,287 @@
+/* Hoverable word style */
+.hoverable-word {
+  display: inline-block;
+  position: relative;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  pointer-events: auto;
+  overflow: visible !important;
+}
+
+.hoverable-word:hover {
+  color: #777; /* Change to a softer gray */
+}
+
+/* Favorite word style */
+.hoverable-word.favorite-word {
+  color: #ffcc00;
+  text-shadow: 0 0 5px rgba(255, 198, 11, 0.3);
+}
+
+.hoverable-word.favorite-word:hover {
+  color: #ffcc00;
+  text-shadow: 0 0 5px rgba(255, 198, 11, 0.3);
+}
+
+/* Hide UI when favorite */
+.hoverable-word.favorite-ui-hidden.favorite-word {
+  color: inherit; /* Use default text color */
+  text-shadow: none; /* Remove text shadow */
+}
+
+.hoverable-word.favorite-ui-hidden.favorite-word:hover {
+  color: #777; /* Same color as normal word on hover */
+  text-shadow: none;
+}
+
+/* Ensure tooltip content is not affected by word favorite status */
+.hoverable-word.favorite-word .word-tooltip {
+  color: #fff; /* Keep tooltip text color unchanged */
+  text-shadow: none; /* Remove text shadow */
+}
+
+/* Ensure tooltip content has consistent style */
+.word-tooltip * {
+  color: inherit;
+  text-shadow: none;
+}
+
+/* Global glassy tooltip */
+.global-word-tooltip {
+  position: fixed;
+  left: 0;
+  top: 0;
+  transform: translate(-100%, -50%);
+  z-index: 100000;
+  display: none;
+  
+  background: rgba(22, 24, 29, 0.95);
+  backdrop-filter: blur(15px);
+  -webkit-backdrop-filter: blur(15px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #fff;
+  padding: 10px 16px;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 500;
+  white-space: nowrap;
+  pointer-events: none;
+  margin-right: 15px;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.25), 0 2px 8px rgba(0, 0, 0, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  max-width: 300px;
+  text-align: center;
+  letter-spacing: 0.5px;
+  min-height: 30px;
+  min-width: 120px;
+}
+
+.global-word-tooltip.active {
+  display: block;
+}
+
+/* Arrow indicator (default pointing right) */
+.global-word-tooltip::after, 
+.global-word-tooltip.tooltip-left::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  right: -10px;
+  transform: translateY(-50%);
+  border-width: 8px;
+  border-style: solid;
+  border-color: transparent transparent transparent rgba(22, 24, 29, 0.95);
+  filter: drop-shadow(1px 0 2px rgba(0, 0, 0, 0.1));
+}
+
+/* Arrow pointing down (for current subtitle area) */
+.global-word-tooltip.tooltip-bottom::after {
+  top: 100%;
+  left: 50%;
+  right: auto;
+  transform: translateX(-50%);
+  border-color: rgba(22, 24, 29, 0.95) transparent transparent transparent;
+}
+
+/* Original glassy tooltip style (retained as backup) */
+.word-tooltip {
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  display: none; /* Hide original tooltip */
+  background: rgba(22, 24, 29, 0.95);
+  backdrop-filter: blur(15px);
+  -webkit-backdrop-filter: blur(15px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #fff;
+  padding: 10px 16px;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 500;
+  white-space: nowrap;
+  pointer-events: none; /* Allow mouse events to pass through, prevent mouseout trigger */
+  opacity: 0;
+  transition: opacity 0.2s cubic-bezier(0.16, 1, 0.3, 1), transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  margin-bottom: 10px;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.25), 0 2px 8px rgba(0, 0, 0, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  max-width: 300px;
+  text-align: center;
+  transform: translateX(-50%) translateY(5px);
+  letter-spacing: 0.5px;
+  min-height: 30px;
+  min-width: 120px;
+  z-index: 10000;
+}
+
+/* Loading indicator */
+.word-tooltip:empty {
+  padding: 10px 15px;
+}
+
+/* Popup favorite status indicator */
+.word-tooltip .favorite-status {
+  display: inline-block;
+  margin-left: 6px;
+  font-size: 12px;
+  opacity: 0.85;
+  font-weight: 400;
+  transition: color 0.3s ease, text-shadow 0.3s ease;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.word-tooltip .favorite-status.is-favorite {
+  color: #FFC60B;
+  text-shadow: 0 0 5px rgba(255, 198, 11, 0.3);
+}
+
+.hoverable-word.active .word-tooltip {
+  opacity: 1;
+  visibility: visible;
+  z-index: 1000;
+  pointer-events: auto;
+  transform: translateX(-50%) translateY(0);
+}
+
+/* Style when lookup is disabled */
+.hoverable-word:not(.lookup-enabled):hover .word-tooltip {
+  opacity: 0;
+  transform: translateX(-50%) translateY(5px);
+  pointer-events: none;
+  transition: opacity 0.1s ease, transform 0.1s ease;
+}
+
+/* Arrow indicator (change to semi-transparent effect) */
+.word-tooltip::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border-width: 6px;
+  border-style: solid;
+  border-color: rgba(22, 24, 29, 0.95) transparent transparent transparent;
+}
+
+.subtitle-text .hoverable-word,
+.current-subtitle-text .hoverable-word {
+  margin: 0;
+  padding: 0;
+}
+
+/* Word tooltip content style */
+.word-tooltip-content {
+  display: flex;
+  flex-direction: column;
+  min-width: 200px;
+  max-width: 300px;
+  white-space: normal;
+  text-align: left;
+  overflow: visible;
+}
+
+
+.word-phonetic {
+  color: rgba(255, 255, 255, 0.7);
+  font-weight: normal;
+  font-size: 14px;
+  font-style: italic;
+  margin-top: 2px;
+}
+
+.word-tooltip-translation {
+  color: rgba(255, 255, 255, 0.9);
+  line-height: 1.4;
+  font-size: 14px;
+}
+
+
+/* Error message style */
+.word-tooltip-error {
+  color: #ff6b6b;
+  font-style: italic;
+  padding: 6px 0;
+  font-size: 13px;
+}
+
+/* Favorite words section style */
+.favorite-words-section {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  background: rgba(30, 30, 30, 0.75);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-radius: 12px;
+  padding: 15px 20px;
+  max-width: 300px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  z-index: 1000;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  transition: all 0.3s;
+}
+
+.favorite-words-section:hover {
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
+  transform: translateY(-2px);
+}
+
+.favorite-words-section h3 {
+  color: #fff;
+  margin-top: 0;
+  margin-bottom: 12px;
+  font-size: 16px;
+  letter-spacing: 0.5px;
+  font-weight: 500;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.favorite-words-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.favorite-word-item {
+  position: relative;
+  color: #FFC60B;
+  background: rgba(255, 198, 11, 0.05);
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+  border: 1px solid rgba(255, 198, 11, 0.15);
+  text-shadow: 0 0 8px rgba(255, 198, 11, 0.3);
+  letter-spacing: 0.5px;
+}
+
+.favorite-word-item:hover {
+  background: rgba(255, 198, 11, 0.1);
+  transform: translateY(-1px);
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2);
+}
+
+.favorite-word-item:active {
+  transform: translateY(0);
+  box-shadow: 0 1px 5px rgba(0, 0, 0, 0.2);
+}

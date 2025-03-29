@@ -1,0 +1,613 @@
+{% extends "api/base.html" %}
+
+{% block title %}登录 | Déjà Vocab{% endblock %}
+
+{% block extra_css %}
+<style>
+
+    .bg-blob {
+        position: absolute;
+        border-radius: 50%;
+        filter: blur(80px);
+        opacity: 0.05;
+    }
+    
+    .blob-primary {
+        background: var(--primary-600);
+        width: 600px;
+        height: 600px;
+        top: -200px;
+        right: -200px;
+        animation: float 20s infinite alternate ease-in-out;
+    }
+    
+    .blob-accent {
+        background: var(--primary-400);
+        width: 500px;
+        height: 500px;
+        bottom: -200px;
+        left: -200px;
+        animation: float 15s infinite alternate-reverse ease-in-out;
+    }
+    
+    .dark .bg-blob {
+        opacity: 0.03;
+    }
+    
+    @keyframes float {
+        0% { transform: translate(0, 0) rotate(0deg); }
+        50% { transform: translate(2%, 3%) rotate(2deg); }
+        100% { transform: translate(-1%, -1%) rotate(-1deg); }
+    }
+    
+    /* 登录容器 */
+    .login-container {
+        position: relative;
+        min-height: calc(100vh - 180px);
+        padding: 3rem 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    /* 登录卡片 */
+    .auth-card {
+        background-color: white;
+        border-radius: 1.5rem;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        width: 100%;
+        max-width: 400px;
+        overflow: hidden;
+        position: relative;
+        z-index: 1;
+        border: 1px solid var(--gray-200);
+        transform: translateY(0);
+        transition: all 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+    
+    .auth-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 30px 60px rgba(14, 165, 233, 0.15);
+    }
+    
+    .dark .auth-card {
+        background-color: var(--gray-800);
+        border-color: var(--gray-700);
+    }
+    
+    .auth-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 5px;
+        background: linear-gradient(90deg, var(--primary-600), var(--primary-400));
+        z-index: 2;
+    }
+    
+    .auth-header {
+        padding: 2.5rem 2.5rem 1.5rem;
+        text-align: center;
+    }
+    
+    .auth-logo {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: var(--primary-600);
+        margin-bottom: 1.5rem;
+        display: inline-block;
+        transition: all 0.3s ease;
+    }
+    
+    .dark .auth-logo {
+        color: var(--primary-400);
+    }
+    
+    .accent {
+        color: var(--primary-400);
+        transition: all 0.3s ease;
+    }
+    
+    .dark .accent {
+        color: var(--primary-300);
+    }
+    
+    .auth-title {
+        font-size: 2.25rem;
+        font-weight: 800;
+        margin-bottom: 0.75rem;
+        background: linear-gradient(to right, var(--primary-600), var(--primary-400));
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+    
+    .dark .auth-title {
+        background: linear-gradient(to right, var(--primary-400), var(--primary-300));
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+    
+    .auth-subtitle {
+        color: var(--gray-600);
+        font-size: 1.1rem;
+        margin-bottom: 0.5rem;
+    }
+    
+    .dark .auth-subtitle {
+        color: var(--gray-400);
+    }
+    
+    .auth-body {
+        padding: 0 2.5rem 2.5rem;
+    }
+    
+    /* 表单样式 */
+    .form-floating {
+        margin-bottom: 1.5rem;
+        position: relative;
+    }
+    
+    .form-floating > .form-control {
+        padding: 1.25rem 1rem 0.5rem;
+        height: 3.75rem;
+        line-height: 1.25;
+        border-radius: 0.75rem;
+        background-color: rgba(255, 255, 255, 0.8);
+        border: 1px solid rgba(0, 0, 0, 0.1);
+        transition: all 0.3s ease;
+        font-size: 1rem;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+        color: var(--gray-800);
+    }
+    
+    .dark .form-floating > .form-control {
+        background-color: rgba(30, 41, 59, 0.7);
+        border-color: rgba(255, 255, 255, 0.1);
+        color: white;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+    }
+    
+    .form-floating > .form-control:focus {
+        box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.25);
+        border-color: var(--primary-400);
+        background-color: rgba(255, 255, 255, 0.95);
+        outline: none;
+    }
+    
+    .dark .form-floating > .form-control:focus {
+        background-color: rgba(30, 41, 59, 0.9);
+        box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.4);
+    }
+    
+    .form-floating > label {
+        padding: 1rem;
+        color: var(--gray-500);
+        font-weight: 500;
+        transition: all 0.2s ease;
+    }
+    
+    .dark .form-floating > label {
+        color: var(--gray-400);
+    }
+    
+    .form-floating > .form-control:focus ~ label,
+    .form-floating > .form-control:not(:placeholder-shown) ~ label {
+        opacity: 0.65;
+        transform: scale(0.85) translateY(-0.75rem) translateX(0.15rem);
+        color: var(--primary-600);
+    }
+    
+    .dark .form-floating > .form-control:focus ~ label,
+    .dark .form-floating > .form-control:not(:placeholder-shown) ~ label {
+        color: var(--primary-400);
+    }
+    
+    .form-floating > .form-control:-webkit-autofill {
+        -webkit-box-shadow: 0 0 0 1000px rgba(255, 255, 255, 0.9) inset;
+        -webkit-text-fill-color: var(--gray-800);
+    }
+    
+    .dark .form-floating > .form-control:-webkit-autofill {
+        -webkit-box-shadow: 0 0 0 1000px rgba(30, 41, 59, 0.9) inset;
+        -webkit-text-fill-color: white;
+    }
+    
+    /* 选项与额外功能 */
+    .form-options {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1.75rem;
+    }
+    
+    .form-check {
+        display: flex;
+        align-items: center;
+    }
+    
+    .form-check-input {
+        width: 1.25rem;
+        height: 1.25rem;
+        margin-right: 0.5rem;
+        background-color: rgba(255, 255, 255, 0.8);
+        border: 1px solid rgba(0, 0, 0, 0.2);
+        border-radius: 0.25rem;
+        transition: all 0.2s ease;
+        cursor: pointer;
+    }
+    
+    .dark .form-check-input {
+        background-color: rgba(30, 41, 59, 0.7);
+        border-color: rgba(255, 255, 255, 0.2);
+    }
+    
+    .form-check-input:checked {
+        background-color: var(--primary-600);
+        border-color: var(--primary-600);
+    }
+    
+    .dark .form-check-input:checked {
+        background-color: var(--primary-500);
+        border-color: var(--primary-500);
+    }
+    
+    .form-check-label {
+        color: var(--gray-700);
+        font-size: 0.95rem;
+        cursor: pointer;
+    }
+    
+    .dark .form-check-label {
+        color: var(--gray-300);
+    }
+    
+    
+    /* 按钮样式 */
+    .btn-login {
+        padding: 1rem 2rem;
+        border-radius: 0.75rem;
+        font-weight: 600;
+        font-size: 1.1rem;
+        background: linear-gradient(to right, var(--primary-600), var(--primary-500));
+        border: none;
+        color: white;
+        width: 100%;
+        margin-top: 0.5rem;
+        position: relative;
+        overflow: hidden;
+        transition: all 0.3s ease;
+        box-shadow: 0 8px 25px rgba(14, 165, 233, 0.3);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .btn-login:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 12px 30px rgba(14, 165, 233, 0.5);
+        background: linear-gradient(to right, var(--primary-500), var(--primary-600));
+    }
+    
+    .btn-login:active {
+        transform: translateY(-1px);
+        box-shadow: 0 5px 15px rgba(14, 165, 233, 0.4);
+    }
+    
+    .btn-login::after {
+        content: '';
+        position: absolute;
+        top: -50%;
+        left: -50%;
+        width: 200%;
+        height: 200%;
+        background: linear-gradient(
+            to bottom right,
+            rgba(255, 255, 255, 0) 0%,
+            rgba(255, 255, 255, 0.2) 50%,
+            rgba(255, 255, 255, 0) 100%
+        );
+        transform: rotate(45deg) translateX(-100%) translateY(-100%);
+        transition: transform 0.6s ease;
+        z-index: 1;
+    }
+    
+    .btn-login:hover::after {
+        transform: rotate(45deg) translateX(100%) translateY(100%);
+    }
+    
+    .btn-login i {
+        margin-right: 0.75rem;
+        font-size: 1.2rem;
+    }
+    
+    /* 警告信息 */
+    .alert {
+        background-color: rgba(239, 68, 68, 0.1);
+        border-left: 4px solid #ef4444;
+        border-radius: 0.75rem;
+        padding: 1rem 1.25rem;
+        margin-bottom: 1.5rem;
+        color: #991b1b;
+        display: flex;
+        align-items: center;
+    }
+    
+    .alert i {
+        margin-right: 0.75rem;
+        font-size: 1.25rem;
+        color: #ef4444;
+    }
+    
+    .dark .alert {
+        background-color: rgba(239, 68, 68, 0.15);
+        color: #fca5a5;
+    }
+    
+    .dark .alert i {
+        color: #f87171;
+    }
+    
+    /* 分隔线 */
+    .auth-footer {
+        padding: 1.75rem 0 0;
+        text-align: center;
+    }
+    
+    .auth-divider {
+        margin: 1.5rem 0;
+        text-align: center;
+        position: relative;
+    }
+    
+    .auth-divider::before {
+        content: '';
+        position: absolute;
+        top: 50%;
+        left: 0;
+        right: 0;
+        height: 1px;
+        background-color: rgba(0, 0, 0, 0.1);
+    }
+    
+    .dark .auth-divider::before {
+        background-color: rgba(255, 255, 255, 0.1);
+    }
+    
+    .auth-divider-text {
+        position: relative;
+        display: inline-block;
+        padding: 0 1rem;
+        background: rgba(255, 255, 255, 0.95);
+        color: var(--gray-600);
+        font-size: 0.95rem;
+    }
+    
+    .dark .auth-divider-text {
+        background: rgba(45, 45, 45, 0.9);
+        color: var(--gray-400);
+    }
+    
+    .register-link {
+        color: var(--primary-600);
+        text-decoration: none;
+        font-weight: 600;
+        transition: all 0.2s ease;
+        display: inline-flex;
+        align-items: center;
+    }
+    
+    .dark .register-link {
+        color: var(--primary-400);
+    }
+    
+    .register-link:hover {
+        color: var(--primary-700);
+        transform: translateY(-1px);
+    }
+    
+    .dark .register-link:hover {
+        color: var(--primary-300);
+    }
+    
+    .register-link i {
+        margin-right: 0.5rem;
+    }
+    
+    /* 动画效果 */
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    
+    .auth-card {
+        animation: fadeInUp 0.8s ease-out forwards;
+    }
+    
+    /* 响应式调整 */
+    @media (max-width: 576px) {
+        .auth-card {
+            margin: 0 1.5rem;
+            max-width: 100%;
+        }
+        
+        .auth-header {
+            padding: 2rem 1.5rem 1rem;
+        }
+        
+        .auth-body {
+            padding: 0 1.5rem 1.5rem;
+        }
+        
+        .auth-title {
+            font-size: 1.75rem;
+        }
+        
+        .form-options {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 1rem;
+        }
+        
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="login-container">
+    <div class="auth-card">
+        <div class="auth-header">
+            <div class="auth-logo">Déjà <span class="accent">Vocab</span></div>
+            <h1 class="auth-title">欢迎回来</h1>
+            <p class="auth-subtitle">登录您的账号继续学习</p>
+        </div>
+        
+        <div class="auth-body">
+            {% if form.errors %}
+            <div class="alert" role="alert">
+                <i class="bi bi-exclamation-triangle-fill"></i>
+                用户名或密码不正确，请重试。
+            </div>
+            {% endif %}
+            
+            <form method="post" class="needs-validation" novalidate>
+                {% csrf_token %}
+                
+                <div class="form-floating mb-3">
+                    <input type="text" class="form-control" id="username" name="username" placeholder=" " required>
+                    <label for="username">用户名</label>
+                    <div class="invalid-feedback">请输入用户名</div>
+                </div>
+                
+                <div class="form-floating mb-4">
+                    <input type="password" class="form-control" id="password" name="password" placeholder=" " required>
+                    <label for="password">密码</label>
+                    <div class="invalid-feedback">请输入密码</div>
+                </div>
+                
+                <div class="form-options">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" value="" id="remember-me" name="remember-me">
+                        <label class="form-check-label" for="remember-me">
+                            记住我
+                        </label>
+                    </div>
+                </div>
+                
+                <div class="d-grid">
+                    <button type="submit" class="btn btn-login">
+                        <i class="bi bi-box-arrow-in-right"></i>登录
+                    </button>
+                </div>
+            </form>
+            
+            <div class="auth-footer">
+                <div class="auth-divider">
+                    <span class="auth-divider-text">还没有账号?</span>
+                </div>
+                <p>
+                    <a href="{% url 'register' %}" class="register-link">
+                        <i class="bi bi-person-plus"></i>创建新账号
+                    </a>
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const forms = document.querySelectorAll('.needs-validation');
+        
+        Array.from(forms).forEach(form => {
+            const inputs = form.querySelectorAll('input');
+            
+            inputs.forEach(input => {
+                // 初始化时检查是否已有值（比如浏览器自动填充）
+                if (input.value) {
+                    const label = document.querySelector(`label[for="${input.id}"]`);
+                    if (label) {
+                        label.style.transform = 'scale(0.85) translateY(-0.75rem) translateX(0.15rem)';
+                        label.style.opacity = '0.65';
+                    }
+                }
+                
+                input.addEventListener('focus', function() {
+                    const label = document.querySelector(`label[for="${input.id}"]`);
+                    if (label) {
+                        label.style.transform = 'scale(0.85) translateY(-0.75rem) translateX(0.15rem)';
+                        label.style.opacity = '0.65';
+                    }
+                });
+                
+                input.addEventListener('blur', function() {
+                    if (input.value === '') {
+                        const label = document.querySelector(`label[for="${input.id}"]`);
+                        if (label) {
+                            label.style.transform = '';
+                            label.style.opacity = '1';
+                        }
+                    }
+                    
+                    if (input.checkValidity()) {
+                        input.classList.remove('is-invalid');
+                        if (input.value) {
+                            input.classList.add('is-valid');
+                        }
+                    } else if (input.value !== '') {
+                        input.classList.remove('is-valid');
+                        input.classList.add('is-invalid');
+                    }
+                });
+                
+                input.addEventListener('input', function() {
+                    input.classList.remove('is-invalid');
+                });
+            });
+            
+            form.addEventListener('submit', event => {
+                let formValid = true;
+                
+                inputs.forEach(input => {
+                    if (!input.checkValidity()) {
+                        input.classList.add('is-invalid');
+                        formValid = false;
+                    } else {
+                        input.classList.remove('is-invalid');
+                        if (input.value) {
+                            input.classList.add('is-valid');
+                        }
+                    }
+                });
+                
+                if (!formValid) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                }
+                
+                form.classList.add('was-validated');
+            }, false);
+        });
+        
+        // 背景交互效果
+        document.addEventListener('mousemove', function(e) {
+            const moveX = (e.clientX - window.innerWidth / 2) / 50;
+            const moveY = (e.clientY - window.innerHeight / 2) / 50;
+            
+            document.querySelectorAll('.bg-blob').forEach(blob => {
+                blob.style.transform = `translate(${moveX}px, ${moveY}px)`;
+            });
+        });
+    });
+</script>
+{% endblock %}

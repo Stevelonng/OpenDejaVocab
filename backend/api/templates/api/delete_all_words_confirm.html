@@ -1,0 +1,577 @@
+{% extends "api/base.html" %}
+
+{% block title %}确认删除所有单词 | Déjà Vocab{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* 背景装饰 */
+    .bg-decoration {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        pointer-events: none;
+        z-index: -1;
+        overflow: hidden;
+    }
+    
+    .bg-blob {
+        position: absolute;
+        border-radius: 50%;
+        filter: blur(80px);
+        opacity: 0.05;
+    }
+    
+    .blob-danger {
+        background: #dc3545;
+        width: 600px;
+        height: 600px;
+        top: -200px;
+        right: -200px;
+        animation: float 20s infinite alternate ease-in-out;
+    }
+    
+    .blob-warning {
+        background: #ffc107;
+        width: 500px;
+        height: 500px;
+        bottom: -200px;
+        left: -200px;
+        animation: float 15s infinite alternate-reverse ease-in-out;
+    }
+    
+    .dark .bg-blob {
+        opacity: 0.03;
+    }
+    
+    @keyframes float {
+        0% { transform: translate(0, 0) rotate(0deg); }
+        50% { transform: translate(2%, 3%) rotate(2deg); }
+        100% { transform: translate(-1%, -1%) rotate(-1deg); }
+    }
+    
+    @keyframes pulse {
+        0%, 100% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.4); }
+        50% { box-shadow: 0 0 0 8px rgba(220, 53, 69, 0); }
+    }
+    
+    @keyframes shake {
+        0%, 100% { transform: translateX(0); }
+        10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+        20%, 40%, 60%, 80% { transform: translateX(5px); }
+    }
+    
+    @keyframes fadeInUp {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    
+    @keyframes slideUp {
+        from { opacity: 0; transform: translateY(15px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    
+    /* 动画延迟类 */
+    .delay-100 { animation-delay: 0.1s; }
+    .delay-200 { animation-delay: 0.2s; }
+    .delay-300 { animation-delay: 0.3s; }
+    .delay-400 { animation-delay: 0.4s; }
+    
+    /* 容器样式 */
+    .delete-confirm-container {
+        position: relative;
+        min-height: calc(100vh - 200px);
+        padding: 3rem 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    /* 确认卡片 */
+    .confirm-card {
+        background: rgba(255, 255, 255, 0.95);
+        border-radius: 1.5rem;
+        box-shadow: 0 20px 40px rgba(220, 53, 69, 0.2);
+        width: 100%;
+        max-width: 650px;
+        overflow: hidden;
+        position: relative;
+        z-index: 1;
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        animation: fadeInUp 0.8s ease-out forwards, pulse 3s infinite;
+    }
+    
+    .dark .confirm-card {
+        background: rgba(45, 45, 45, 0.9);
+        border-color: rgba(220, 53, 69, 0.2);
+    }
+    
+    .confirm-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 5px;
+        background: linear-gradient(90deg, #dc3545, #ff6b6b);
+        z-index: 2;
+    }
+    
+    .confirm-header {
+        background: linear-gradient(135deg, #dc3545, #c82333);
+        padding: 1.75rem;
+        color: white;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .confirm-header::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M11 18c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm48 25c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm-43-7c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm63 31c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM34 90c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm56-76c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM12 86c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm28-65c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm23-11c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-6 60c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm29 22c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zM32 63c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm57-13c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-9-21c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM60 91c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM35 41c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM12 60c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2z' fill='%23ffffff' fill-opacity='0.1' fill-rule='evenodd'/%3E%3C/svg%3E");
+        opacity: 0.3;
+    }
+    
+    .confirm-title {
+        font-size: 1.5rem;
+        font-weight: 700;
+        margin: 0;
+        display: flex;
+        align-items: center;
+    }
+    
+    .confirm-title i {
+        margin-right: 0.75rem;
+        font-size: 1.75rem;
+    }
+    
+    .confirm-body {
+        padding: 2.5rem;
+    }
+    
+    /* 警告消息 */
+    .warning-message {
+        background-color: rgba(220, 53, 69, 0.05);
+        border-left: 4px solid #dc3545;
+        padding: 1.25rem;
+        margin-bottom: 1.75rem;
+        border-radius: 0.75rem;
+        animation: slideUp 0.6s ease-out forwards, shake 0.8s 0.6s ease-in-out;
+    }
+    
+    .dark .warning-message {
+        background-color: rgba(220, 53, 69, 0.1);
+    }
+    
+    .warning-message i {
+        color: #dc3545;
+        font-size: 1.25rem;
+        margin-right: 0.5rem;
+    }
+    
+    .warning-message strong {
+        color: #dc3545;
+        font-weight: 700;
+    }
+    
+    /* 单词计数器 */
+    .word-counter {
+        background: linear-gradient(to right, rgba(220, 53, 69, 0.1), rgba(220, 53, 69, 0.05));
+        border-radius: 1rem;
+        padding: 2rem;
+        margin-bottom: 1.75rem;
+        text-align: center;
+        box-shadow: 0 8px 20px rgba(220, 53, 69, 0.1);
+        animation: slideUp 0.6s 0.2s ease-out forwards;
+        opacity: 0;
+    }
+    
+    .dark .word-counter {
+        background: linear-gradient(to right, rgba(220, 53, 69, 0.15), rgba(220, 53, 69, 0.1));
+    }
+    
+    .counter-value {
+        font-size: 3.5rem;
+        font-weight: 800;
+        color: #dc3545;
+        line-height: 1;
+        margin-bottom: 0.5rem;
+        text-shadow: 0 2px 10px rgba(220, 53, 69, 0.3);
+    }
+    
+    .dark .counter-value {
+        color: #ff6b6b;
+    }
+    
+    .counter-label {
+        color: var(--gray-700);
+        font-size: 1.1rem;
+        font-weight: 500;
+    }
+    
+    .dark .counter-label {
+        color: var(--gray-300);
+    }
+    
+    /* 删除解释 */
+    .delete-explanation {
+        color: var(--gray-700);
+        line-height: 1.6;
+        margin-bottom: 1.5rem;
+        animation: slideUp 0.6s 0.3s ease-out forwards;
+        opacity: 0;
+    }
+    
+    .dark .delete-explanation {
+        color: var(--gray-300);
+    }
+    
+    .delete-explanation strong {
+        color: #dc3545;
+        font-weight: 700;
+    }
+    
+    /* 确认输入字段 */
+    .confirm-input-group {
+        margin-bottom: 2rem;
+        animation: slideUp 0.6s 0.4s ease-out forwards;
+        opacity: 0;
+    }
+    
+    .confirm-label {
+        font-weight: 600;
+        margin-bottom: 0.75rem;
+        color: var(--gray-800);
+        display: block;
+    }
+    
+    .dark .confirm-label {
+        color: var(--gray-200);
+    }
+    
+    .confirm-input {
+        width: 100%;
+        padding: 1rem 1.25rem;
+        border: 2px solid rgba(220, 53, 69, 0.3);
+        border-radius: 0.75rem;
+        font-size: 1rem;
+        transition: all 0.3s ease;
+        background-color: rgba(255, 255, 255, 0.9);
+        box-shadow: 0 4px 10px rgba(220, 53, 69, 0.1);
+    }
+    
+    .dark .confirm-input {
+        background-color: rgba(45, 45, 45, 0.8);
+        color: var(--white);
+        border-color: rgba(220, 53, 69, 0.4);
+    }
+    
+    .confirm-input:focus {
+        outline: none;
+        border-color: #dc3545;
+        box-shadow: 0 0 0 3px rgba(220, 53, 69, 0.2);
+    }
+    
+    .confirm-input.is-invalid {
+        border-color: #dc3545;
+        animation: shake 0.5s ease-in-out;
+    }
+    
+    /* 按钮组 */
+    .confirm-actions {
+        display: flex;
+        gap: 1rem;
+        margin-top: 2rem;
+        animation: slideUp 0.6s 0.5s ease-out forwards;
+        opacity: 0;
+    }
+    
+    .btn-cancel {
+        flex: 1;
+        padding: 1rem 1.5rem;
+        border-radius: 0.75rem;
+        font-weight: 600;
+        font-size: 1rem;
+        background-color: white;
+        border: 1px solid rgba(0, 0, 0, 0.1);
+        color: var(--gray-700);
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        text-decoration: none;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+    }
+    
+    .dark .btn-cancel {
+        background-color: rgba(45, 45, 45, 0.8);
+        border-color: rgba(255, 255, 255, 0.1);
+        color: var(--gray-300);
+    }
+    
+    .btn-cancel:hover {
+        background-color: var(--gray-100);
+        transform: translateY(-3px);
+        box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1);
+    }
+    
+    .dark .btn-cancel:hover {
+        background-color: var(--gray-800);
+        box-shadow: 0 8px 15px rgba(0, 0, 0, 0.2);
+    }
+    
+    .btn-danger-confirm {
+        flex: 1;
+        padding: 1rem 1.5rem;
+        border-radius: 0.75rem;
+        font-weight: 600;
+        font-size: 1rem;
+        background-color: rgba(220, 53, 69, 0.1);
+        border: 2px solid #dc3545;
+        color: #dc3545;
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 4px 10px rgba(220, 53, 69, 0.15);
+    }
+    
+    .btn-danger-confirm:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+        transform: none !important;
+        box-shadow: none !important;
+    }
+    
+    .btn-danger-confirm:not(:disabled):hover {
+        background-color: #dc3545;
+        color: white;
+        transform: translateY(-3px);
+        box-shadow: 0 8px 20px rgba(220, 53, 69, 0.25);
+    }
+    
+    .btn-danger-confirm::after {
+        content: '';
+        position: absolute;
+        top: -50%;
+        left: -50%;
+        width: 200%;
+        height: 200%;
+        background: linear-gradient(
+            to bottom right,
+            rgba(255, 255, 255, 0) 0%,
+            rgba(255, 255, 255, 0.2) 50%,
+            rgba(255, 255, 255, 0) 100%
+        );
+        transform: rotate(45deg) translateX(-100%) translateY(-100%);
+        transition: transform 0.6s ease;
+        z-index: 1;
+    }
+    
+    .btn-danger-confirm:not(:disabled):hover::after {
+        transform: rotate(45deg) translateX(100%) translateY(100%);
+    }
+    
+    .btn-icon {
+        margin-right: 0.75rem;
+        font-size: 1.1rem;
+    }
+    
+    /* 响应式调整 */
+    @media (max-width: 768px) {
+        .confirm-card {
+            margin: 0 1.5rem;
+            max-width: 100%;
+        }
+        
+        .confirm-body {
+            padding: 1.75rem;
+        }
+        
+        .confirm-actions {
+            flex-direction: column;
+        }
+        
+        .counter-value {
+            font-size: 2.5rem;
+        }
+    }
+    
+    @media (max-width: 480px) {
+        .confirm-header {
+            padding: 1.25rem;
+        }
+        
+        .confirm-title {
+            font-size: 1.25rem;
+        }
+        
+        .confirm-title i {
+            font-size: 1.5rem;
+        }
+        
+        .confirm-body {
+            padding: 1.25rem;
+        }
+        
+        .warning-message {
+            padding: 1rem;
+        }
+        
+        .word-counter {
+            padding: 1.5rem;
+        }
+        
+        .counter-value {
+            font-size: 2rem;
+        }
+        
+        .confirm-input-group {
+            margin-bottom: 1.5rem;
+        }
+        
+        .confirm-input {
+            padding: 0.75rem 1rem;
+        }
+        
+        .btn-cancel, .btn-danger-confirm {
+            padding: 0.75rem 1.25rem;
+            font-size: 0.95rem;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="delete-confirm-container">
+    <!-- 背景装饰 -->
+    <div class="bg-decoration">
+        <div class="bg-blob blob-danger"></div>
+        <div class="bg-blob blob-warning"></div>
+    </div>
+    
+    <div class="confirm-card">
+        <div class="confirm-header">
+            <h2 class="confirm-title">
+                <i class="bi bi-exclamation-triangle-fill"></i>
+                确认删除所有单词
+            </h2>
+        </div>
+        
+        <div class="confirm-body">
+            <!-- 警告提示 -->
+            <div class="warning-message">
+                <i class="bi bi-exclamation-circle-fill"></i>
+                <strong>危险操作：</strong> 此操作将永久删除所有单词和引用，且<strong>无法撤销</strong>！
+            </div>
+            
+            <!-- 单词计数 -->
+            <div class="word-counter">
+                <div class="counter-value">{{ word_count }}</div>
+                <div class="counter-label">个单词将被永久删除</div>
+            </div>
+            
+            <!-- 删除解释 -->
+            <p class="delete-explanation">
+                您即将删除词典中的<strong>所有 {{ word_count }} 个单词</strong>和它们的上下文引用。这些数据无法恢复。
+            </p>
+            
+            <p class="delete-explanation">
+                如果您只想删除个别单词，请返回到词典页面，点击单词详情页中的删除选项。
+            </p>
+            
+            <!-- 确认输入 -->
+            <div class="confirm-input-group">
+                <label for="confirmationInput" class="confirm-label">请输入"删除全部"以确认操作：</label>
+                <input 
+                    type="text" 
+                    id="confirmationInput" 
+                    class="confirm-input" 
+                    placeholder="删除全部" 
+                    autocomplete="off"
+                >
+            </div>
+            
+            <!-- 操作按钮 -->
+            <div class="confirm-actions">
+                <a href="{% url 'dictionary' %}" class="btn-cancel">
+                    <i class="bi bi-arrow-left btn-icon"></i>取消并返回
+                </a>
+                
+                <form method="post" action="{% url 'delete_all_words' %}" id="deleteForm">
+                    {% csrf_token %}
+                    <button type="submit" class="btn-danger-confirm" id="confirmDeleteBtn" disabled>
+                        <i class="bi bi-trash btn-icon"></i>确认删除全部单词
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const confirmationInput = document.getElementById('confirmationInput');
+        const confirmDeleteBtn = document.getElementById('confirmDeleteBtn');
+        const deleteForm = document.getElementById('deleteForm');
+        const confirmationPhrase = '删除全部';
+        
+        // 验证输入并启用/禁用确认按钮
+        confirmationInput.addEventListener('input', function() {
+            if (this.value === confirmationPhrase) {
+                confirmDeleteBtn.disabled = false;
+                confirmDeleteBtn.classList.add('active');
+            } else {
+                confirmDeleteBtn.disabled = true;
+                confirmDeleteBtn.classList.remove('active');
+            }
+        });
+        
+        // 提交前再次验证
+        deleteForm.addEventListener('submit', function(e) {
+            if (confirmationInput.value !== confirmationPhrase) {
+                e.preventDefault();
+                confirmationInput.classList.add('is-invalid');
+                
+                // 聚焦输入框
+                confirmationInput.focus();
+                
+                // 3秒后移除无效类
+                setTimeout(() => {
+                    confirmationInput.classList.remove('is-invalid');
+                }, 3000);
+            } else {
+                // 禁用按钮并改变文字，防止重复提交
+                confirmDeleteBtn.disabled = true;
+                confirmDeleteBtn.innerHTML = '<i class="bi bi-hourglass-split btn-icon"></i>正在删除...';
+            }
+        });
+        
+        // 背景互动效果
+        document.addEventListener('mousemove', function(e) {
+            const moveX = (e.clientX - window.innerWidth / 2) / 50;
+            const moveY = (e.clientY - window.innerHeight / 2) / 50;
+            
+            document.querySelectorAll('.bg-blob').forEach(blob => {
+                blob.style.transform = `translate(${moveX}px, ${moveY}px)`;
+            });
+        });
+        
+        // 放置焦点在输入框
+        setTimeout(() => {
+            confirmationInput.focus();
+        }, 500);
+    });
+</script>
+{% endblock %}
