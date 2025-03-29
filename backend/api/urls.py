@@ -17,7 +17,8 @@ from . import gemini_default_view
 from . import auto_subtitle_views  # Import new auto subtitle view
 from .chat_views import (
     get_or_create_chat_session, end_chat_session, get_chat_sessions, 
-    export_chat_notes, get_session_videos, delete_chat_session
+    export_chat_notes, get_session_videos, delete_chat_session,
+    ChatSessionListView, ChatSessionDetailView, delete_chat_session_web, download_chat_session
 )
 
 router = DefaultRouter()
@@ -82,6 +83,11 @@ urlpatterns = [
     # Sentence web interface
     path('web/sentences/', web_sentence_views.SentenceListView.as_view(), name='sentence_list'),
     path('web/sentences/<int:sentence_id>/delete/', web_sentence_views.delete_sentence, name='delete_sentence'),
+    
+    # Chat sessions web interface
+    path('web/notes/', ChatSessionListView.as_view(), name='notes'),
+    path('web/notes/<int:pk>/', ChatSessionDetailView.as_view(), name='notes_detail'),
+    path('web/notes/<int:session_id>/delete/', delete_chat_session_web, name='delete_chat_session_web'),
     
     # Feedback
     path('feedback/', feedback_views.feedback_api, name='feedback_api'),

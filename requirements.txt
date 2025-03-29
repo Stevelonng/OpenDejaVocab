@@ -36,3 +36,10 @@ Pillow>=9.5.0  # For image processing if needed
 termcolor>=2.3.0  # For colored terminal output
 beautifulsoup4>=4.11.0  # HTML parsing (bs4)
 lxml>=4.9.0  # XML/HTML parser for BeautifulSoup
+
+# Document generation
+python-docx>=0.8.11  # For Word document generation
+reportlab>=3.6.12   # For PDF generation
+
+# Markdown support
+markdown>=3.4.1

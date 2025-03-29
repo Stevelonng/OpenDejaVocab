@@ -8,6 +8,18 @@ from rest_framework.response import Response
 from rest_framework import status
 from .models import Video
 from .chat_models import ChatSession, ChatMessage
+from django.views.generic import ListView, DetailView
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.shortcuts import render, get_object_or_404, redirect
+from django.http import HttpResponse, FileResponse
+from django.contrib import messages
+from io import BytesIO
+import docx
+from docx.shared import Pt, RGBColor
+from reportlab.lib.pagesizes import letter
+from reportlab.pdfgen import canvas
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
 
 # Set up logging
 logger = logging.getLogger(__name__)
@@ -445,3 +457,218 @@ def export_chat_notes(request, session_id=None):
         
     except ChatSession.DoesNotExist:
         return JsonResponse({'status': 'error', 'message': 'Session does not exist'}, status=404)
+
+
+# Web views for chat sessions
+class ChatSessionListView(LoginRequiredMixin, ListView):
+    """List view for chat sessions (notes)"""
+    model = ChatSession
+    template_name = 'api/notes.html'
+    context_object_name = 'chat_sessions'
+    paginate_by = 12
+    
+    def get_queryset(self):
+        """Get chat sessions for the current user"""
+        return ChatSession.objects.filter(user=self.request.user).order_by('-created_at')
+
+
+class ChatSessionDetailView(LoginRequiredMixin, DetailView):
+    """Detail view for a specific chat session (note)"""
+    model = ChatSession
+    template_name = 'api/notes_detail.html'
+    context_object_name = 'chat_session'
+    
+    def get_object(self):
+        """Get the chat session object"""
+        session_id = self.kwargs.get('pk')
+        return get_object_or_404(ChatSession, id=session_id, user=self.request.user)
+
+
+from django.contrib.auth.decorators import login_required
+@login_required
+def delete_chat_session_web(request, session_id):
+    """Delete a chat session from the web interface"""
+    try:
+        # Get the session
+        session = get_object_or_404(ChatSession, id=session_id, user=request.user)
+        
+        # Delete the session and all associated messages
+        session_id = session.id
+        session.delete()
+        
+        # Add success message
+        messages.success(request, f"聊天记录已成功删除")
+        
+        # Redirect to notes list
+        return redirect('notes')
+        
+    except Exception as e:
+        logger.error(f"Error deleting chat session: {str(e)}")
+        messages.error(request, f"删除失败: {str(e)}")
+        return redirect('notes_detail', pk=session_id)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def download_chat_session(request, session_id):
+    """Download a chat session in the specified format"""
+    # Get the format from the query parameter
+    format_type = request.GET.get('format', 'txt')
+    
+    # Get the session
+    session = get_object_or_404(ChatSession, id=session_id, user=request.user)
+    
+    # Get the messages
+    messages_list = session.messages.all().order_by('timestamp')
+    
+    # Create a filename
+    clean_title = ''.join(c if c.isalnum() or c in ' -_' else '_' for c in session.title)
+    filename = f"DejaVocab_Chat_{clean_title}_{timezone.now().strftime('%Y%m%d')}"
+    
+    if format_type == 'txt':
+        # Create a text file
+        response = HttpResponse(content_type='text/plain')
+        response['Content-Disposition'] = f'attachment; filename="{filename}.txt"'
+        
+        # Write header
+        response.write(f"标题: {session.title}\n")
+        response.write(f"日期: {session.created_at.strftime('%Y-%m-%d %H:%M')}\n")
+        response.write(f"消息数: {session.get_messages_count()}\n")
+        response.write(f"持续时间: {session.get_duration()} 分钟\n\n")
+        
+        # Write summary if exists
+        if session.summary:
+            response.write("摘要:\n")
+            response.write(f"{session.summary}\n\n")
+        
+        # Write messages
+        response.write("聊天记录:\n")
+        response.write("="*50 + "\n\n")
+        
+        for msg in messages_list:
+            role_display = msg.get_role_display()
+            response.write(f"{role_display} ({msg.timestamp.strftime('%Y-%m-%d %H:%M:%S')}):\n")
+            response.write(f"{msg.content}\n\n")
+            response.write("-"*50 + "\n\n")
+        
+        return response
+        
+    elif format_type == 'docx':
+        # Create a Word document
+        doc = docx.Document()
+        
+        # Set title
+        title = doc.add_heading(session.title, level=1)
+        
+        # Add metadata
+        doc.add_paragraph(f"日期: {session.created_at.strftime('%Y-%m-%d %H:%M')}")
+        doc.add_paragraph(f"消息数: {session.get_messages_count()}")
+        doc.add_paragraph(f"持续时间: {session.get_duration()} 分钟")
+        
+        # Add summary if exists
+        if session.summary:
+            doc.add_heading("摘要", level=2)
+            doc.add_paragraph(session.summary)
+        
+        # Add messages
+        doc.add_heading("聊天记录", level=2)
+        
+        for msg in messages_list:
+            # Create a paragraph for each message
+            role_para = doc.add_paragraph()
+            role_run = role_para.add_run(f"{msg.get_role_display()} ({msg.timestamp.strftime('%Y-%m-%d %H:%M:%S')}):")
+            role_run.bold = True
+            
+            # Add message content
+            doc.add_paragraph(msg.content)
+            
+            # Add a separator
+            doc.add_paragraph("---")
+        
+        # Save to a BytesIO object
+        f = BytesIO()
+        doc.save(f)
+        f.seek(0)
+        
+        # Return the document
+        response = HttpResponse(f.read())
+        response['Content-Disposition'] = f'attachment; filename="{filename}.docx"'
+        response['Content-Type'] = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+        return response
+        
+    elif format_type == 'pdf':
+        # Create a PDF document
+        buffer = BytesIO()
+        doc = SimpleDocTemplate(buffer, pagesize=letter)
+        styles = getSampleStyleSheet()
+        
+        # Create custom styles
+        title_style = ParagraphStyle(
+            'Title',
+            parent=styles['Title'],
+            fontSize=16,
+            spaceAfter=12
+        )
+        
+        heading_style = ParagraphStyle(
+            'Heading',
+            parent=styles['Heading2'],
+            fontSize=14,
+            spaceAfter=10,
+            spaceBefore=10
+        )
+        
+        normal_style = styles['Normal']
+        
+        role_style = ParagraphStyle(
+            'Role',
+            parent=normal_style,
+            fontName='Helvetica-Bold',
+            fontSize=10,
+            spaceAfter=6
+        )
+        
+        # Create content
+        content = []
+        
+        # Add title
+        content.append(Paragraph(session.title, title_style))
+        content.append(Spacer(1, 10))
+        
+        # Add metadata
+        content.append(Paragraph(f"日期: {session.created_at.strftime('%Y-%m-%d %H:%M')}", normal_style))
+        content.append(Paragraph(f"消息数: {session.get_messages_count()}", normal_style))
+        content.append(Paragraph(f"持续时间: {session.get_duration()} 分钟", normal_style))
+        content.append(Spacer(1, 10))
+        
+        # Add summary if exists
+        if session.summary:
+            content.append(Paragraph("摘要", heading_style))
+            content.append(Paragraph(session.summary, normal_style))
+            content.append(Spacer(1, 10))
+        
+        # Add messages
+        content.append(Paragraph("聊天记录", heading_style))
+        content.append(Spacer(1, 10))
+        
+        for msg in messages_list:
+            # Add role and timestamp
+            content.append(Paragraph(f"{msg.get_role_display()} ({msg.timestamp.strftime('%Y-%m-%d %H:%M:%S')}):", role_style))
+            
+            # Add message content
+            content.append(Paragraph(msg.content, normal_style))
+            content.append(Paragraph("---", normal_style))
+            content.append(Spacer(1, 5))
+        
+        # Build the PDF
+        doc.build(content)
+        buffer.seek(0)
+        
+        # Return the PDF
+        response = HttpResponse(buffer, content_type='application/pdf')
+        response['Content-Disposition'] = f'attachment; filename="{filename}.pdf"'
+        return response
+    
+    else:
+        # Default to text format if format is not recognized
+        return HttpResponse("Unsupported format", status=400)

@@ -881,6 +881,9 @@ class ChatUI {
       content: userMessage
     });
     
+    // 立即显示打字指示器，不等待任何处理
+    const assistantTypingElement = this.showTypingIndicator();
+    
     // Set processing state
     this.isProcessing = true;
     
@@ -966,9 +969,6 @@ class ChatUI {
           console.log('[INFO] Updated lastVideoId to:', currentVideoId);
         }
       }
-      
-      // 处理完系统消息后，再显示助手的打字指示器
-      const assistantTypingElement = this.showTypingIndicator();
       
       // Initialize AbortController for canceling request
       this.currentRequest = new AbortController();
@@ -1303,7 +1303,7 @@ class ChatUI {
         notificationSystem.show({
           type: 'warning',
           title: '删除聊天会话',
-          message: '确定要删除当前聊天会话吗？此操作将彻底删除服务器上的会话数据。',
+          message: '确定要删除当前聊天会话吗？此操作将彻底删除服务器上的会话数据，且无法恢复。',
           icon: 'trash',
           // Use new multi-button API
           buttons: [
@@ -1336,7 +1336,7 @@ class ChatUI {
         });
       } else {
         // Use original way as fallback
-        if (confirm('确定要删除当前聊天会话吗？此操作将彻底删除服务器上的会话数据。')) {
+        if (confirm('确定要删除当前聊天会话吗？此操作将彻底删除服务器上的会话数据，且无法恢复。')) {
           this._executeClearChat(true);
         } else {
           this.isConfirmingClear = false;
@@ -1345,7 +1345,7 @@ class ChatUI {
     } catch (error) {
       console.error('[ERROR] Confirm clear chat failed:', error);
       // Use original way as fallback
-      if (confirm('确定要删除当前聊天会话吗？此操作将彻底删除服务器上的会话数据。')) {
+      if (confirm('确定要删除当前聊天会话吗？此操作将彻底删除服务器上的会话数据，且无法恢复。')) {
         this._executeClearChat(true);
       } else {
         this.isConfirmingClear = false;
@@ -1371,29 +1371,24 @@ class ChatUI {
           throw new Error('Unable to determine API base URL');
         }
         
-        // Send API request to delete session
-        try {
-          // 使用end-session端点，因为我们知道这个是有效的
-          const endSessionUrl = `${baseUrl}/chat/end-session/`;
-          console.log('[INFO] Ending chat session at:', endSessionUrl);
-          
-          const response = await fetch(endSessionUrl, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Token ${this.authToken}`
-            }
-          });
-          
-          if (!response.ok) {
-            throw new Error(`Failed to end session: ${response.status}`);
+        // 使用delete端点，真正删除会话而不是结束会话
+        const deleteSessionUrl = `${baseUrl}/chat/session/delete/`;
+        console.log('[INFO] Deleting chat session at:', deleteSessionUrl);
+        
+        const response = await fetch(deleteSessionUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Token ${this.authToken}`
           }
-          
-          const data = await response.json();
-          console.log('[INFO] Server session deleted:', data);
-        } catch (error) {
-          console.error('[ERROR] Delete server session request failed:', error);
+        });
+        
+        if (!response.ok) {
+          throw new Error(`Failed to delete session: ${response.status}`);
         }
+        
+        const data = await response.json();
+        console.log('[INFO] Server session completely deleted:', data);
       }
       
       // Clear chat container
@@ -1781,12 +1776,12 @@ class ChatUI {
         throw new Error('Unable to determine API base URL');
       }
       
-      // 使用end-session端点，因为我们知道这个是有效的
-      const endSessionUrl = `${baseUrl}/chat/end-session/`;
-      console.log('[INFO] Ending chat session at:', endSessionUrl);
+      // 使用delete端点，真正删除会话而不是结束会话
+      const deleteSessionUrl = `${baseUrl}/chat/session/delete/`;
+      console.log('[INFO] Deleting chat session at:', deleteSessionUrl);
       
       // Send API request to end the session
-      const response = await fetch(endSessionUrl, {
+      const response = await fetch(deleteSessionUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -1795,7 +1790,7 @@ class ChatUI {
       });
       
       if (!response.ok) {
-        throw new Error(`Failed to end session: ${response.status}`);
+        throw new Error(`Failed to delete session: ${response.status}`);
       }
       
       const data = await response.json();

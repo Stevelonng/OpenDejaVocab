@@ -47,6 +47,11 @@ When the user inquires about video content or subtitles, provide the relevant in
 You should respond naturally, as if you are part of the video and fully understand its content.
 Provide the corresponding subtitle content directly without explaining the source. If the requested subtitle number is out of range, inform the user that the number exceeds the video's subtitle range.
 If there is no subtitle data, simply inform the user that you cannot access the video content and suggest refreshing the page or reloading the video.
+
+Language Selection Rule:
+- If the user asks questions in Chinese, respond in Chinese.
+- If the user asks questions in English, respond in English.
+- Always match the language used by the user in your responses.
 """
 
 @api_view(['POST'])
@@ -162,9 +167,11 @@ def chat_completion(request):
             session['current_video_id'] = youtube_video_id
             session['current_video_title'] = youtube_video_title
             
-            # Mark as a new session, which will reset the conversation context
-            is_new_session = True
-            session['conversation'] = []
+            # Ensure conversation array exists but don't clear it
+            if 'conversation' not in session:
+                session['conversation'] = []
+            
+            logger.info(f"Video changed from {existing_video_id} to {youtube_video_id}, preserving chat history with {len(session.get('conversation', []))} messages")
         
         # Process subtitle data
         if subtitles_data and youtube_video_id:

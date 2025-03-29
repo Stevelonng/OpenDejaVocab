@@ -1064,6 +1064,12 @@
                             </a>
                         </li>
                         <li class="menu-item">
+                            <a href="{% url 'notes' %}" class="menu-link {% if request.resolver_match.url_name == 'notes' or request.resolver_match.url_name == 'notes_detail' %}active{% endif %}">
+                                <i class="bi bi-journal-richtext menu-icon"></i>
+                                <span>聊天记录</span>
+                            </a>
+                        </li>
+                        <li class="menu-item">
                             <a href="{% url 'word_statistics' %}" class="menu-link {% if request.resolver_match.url_name == 'word_statistics' %}active{% endif %}">
                                 <i class="bi bi-graph-up menu-icon"></i>
                                 <span>学习统计</span>
