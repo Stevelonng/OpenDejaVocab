@@ -1,0 +1,921 @@
+{% extends "api/base.html" %}
+{% load custom_filters %}
+
+{% block title %}我的聊天记录 | Déjà Vocab{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Notes container */
+    .notes-container {
+        position: relative;
+    }
+    
+    /* Page header */
+    .page-header {
+        margin-bottom: 2rem;
+    }
+    
+    .page-title {
+        font-size: 1.875rem;
+        font-weight: 800;
+        color: var(--gray-900);
+        margin-bottom: 0.75rem;
+        letter-spacing: -0.025em;
+        line-height: 1.2;
+    }
+    
+    .dark .page-title {
+        color: white;
+    }
+    
+    .page-description {
+        font-size: 1rem;
+        color: var(--gray-600);
+        max-width: 600px;
+    }
+    
+    .dark .page-description {
+        color: var(--gray-400);
+    }
+    
+    /* Filter section */
+    .filter-section {
+        background-color: white;
+        border-radius: 1rem;
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        border: 1px solid var(--gray-200);
+    }
+    
+    .dark .filter-section {
+        background-color: var(--gray-800);
+        border-color: var(--gray-700);
+    }
+    
+    .filter-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1rem;
+        align-items: center;
+    }
+    
+    .date-filter {
+        position: relative;
+        width: 250px;
+        flex-shrink: 0;
+    }
+    
+    .date-input {
+        width: 100%;
+        padding: 0.625rem 1rem;
+        border: 1px solid var(--gray-300);
+        border-radius: 0.5rem;
+        font-size: 0.875rem;
+        background-color: white;
+        color: var(--gray-900);
+        transition: all 0.2s ease;
+        padding-right: 2.5rem;
+    }
+    
+    .dark .date-input {
+        background-color: var(--gray-700);
+        border-color: var(--gray-600);
+        color: white;
+    }
+    
+    .date-input:focus {
+        border-color: var(--primary-400);
+        box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.25);
+        outline: none;
+    }
+    
+    .date-icon {
+        position: absolute;
+        top: 50%;
+        right: 1rem;
+        transform: translateY(-50%);
+        color: var(--gray-500);
+        pointer-events: none;
+    }
+    
+    .dark .date-icon {
+        color: var(--gray-400);
+    }
+    
+    .search-filter {
+        position: relative;
+        flex-grow: 1;
+    }
+    
+    .search-input {
+        width: 100%;
+        padding: 0.625rem 1rem;
+        border: 1px solid var(--gray-300);
+        border-radius: 0.5rem;
+        font-size: 0.875rem;
+        background-color: white;
+        color: var(--gray-900);
+        transition: all 0.2s ease;
+        padding-left: 2.5rem;
+    }
+    
+    .dark .search-input {
+        background-color: var(--gray-700);
+        border-color: var(--gray-600);
+        color: white;
+    }
+    
+    .search-input:focus {
+        border-color: var(--primary-400);
+        box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.25);
+        outline: none;
+    }
+    
+    .search-icon {
+        position: absolute;
+        top: 50%;
+        left: 1rem;
+        transform: translateY(-50%);
+        color: var(--gray-500);
+        pointer-events: none;
+    }
+    
+    .dark .search-icon {
+        color: var(--gray-400);
+    }
+    
+    .view-toggle {
+        display: flex;
+        align-items: center;
+        border: 1px solid var(--gray-300);
+        border-radius: 0.5rem;
+        overflow: hidden;
+    }
+    
+    .dark .view-toggle {
+        border-color: var(--gray-600);
+    }
+    
+    .view-toggle-btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 40px;
+        height: 40px;
+        background-color: white;
+        color: var(--gray-600);
+        border: none;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+    
+    .dark .view-toggle-btn {
+        background-color: var(--gray-700);
+        color: var(--gray-400);
+    }
+    
+    .view-toggle-btn.active {
+        background-color: var(--primary-500);
+        color: white;
+    }
+    
+    .dark .view-toggle-btn.active {
+        background-color: var(--primary-600);
+    }
+    
+    .view-toggle-btn:hover:not(.active) {
+        background-color: var(--gray-100);
+        color: var(--gray-800);
+    }
+    
+    .dark .view-toggle-btn:hover:not(.active) {
+        background-color: var(--gray-600);
+        color: white;
+    }
+    
+    /* Note card */
+    .note-card {
+        background-color: white;
+        border-radius: 1rem;
+        overflow: hidden;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        border: 1px solid var(--gray-200);
+        transition: all 0.3s ease;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        position: relative;
+    }
+    
+    .dark .note-card {
+        background-color: var(--gray-800);
+        border-color: var(--gray-700);
+    }
+    
+    .note-card:hover {
+        transform: translateY(-6px);
+        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    }
+    
+    .note-card-header {
+        padding: 1.5rem;
+        border-bottom: 1px solid var(--gray-200);
+        background-color: white;
+        color: var(--gray-900);
+    }
+    
+    .dark .note-card-header {
+        border-color: var(--gray-700);
+        background-color: var(--gray-800);
+        color: white;
+    }
+    
+    .note-meta {
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+        font-size: 0.875rem;
+        color: var(--gray-600);
+    }
+    
+    .dark .note-meta {
+        color: var(--gray-400);
+    }
+    
+    .meta-item {
+        display: flex;
+        align-items: center;
+        gap: 0.25rem;
+    }
+    
+    .note-card-body {
+        padding: 1.5rem;
+        flex-grow: 1;
+    }
+    
+    .note-summary {
+        margin-top: 1rem;
+        font-size: 0.9rem;
+        color: var(--gray-600);
+        max-height: 80px;
+        overflow: hidden;
+        position: relative;
+    }
+    
+    .dark .note-summary {
+        color: var(--gray-400);
+    }
+    
+    .note-summary::after {
+        content: "";
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        height: 30px;
+        background: linear-gradient(transparent, white);
+    }
+    
+    .dark .note-summary::after {
+        background: linear-gradient(transparent, var(--gray-800));
+    }
+    
+    .video-thumbnail {
+        width: 100%;
+        height: 160px;
+        overflow: hidden;
+        border-radius: 0.5rem;
+        position: relative;
+        margin-bottom: 0.5rem;
+    }
+    
+    .dark .video-thumbnail {
+        background-color: var(--gray-900);
+    }
+    
+    .video-thumbnail img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+    
+    .video-title {
+        font-size: 0.9rem;
+        font-weight: 500;
+        color: var(--gray-700);
+        margin-bottom: 1rem;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    
+    .dark .video-title {
+        color: var(--gray-300);
+    }
+    
+    .note-card-footer {
+        padding: 1rem 1.5rem;
+        border-top: 1px solid var(--gray-200);
+        display: flex;
+        justify-content: flex-end;
+    }
+    
+    .dark .note-card-footer {
+        border-color: var(--gray-700);
+    }
+    
+    .btn-view-note {
+        padding: 0.625rem 1.25rem;
+        background-color: var(--primary-500);
+        color: white;
+        border: none;
+        border-radius: 0.5rem;
+        font-size: 0.875rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.375rem;
+    }
+    
+    .btn-view-note:hover {
+        background-color: var(--primary-600);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(29, 78, 216, 0.25);
+    }
+    
+    /* Notes grid */
+    .notes-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+    }
+    
+    @media (max-width: 640px) {
+        .notes-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+    
+    /* Notes list */
+    .notes-list {
+        margin-bottom: 2rem;
+    }
+    
+    .note-list-item {
+        background-color: white;
+        border-radius: 1rem;
+        overflow: hidden;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        border: 1px solid var(--gray-200);
+        transition: all 0.3s ease;
+        margin-bottom: 1.5rem;
+        display: flex;
+        gap: 1rem;
+    }
+    
+    .dark .note-list-item {
+        background-color: var(--gray-800);
+        border-color: var(--gray-700);
+    }
+    
+    .note-list-item:hover {
+        transform: translateY(-6px);
+        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    }
+    
+    .note-list-content {
+        padding: 1.5rem;
+        flex-grow: 1;
+    }
+    
+    .note-list-header {
+        margin-bottom: 1rem;
+    }
+    
+    .note-list-meta {
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+        font-size: 0.875rem;
+        color: var(--gray-600);
+    }
+    
+    .dark .note-list-meta {
+        color: var(--gray-400);
+    }
+    
+    .note-list-summary {
+        font-size: 0.95rem;
+        color: var(--gray-700);
+        line-height: 1.6;
+        margin-bottom: 1.5rem;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        display: -webkit-box;
+        -webkit-line-clamp: 3;
+        line-clamp: 3;
+        -webkit-box-orient: vertical;
+    }
+    
+    .dark .note-list-summary {
+        color: var(--gray-300);
+    }
+    
+    .note-list-actions {
+        padding: 1rem 1.5rem;
+        border-top: 1px solid var(--gray-200);
+        display: flex;
+        justify-content: flex-end;
+    }
+    
+    .dark .note-list-actions {
+        border-color: var(--gray-700);
+    }
+    
+    /* Pagination */
+    .pagination-container {
+        margin-top: 2rem;
+    }
+    
+    .pagination {
+        display: flex;
+        justify-content: center;
+        gap: 0.5rem;
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+    
+    .page-item {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 30px;
+        height: 30px;
+        border-radius: 0.5rem;
+        background-color: var(--gray-100);
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+    
+    .dark .page-item {
+        background-color: var(--gray-700);
+    }
+    
+    .page-item:hover {
+        background-color: var(--gray-200);
+    }
+    
+    .dark .page-item:hover {
+        background-color: var(--gray-600);
+    }
+    
+    .page-item.active {
+        background-color: var(--primary-500);
+        color: white;
+    }
+    
+    .dark .page-item.active {
+        background-color: var(--primary-600);
+    }
+    
+    .page-link {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+        height: 100%;
+        color: var(--gray-800);
+        text-decoration: none;
+    }
+    
+    .dark .page-link {
+        color: var(--gray-200);
+    }
+    
+    .video-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .play-button {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background-color: white;
+        color: var(--gray-900);
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+    
+    .play-button:hover {
+        background-color: var(--primary-500);
+        color: white;
+    }
+    
+    .video-list-content {
+        padding: 1rem;
+    }
+    
+    .video-list-title {
+        font-size: 1.125rem;
+        font-weight: 700;
+        color: var(--gray-900);
+        margin-bottom: 0.5rem;
+    }
+    
+    .dark .video-list-title {
+        color: white;
+    }
+    
+    .video-list-meta {
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+        font-size: 0.875rem;
+        color: var(--gray-600);
+    }
+    
+    .dark .video-list-meta {
+        color: var(--gray-400);
+    }
+    
+    .video-meta-item {
+        display: flex;
+        align-items: center;
+        gap: 0.25rem;
+    }
+    
+    .video-list-actions {
+        padding: 1rem;
+        border-top: 1px solid var(--gray-200);
+        display: flex;
+        justify-content: flex-end;
+    }
+    
+    .dark .video-list-actions {
+        border-color: var(--gray-700);
+    }
+    
+    .btn-video {
+        padding: 0.625rem 1.25rem;
+        background-color: var(--primary-500);
+        color: white;
+        border: none;
+        border-radius: 0.5rem;
+        font-size: 0.875rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.375rem;
+    }
+    
+    .btn-video:hover {
+        background-color: var(--primary-600);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(29, 78, 216, 0.25);
+    }
+    
+    .btn-video-primary {
+        background-color: var(--primary-500);
+        color: white;
+    }
+    
+    .btn-video-primary:hover {
+        background-color: var(--primary-600);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="notes-container">
+    <!-- Page header -->
+    <div class="page-header">
+        <h1 class="page-title">我的聊天记录</h1>
+        <p class="page-description">浏览和管理你的所有聊天会话和学习笔记</p>
+    </div>
+    
+    <!-- Filter section -->
+    <div class="filter-section">
+        <div class="filter-row">
+            <div class="date-filter">
+                <input type="date" class="date-input" id="dateFilter" placeholder="按日期筛选">
+                <i class="bi bi-calendar-date date-icon"></i>
+            </div>
+            
+            <div class="search-filter">
+                <input type="text" class="search-input" id="searchFilter" placeholder="搜索聊天记录和笔记...">
+                <i class="bi bi-search search-icon"></i>
+            </div>
+            
+            <div class="view-toggle">
+                <button id="gridViewBtn" class="view-toggle-btn active" title="网格视图">
+                    <i class="bi bi-grid-3x3-gap-fill"></i>
+                </button>
+                <button id="listViewBtn" class="view-toggle-btn" title="列表视图">
+                    <i class="bi bi-list-ul"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    {% if chat_sessions %}
+    <!-- Notes grid -->
+    <div id="notes-grid-view" class="notes-grid">
+        {% for session in chat_sessions %}
+        <div class="note-card" data-date="{{ session.created_at|date:'Y-m-d' }}">
+            <div class="note-card-header">
+                <div class="note-meta">
+                    <span class="meta-item">
+                        <i class="bi bi-clock"></i> {{ session.created_at|date:"Y-m-d H:i" }}
+                    </span>
+                    <span class="meta-item">
+                        <i class="bi bi-chat-dots"></i> {{ session.get_messages_count }} 条消息
+                    </span>
+                    {% if session.get_duration %}
+                    <span class="meta-item">
+                        <i class="bi bi-hourglass-split"></i> {{ session.get_duration }} 分钟
+                    </span>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div class="note-card-body">             
+                {% if session.summary %}
+                <div class="note-summary">
+                    {{ session.summary|format_markdown }}
+                </div>
+                {% endif %}
+            </div>
+            
+            <div class="note-card-footer">
+                <a href="{% url 'notes_detail' session.id %}" class="btn-view-note">
+                    查看详情
+                </a>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    
+    <!-- Notes list -->
+    <div id="notes-list-view" class="notes-list" style="display: none;">
+        {% for session in chat_sessions %}
+        <div class="note-list-item" data-date="{{ session.created_at|date:'Y-m-d' }}">
+            <div class="note-list-content">
+                <div class="note-list-meta">
+                    <div class="video-meta-item">
+                        <i class="bi bi-clock"></i> {{ session.created_at|date:"Y-m-d H:i" }}
+                    </div>
+                    <div class="video-meta-item">
+                        <i class="bi bi-chat-dots"></i> {{ session.get_messages_count }} 条消息
+                    </div>
+                    {% if session.get_duration %}
+                    <div class="video-meta-item">
+                        <i class="bi bi-hourglass-split"></i> {{ session.get_duration }} 分钟
+                    </div>
+                    {% endif %}
+                    {% if session.session_videos.count > 0 %}
+                    <div class="video-meta-item">
+                        <i class="bi bi-film"></i> {{ session.session_videos.count }} 个视频
+                    </div>
+                    {% endif %}
+                </div>
+                {% if session.summary %}
+                <div class="note-list-summary">
+                    {{ session.summary|format_markdown }}
+                </div>
+                {% endif %}
+                <div class="note-list-actions">
+                    <a href="{% url 'notes_detail' session.id %}" class="btn-video btn-video-primary">
+                        <i class="bi bi-file-earmark-text"></i> 查看详情
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    
+    <!-- Pagination -->
+    {% if is_paginated %}
+    <div class="pagination-container">
+        <ul class="pagination">
+            {% if page_obj.has_previous %}
+            <li class="page-item">
+                <a class="page-link" href="?page=1" aria-label="First">
+                    <i class="bi bi-chevron-double-left"></i>
+                </a>
+            </li>
+            <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.previous_page_number }}" aria-label="Previous">
+                    <i class="bi bi-chevron-left"></i>
+                </a>
+            </li>
+            {% endif %}
+            
+            {% for i in paginator.page_range %}
+                {% if page_obj.number == i %}
+                <li class="page-item active">
+                    <span class="page-link">{{ i }}</span>
+                </li>
+                {% elif i > page_obj.number|add:'-3' and i < page_obj.number|add:'3' %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ i }}">{{ i }}</a>
+                </li>
+                {% endif %}
+            {% endfor %}
+            
+            {% if page_obj.has_next %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.next_page_number }}" aria-label="Next">
+                    <i class="bi bi-chevron-right"></i>
+                </a>
+            </li>
+            <li class="page-item">
+                <a class="page-link" href="?page={{ paginator.num_pages }}" aria-label="Last">
+                    <i class="bi bi-chevron-double-right"></i>
+                </a>
+            </li>
+            {% endif %}
+        </ul>
+    </div>
+    {% endif %}
+    
+    {% else %}
+    <div class="alert alert-info">
+        <i class="bi bi-info-circle me-2"></i> 您还没有任何聊天记录。使用Déjà Vocab扩展程序开始对话以创建聊天记录。
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // DOM elements
+        const gridViewBtn = document.getElementById('gridViewBtn');
+        const listViewBtn = document.getElementById('listViewBtn');
+        const notesGridView = document.getElementById('notes-grid-view');
+        const notesListView = document.getElementById('notes-list-view');
+        const dateFilter = document.getElementById('dateFilter');
+        const searchFilter = document.getElementById('searchFilter');
+        
+        // Switch to grid view
+        function switchToGridView() {
+            // Update button states
+            gridViewBtn.classList.add('active');
+            listViewBtn.classList.remove('active');
+            
+            // Show grid, hide list
+            notesGridView.style.display = 'grid';
+            notesListView.style.display = 'none';
+            
+            // Save preference in local storage
+            localStorage.setItem('notesViewPreference', 'grid');
+        }
+        
+        // Switch to list view
+        function switchToListView() {
+            // Update button states
+            gridViewBtn.classList.remove('active');
+            listViewBtn.classList.add('active');
+            
+            // Show list, hide grid
+            notesGridView.style.display = 'none';
+            notesListView.style.display = 'block';
+            
+            // Save preference in local storage
+            localStorage.setItem('notesViewPreference', 'list');
+        }
+        
+        // Filter notes by date
+        function filterByDate() {
+            const selectedDate = dateFilter.value;
+            
+            if (!selectedDate) {
+                // If no date selected, show all notes
+                document.querySelectorAll('.note-card, .note-list-item').forEach(item => {
+                    item.style.display = '';
+                });
+                return;
+            }
+            
+            // Filter both grid and list views
+            document.querySelectorAll('.note-card, .note-list-item').forEach(item => {
+                const noteDate = item.getAttribute('data-date');
+                if (noteDate === selectedDate) {
+                    item.style.display = '';
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+        }
+        
+        // Filter notes by search term
+        function filterBySearch() {
+            const searchText = searchFilter.value.toLowerCase().trim();
+            
+            // Filter both grid and list views
+            document.querySelectorAll('.note-card, .note-list-item').forEach(item => {
+                const summary = item.querySelector('.note-summary, .note-list-summary')?.textContent.toLowerCase() || '';
+                const videoTitle = item.querySelector('.video-title')?.textContent.toLowerCase() || '';
+                const metaText = item.querySelector('.note-meta, .note-list-meta')?.textContent.toLowerCase() || '';
+                
+                // 检查是否匹配任一字段
+                const matches = summary.includes(searchText) || 
+                                videoTitle.includes(searchText) || 
+                                metaText.includes(searchText);
+                                
+                item.style.display = searchText === '' || matches ? '' : 'none';
+            });
+            
+            // 显示空状态
+            toggleEmptyState();
+        }
+        
+        // 初始化视图基于保存的偏好
+        const savedViewPreference = localStorage.getItem('notesViewPreference');
+        if (savedViewPreference === 'list') {
+            switchToListView();
+        } else {
+            switchToGridView();
+        }
+        
+        // 手动加载YouTube缩略图
+        loadYouTubeThumbnails();
+        
+        // Event listeners
+        gridViewBtn.addEventListener('click', switchToGridView);
+        listViewBtn.addEventListener('click', switchToListView);
+        dateFilter.addEventListener('change', filterByDate);
+        searchFilter.addEventListener('input', filterBySearch);
+        
+        // 提取YouTube ID并设置缩略图
+        function loadYouTubeThumbnails() {
+            const videoThumbnails = document.querySelectorAll('.thumbnail-img[data-youtube-url]');
+            console.log('找到', videoThumbnails.length, '个视频缩略图');
+            
+            videoThumbnails.forEach(img => {
+                const youtubeUrl = img.getAttribute('data-youtube-url');
+                console.log('处理URL:', youtubeUrl);
+                
+                if (youtubeUrl) {
+                    const youtubeId = getYoutubeId(youtubeUrl);
+                    console.log('提取ID:', youtubeId);
+                    
+                    if (youtubeId) {
+                        img.src = `https://img.youtube.com/vi/${youtubeId}/mqdefault.jpg`;
+                        console.log('设置缩略图:', img.src);
+                    }
+                }
+            });
+        }
+        
+        // 获取YouTube ID - 使用与useYoutubeInfo.ts一致的方法
+        function getYoutubeId(url) {
+            if (!url) return null;
+            
+            // 匹配标准YouTube URL
+            let match = url.match(/(?:youtube\.com\/(?:[^\/\n\s]+\/\S+\/|(?:v|e(?:mbed)?)\/)|youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
+                          
+            if (match && match[1]) {
+                return match[1];
+            }
+            
+            // 匹配youtube.com/watch?v=视频ID格式
+            match = url.match(/[?&]v=([^&#]*)/);
+            if (match && match[1] && match[1].length === 11) {
+                return match[1];
+            }
+            
+            // 匹配youtu.be/视频ID格式
+            match = url.match(/youtu\.be\/([^\/\?\&]*)/);
+            if (match && match[1] && match[1].length === 11) {
+                return match[1];
+            }
+            
+            return null;
+        }
+    });
+</script>
+{% endblock %}
