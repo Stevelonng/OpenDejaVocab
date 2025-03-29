@@ -33,6 +33,7 @@ class ChatModeManager {
    * @param {Function} config.clearChatHistory - Clear chat history method
    * @param {Function} config.exportChatSession - Export chat session method
    * @param {Function} config.clearServerSession - Clear server session method
+   * @param {Function} config.endServerSession - End server session method
    */
   constructor(config = {}) {
     // Global singleton check
@@ -52,6 +53,8 @@ class ChatModeManager {
     this.exportChatSession = config.exportChatSession || (() => console.log('Export chat session (not implemented)'));
     // Add clear server session callback
     this.clearServerSession = config.clearServerSession || (() => console.log('Clear server session (not implemented)'));
+    // Add end server session callback
+    this.endServerSession = config.endServerSession || (() => console.log('End server session (not implemented)'));
     
     // State properties
     this.currentMode = 'default'; // Default to normal mode
@@ -101,6 +104,8 @@ class ChatModeManager {
     if (config.exportChatSession) this.exportChatSession = config.exportChatSession;
     // Update clear server session callback
     if (config.clearServerSession) this.clearServerSession = config.clearServerSession;
+    // Update end server session callback
+    if (config.endServerSession) this.endServerSession = config.endServerSession;
   }
   
   /**
@@ -173,16 +178,12 @@ class ChatModeManager {
    * @returns {Promise<void>}
    */
   async toggle() {
-    // Record previous mode, used to determine toggle direction
+    // Record previous mode
     const previousMode = this.currentMode;
     
-    // Calculate target mode
-    const targetMode = this.currentMode === 'accumulate' ? 'default' : 'accumulate';
-    
-    console.log('[INFO] Switching chat mode from', this.currentMode, 'to', targetMode);
-    
-    // Switch mode
-    this.currentMode = targetMode;
+    // Toggle mode
+    this.currentMode = this.currentMode === 'default' ? 'accumulate' : 'default';
+    console.log('[INFO] Chat mode toggled to:', this.currentMode);
     
     // Save settings
     await this.saveMode();
@@ -191,13 +192,26 @@ class ChatModeManager {
     // 这确保在进入专注模式时也会清空所有消息
     this.clearChatHistory();
     
-    // 清除后端会话
-    if (this.clearServerSession) {
-      try {
-        console.log('[INFO] Clearing server session when switching chat mode');
-        await this.clearServerSession();
-      } catch (error) {
-        console.error('[ERROR] Failed to clear server session:', error);
+    // 根据不同的模式切换情况，处理后端会话
+    if (previousMode === 'accumulate' && this.currentMode === 'default') {
+      // 从专注模式切换到普通模式时，结束会话但保留历史
+      if (this.endServerSession) {
+        try {
+          console.log('[INFO] Ending server session when switching from accumulate to default mode');
+          await this.endServerSession();
+        } catch (error) {
+          console.error('[ERROR] Failed to end server session:', error);
+        }
+      }
+    } else {
+      // 其他情况（进入专注模式或者在普通模式切换），清除后端会话
+      if (this.clearServerSession) {
+        try {
+          console.log('[INFO] Clearing server session when switching chat mode');
+          await this.clearServerSession();
+        } catch (error) {
+          console.error('[ERROR] Failed to clear server session:', error);
+        }
       }
     }
     

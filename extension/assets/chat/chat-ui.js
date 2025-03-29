@@ -1568,6 +1568,12 @@ class ChatUI {
         console.log('[INFO] Automatically triggered clear server session');
         // Use ChatUI's clear server session method
         return this.clearServerSession();
+      },
+      // Provide end server session method
+      endServerSession: async () => {
+        console.log('[INFO] Automatically triggered end server session');
+        // Use ChatUI's end server session method
+        return this.endServerSession();
       }
     });
     
@@ -1761,13 +1767,54 @@ class ChatUI {
   }
 
   /**
-   * Clear server session - to be used when switching chat modes
-   * Simplified version without notifications
-   * @returns {Promise<void>}
+   * End server session without deleting it (preserve history with summary)
+   * Used when switching from accumulate mode to default mode
+   * @returns {Promise<boolean>} True if success, false otherwise
+   */
+  async endServerSession() {
+    try {
+      console.log('[INFO] Ending server session for mode switch (preserving history)...');
+      
+      // Get base URL
+      const baseUrl = this.getApiBaseUrl();
+      if (!baseUrl) {
+        console.error('[ERROR] Unable to determine API base URL');
+        throw new Error('Unable to determine API base URL');
+      }
+      
+      // 使用end-session端点，结束会话并保存历史
+      const endSessionUrl = `${baseUrl}/chat/end-session/`;
+      console.log('[INFO] Ending chat session at:', endSessionUrl);
+      
+      // Send API request to end the session
+      const response = await fetch(endSessionUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Token ${this.authToken}`
+        }
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Failed to end session: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      console.log('[INFO] Server session ended and saved with summary:', data);
+      return true;
+    } catch (error) {
+      console.error('[ERROR] End server session request failed:', error);
+      return false;
+    }
+  }
+
+  /**
+   * Clear server session by completely deleting it (no preservation)
+   * @returns {Promise<boolean>} True if success, false otherwise
    */
   async clearServerSession() {
     try {
-      console.log('[INFO] Clearing server session for mode switch...');
+      console.log('[INFO] Clearing server session...');
       
       // Get base URL
       const baseUrl = this.getApiBaseUrl();
