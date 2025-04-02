@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 # Gemini API Configuration
 # TODO: Replace with your actual API key
 GEMINI_API_KEY = "YOUR-GEMINI-API-KEY"  # Replace with your actual API key
-GEMINI_MODEL = "gemini-2.0-flash"  # Use the latest available model
+GEMINI_MODEL = "gemini-2.0-flash-lite"  # Use the latest available model
 
 # Cache settings
 CACHE_TIMEOUT = 60 * 60 * 24 * 7  # Session cache retention for 7 days
@@ -49,7 +49,7 @@ Provide the corresponding subtitle content directly without explaining the sourc
 If there is no subtitle data, simply inform the user that you cannot access the video content and suggest refreshing the page or reloading the video.
 
 Language Selection Rule:
-- If the user asks questions in Chinese, respond in Chinese.
+- If the user asks questions in Chinese, respond in Chinese.（只要问题里面有一个中文字，就要用中文回复）
 - If the user asks questions in English, respond in English.
 - Always match the language used by the user in your responses.
 """

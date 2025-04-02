@@ -1,4 +1,3 @@
-
 <div align="center">
   <h3>📚 Learn a language while watching YouTube videos you love! 📚</h3>
 </div>
@@ -138,14 +137,14 @@ We welcome contributions to Déjà Vocab! Check out our [contribution guidelines
   <img src="https://img.shields.io/badge/⭐-Star_if_useful-yellow?style=for-the-badge" alt="Star if useful">
 </div>
 
-## ⭐ Star History
+## ⭐Star History
 
-<a href="https://star-history.com/#Stevelonng/OpenDejaVocab&Date">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=Stevelonng/OpenDejaVocab&type=Date&theme=dark" />
-    <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/svg?repos=Stevelonng/OpenDejaVocab&type=Date" />
-    <img alt="Star History Chart" src="https://api.star-history.com/svg?repos=Stevelonng/OpenDejaVocab&type=Date" />
-  </picture>
+<a href="https://www.star-history.com/#Stevelonng/OpenDejaVocab&Date">
+ <picture>
+   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=Stevelonng/OpenDejaVocab&type=Date&theme=dark" />
+   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/svg?repos=Stevelonng/OpenDejaVocab&type=Date" />
+   <img alt="Star History Chart" src="https://api.star-history.com/svg?repos=Stevelonng/OpenDejaVocab&type=Date" />
+ </picture>
 </a>
 
 ## 📜 License
