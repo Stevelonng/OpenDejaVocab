@@ -1,7 +1,7 @@
 # Déjà Vocab - Aiming to build the ultimate language learning ecosystem
 
 <div align="center">
-  <img src="backend/static/images/deja-logo.jpg" alt="Déjà Vocab Logo" width="200">
+  <img src="backend/static/images/deja-logo.jpg" alt="Déjà Vocab Logo" width="100%">
   <h3>Intelligent YouTube Learning Assistant</h3>
   <p>Automatically captures video subtitles, builds your personal vocabulary, answers questions with AI in real-time, and enhances your language skills while you enjoy videos.</p>
   

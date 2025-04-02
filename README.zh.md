@@ -1,7 +1,7 @@
 # Déjà Vocab - 旨在打造最强大的语言学习生态系统
 
 <div align="center">
-  <img src="backend/static/images/deja-logo.jpg" alt="Déjà Vocab Logo" width="200">
+  <img src="backend/static/images/deja-logo.jpg" alt="Déjà Vocab Logo" width="100%">
   <h3>智能YouTube学习助手</h3>
   <p>自动收集视频字幕，构建个人词典，AI实时解答问题，边看视频边轻松提升语言能力。</p>
   
