@@ -1,9 +1,8 @@
-# Déjà Vocab
-<h3 align="center"><i>旨在打造最强大的语言学习生态系统</i></h3>
-
+<div align="center">
+  <h3>📚 边看喜欢的YouTube视频，边学习语言! 📚</h3>
+</div>
 <div align="center">
   <img src="backend/static/images/deja-logo.jpg" alt="Déjà Vocab Logo" width="100%">
-  <h3>智能YouTube学习助手</h3>
   <p>自动收集视频字幕，构建个人词典，AI实时解答问题，边看视频边轻松提升语言能力。</p>
   
   <p>
@@ -11,7 +10,6 @@
       <img src="https://img.shields.io/badge/Chrome-添加到Chrome-4285F4?style=for-the-badge&logo=google-chrome&logoColor=white" alt="添加到Chrome">
     </a>
   </p>
-  
   <p>
     <a href="https://github.com/Stevelonng/OpenDejaVocab/stargazers">
       <img alt="GitHub 星标" src="https://img.shields.io/github/stars/Stevelonng/OpenDejaVocab?style=flat&logo=github">
@@ -31,18 +29,11 @@
     <a href="README.md">English</a> | 
     <b><a href="#">中文</a></b>
   </p>
-  
-  <p><i>全靠Vibe Coding，没有一行是手写的，因为我还不会😭</i></p>
 </div>
 
 ---
-
-<div align="center">
-  <h3>📚 边看喜欢的YouTube视频，边学习语言! 📚</h3>
-</div>
-
+<h3 align="center"><i>旨在打造最强大的语言学习生态系统</i></h3>
 ## 🚀 快速开始
-
 <details open>
   <summary><b>👆 点击安装</b></summary>
   <ol>
@@ -54,10 +45,6 @@
     <li>使用AI助手解答任何语言问题</li>
   </ol>
 </details>
-
-## 📋 项目概述
-
-Déjà Vocab将YouTube视频转变为语言学习体验，通过提取字幕、提供即时释义和AI驱动的辅助功能，让您在享受喜欢的内容的同时学习语言。
 
 ## ✨ 核心功能
 

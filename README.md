@@ -1,10 +1,10 @@
-# Déjà Vocab
-<h3 align="center"><i>Aiming to build the ultimate language learning ecosystem</i></h3>
 
 <div align="center">
+  <h3>📚 Learn a language while watching YouTube videos you love! 📚</h3>
+</div>
+<div align="center">
   <img src="backend/static/images/deja-logo.jpg" alt="Déjà Vocab Logo" width="100%">
-  <h3>Intelligent YouTube Learning Assistant</h3>
-  <p>Automatically captures video subtitles, builds your personal vocabulary, answers questions with AI in real-time, and enhances your language skills while you enjoy videos.</p>
+  <p>Automatically captures video subtitles, builds your personal vocabulary, answers questions with AI in real-time, and enhances your language skills while you enjoy videos. - Created with Vibe Coding</p>
   
   <p>
     <a href="https://chromewebstore.google.com/detail/deja-vocab/fgoacfcjfdnjgiamkgphccmhcieibmgh">
@@ -26,20 +26,16 @@
       <img alt="License" src="https://img.shields.io/github/license/Stevelonng/OpenDejaVocab?style=flat&logo=apache">
     </a>
   </p>
-  
   <p>
     <b><a href="#">English</a></b> | 
     <a href="README.zh.md">中文</a>
   </p>
-  
-  <p><i>Created with Vibe Coding - not a single line handwritten because I'm still learning! 😭</i></p>
 </div>
 
 ---
+<h3 align="center"><i>Aiming to build the ultimate language learning ecosystem</i></h3>
 
-<div align="center">
-  <h3>📚 Learn a language while watching YouTube videos you love! 📚</h3>
-</div>
+
 
 ## 🚀 Quick Start
 
@@ -54,10 +50,6 @@
     <li>Use the AI assistant for any language questions</li>
   </ol>
 </details>
-
-## 📋 Project Overview
-
-Déjà Vocab transforms YouTube videos into language learning experiences by extracting subtitles, providing instant definitions, and offering AI-powered assistance - all while you enjoy your favorite content.
 
 ## ✨ Core Features
 
