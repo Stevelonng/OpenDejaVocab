@@ -1,4 +1,5 @@
-# Déjà Vocab - Aiming to build the ultimate language learning ecosystem
+# Déjà Vocab
+<h3 align="center"><i>Aiming to build the ultimate language learning ecosystem</i></h3>
 
 <div align="center">
   <img src="backend/static/images/deja-logo.jpg" alt="Déjà Vocab Logo" width="100%">

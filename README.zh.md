@@ -1,4 +1,5 @@
-# Déjà Vocab - 旨在打造最强大的语言学习生态系统
+# Déjà Vocab
+<h3 align="center"><i>旨在打造最强大的语言学习生态系统</i></h3>
 
 <div align="center">
   <img src="backend/static/images/deja-logo.jpg" alt="Déjà Vocab Logo" width="100%">
