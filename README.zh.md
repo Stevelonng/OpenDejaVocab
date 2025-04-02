@@ -1,13 +1,15 @@
 # Déjà Vocab - 旨在做最强的语言学习生态
-<p align="center"><i>全靠Vibe Coding，没有一行是手写的，因为我还不会😭</i></p>
-
-<p align="center">
-  <img src="backend/static/images/logo.JPG" alt="Déjà Vocab Logo" width="200">
-</p>
 
 <div align="center">
+  <img src="backend/static/images/logo.JPG" alt="Déjà Vocab Logo" width="200">
   <h3>智能YouTube学习助手</h3>
-  <p>自动收集视频字幕，构建个人词典，AI实时解答问题，提供个性化学习建议，边看视频边轻松提升语言能力。</p>
+  <p>自动收集视频字幕，构建个人词典，AI实时解答问题，边看视频边轻松提升语言能力。</p>
+  
+  <p>
+    <a href="https://chromewebstore.google.com/detail/deja-vocab/fgoacfcjfdnjgiamkgphccmhcieibmgh">
+      <img src="https://img.shields.io/badge/Chrome-添加到Chrome-4285F4?style=for-the-badge&logo=google-chrome&logoColor=white" alt="添加到Chrome">
+    </a>
+  </p>
   
   <p>
     <a href="#项目概述">项目概述</a> •
@@ -21,6 +23,8 @@
     <a href="README.md">English</a> | 
     <b><a href="#">中文</a></b>
   </p>
+  
+  <p><i>全靠Vibe Coding，没有一行是手写的，因为我还不会😭</i></p>
 </div>
 
 ---
@@ -85,6 +89,13 @@ Déjà Vocab由两个主要部分组成：
 - **与后端API通信**：安全、高效地传输和同步用户数据
 
 ## 安装说明
+
+### Chrome网上应用店安装
+Déjà Vocab现已上线Chrome网上应用店！您可以直接从以下链接安装：
+[https://chromewebstore.google.com/detail/deja-vocab/fgoacfcjfdnjgiamkgphccmhcieibmgh](https://chromewebstore.google.com/detail/deja-vocab/fgoacfcjfdnjgiamkgphccmhcieibmgh)
+
+### 手动安装与开发
+如果您希望手动安装或参与开发，请按照以下步骤操作：
 
 ### 后端部署
 
@@ -235,7 +246,7 @@ Déjà Vocab由两个主要部分组成：
 
 ## 许可证
 
-本项目采用MIT许可证 - 详情见[LICENSE](LICENSE)文件
+本项目采用Apache License 2.0许可证 - 详情见[LICENSE](LICENSE)文件
 
 ## 联系方式
 

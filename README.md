@@ -1,13 +1,15 @@
 # Déjà Vocab
-<p align="center"><i>Created entirely with Vibe Coding - not a single line handwritten because I'm still learning! 😭</i></p>
-
-<p align="center">
-  <img src="backend/static/images/logo.JPG" alt="Déjà Vocab Logo" width="200">
-</p>
 
 <div align="center">
+  <img src="backend/static/images/logo.JPG" alt="Déjà Vocab Logo" width="200">
   <h3>Intelligent YouTube Learning Assistant</h3>
-  <p>Automatically captures video subtitles, builds your personal vocabulary, answers questions with AI in real-time, delivers personalized learning recommendations, and effortlessly enhances your language skills while you enjoy videos.</p>
+  <p>Automatically captures video subtitles, builds your personal vocabulary, answers questions with AI in real-time, and enhances your language skills while you enjoy videos.</p>
+  
+  <p>
+    <a href="https://chromewebstore.google.com/detail/deja-vocab/fgoacfcjfdnjgiamkgphccmhcieibmgh">
+      <img src="https://img.shields.io/badge/Chrome-Add%20to%20Chrome-4285F4?style=for-the-badge&logo=google-chrome&logoColor=white" alt="Add to Chrome">
+    </a>
+  </p>
   
   <p>
     <a href="#project-overview">Overview</a> •
@@ -21,6 +23,8 @@
     <b><a href="#">English</a></b> | 
     <a href="README.zh.md">中文</a>
   </p>
+  
+  <p><i>Created with Vibe Coding - not a single line handwritten because I'm still learning! 😭</i></p>
 </div>
 
 ---
@@ -174,7 +178,7 @@ This feature is particularly useful for developers and testers contributing to t
 
 ## License
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+This project is licensed under the Apache License 2.0 - see the [LICENSE](LICENSE) file for details.
 
 ## Contact
 
