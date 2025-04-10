@@ -5,6 +5,13 @@ import uuid
 import logging
 import time
 import traceback
+import os
+
+# 导入dotenv加载.env文件
+from dotenv import load_dotenv
+
+# 加载.env文件中的环境变量
+load_dotenv()
 from django.core.cache import cache
 from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
@@ -32,8 +39,9 @@ memory = get_memory_instance()
 logger.info(f"Memory system status: {'initialized' if memory else 'not initialized'}")
 
 # Gemini API Configuration
-# TODO: Replace with your actual API key
-GEMINI_API_KEY = "Your-API-Key"  # Use the same API key as in gemini_views.py
+GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "")
+if not GEMINI_API_KEY:
+    logger.warning("未找到GEMINI_API_KEY环境变量，请确保.env文件包含此密钥")
 GEMINI_MODEL = "gemini-2.0-flash-lite"  # Use the latest available model
 
 # Cache settings

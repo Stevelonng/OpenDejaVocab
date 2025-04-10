@@ -5,6 +5,16 @@ import logging
 import os
 import concurrent.futures
 import traceback
+import os
+import logging
+import concurrent.futures
+
+# 导入dotenv加载.env文件
+from dotenv import load_dotenv
+
+# 加载.env文件中的环境变量
+load_dotenv()
+
 from mem0 import Memory
 from mem0.proxy.main import Mem0
 from django.core.cache import cache
@@ -27,8 +37,10 @@ memory_executor = concurrent.futures.ThreadPoolExecutor(max_workers=5)
 # Mem0 API密钥（从环境变量获取）
 MEM0_API_KEY = os.environ.get("MEM0_API_KEY", "")
 
-# 确保设置 OpenAI API 密钥
-OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY", "Your-API-Key")
+# 确保设置 OpenAI API 密钥（从.env文件加载）
+OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY", "")
+if not OPENAI_API_KEY:
+    logger.warning("未找到OPENAI_API_KEY环境变量，请确保.env文件包含此密钥")
 os.environ["OPENAI_API_KEY"] = OPENAI_API_KEY
 
 # 从环境变量获取Qdrant配置

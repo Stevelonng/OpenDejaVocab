@@ -5,6 +5,12 @@ from rest_framework import status
 import os
 import requests
 import logging
+
+# Import dotenv to load environment variables from .env file
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv()
 from google.cloud import translate_v3
 import google.auth
 import google.auth.exceptions
@@ -14,8 +20,10 @@ from google.oauth2 import service_account
 logger = logging.getLogger(__name__)
 
 # Google Translate API settings
-# API Key 方式认证（v2版本）
-GOOGLE_TRANSLATE_API_KEY = os.environ.get("GOOGLE_TRANSLATE_API_KEY", "AIzaSyDZXgU5L5DYEXjtDl4c1k1FEwe0L0h-z2A")
+# API Key authentication method (v2 version)
+GOOGLE_TRANSLATE_API_KEY = os.environ.get("GOOGLE_TRANSLATE_API_KEY", "")
+if not GOOGLE_TRANSLATE_API_KEY:
+    logger.warning("GOOGLE_TRANSLATE_API_KEY environment variable not found. Please make sure it's included in your .env file.")
 GOOGLE_TRANSLATE_URL = "https://translation.googleapis.com/language/translate/v2"
 
 # 服务账号方式认证 (v3 API)

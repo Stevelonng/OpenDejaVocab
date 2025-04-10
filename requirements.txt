@@ -40,6 +40,7 @@ lxml>=4.9.0  # XML/HTML parser for BeautifulSoup
 # Document generation
 python-docx>=0.8.11  # For Word document generation
 reportlab>=3.6.12   # For PDF generation
+python-dotenv
 
 # Markdown support
 markdown>=3.4.1

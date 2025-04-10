@@ -1,5 +1,12 @@
 import logging
 import traceback
+import os
+
+# 导入dotenv加载.env文件
+from dotenv import load_dotenv
+
+# 加载.env文件中的环境变量
+load_dotenv()
 
 
 # 导入内存服务模块
@@ -32,7 +39,9 @@ from google import genai
 logger = logging.getLogger(__name__)
 
 # Get Gemini API key from environment variables
-GEMINI_API_KEY = "Your-API-Key"  # Use the same API key as in gemini_views.py
+GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "")
+if not GEMINI_API_KEY:
+    logger.warning("未找到GEMINI_API_KEY环境变量，请确保.env文件包含此密钥")
 
 # Directly instantiate the client without using the configure method
 client = genai.Client(api_key=GEMINI_API_KEY)
