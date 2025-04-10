@@ -73,6 +73,13 @@
   </ul>
 </details>
 
+## ✨ Core Features
+
+<details>
+  <summary><b>Special Thanks</b></summary>
+  <p>This project leverages <a href="https://github.com/mem0ai/mem0">mem0</a> for memory and context management.</p>
+</details>
+
 ## 📥 Installation and Setup
 
 <details>

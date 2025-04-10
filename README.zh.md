@@ -69,6 +69,12 @@
   </ul>
 </details>
 
+## ✨ 核心功能
+
+<details>
+  <summary><b>特别感谢</b></summary>
+  <p>本项目使用<a href="https://github.com/mem0ai/mem0">mem0</a>提供记忆和上下文管理功能。</p>
+</details>
 
 ## 📥 安装说明
 
