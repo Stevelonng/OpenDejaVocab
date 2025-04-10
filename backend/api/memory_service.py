@@ -28,7 +28,7 @@ memory_executor = concurrent.futures.ThreadPoolExecutor(max_workers=5)
 MEM0_API_KEY = os.environ.get("MEM0_API_KEY", "")
 
 # 确保设置 OpenAI API 密钥
-OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY", "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")
+OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY", "Your-API-Key")
 os.environ["OPENAI_API_KEY"] = OPENAI_API_KEY
 
 # 从环境变量获取Qdrant配置
