@@ -46,6 +46,7 @@ class Subtitle(models.Model):
     text = models.TextField()
     start_time = models.FloatField()  # Time in seconds
     end_time = models.FloatField()    # Time in seconds
+    translation = models.TextField(blank=True)  # 字幕翻译，可以为空
     
     def __str__(self):
         return f"{self.text[:50]}..."

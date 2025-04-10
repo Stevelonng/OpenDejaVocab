@@ -1,7 +1,6 @@
 import re
 import time
 from django.utils import timezone
-from django.contrib.auth.models import User
 from django.http import HttpResponsePermanentRedirect
 from .models import UserSession, UserActivity, UserMetrics
 

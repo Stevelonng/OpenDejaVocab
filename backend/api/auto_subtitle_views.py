@@ -135,8 +135,56 @@ def auto_fetch_subtitles(request):
         
         # Try to get subtitles
         try:
-            # Try to get English subtitles
-            transcript_list = YouTubeTranscriptApi.list_transcripts(video_id)
+            # 配置Webshare代理来解决IP封禁问题
+            from youtube_transcript_api.proxies import WebshareProxyConfig
+            import requests
+            
+            # 使用Webshare代理
+            proxy_config = WebshareProxyConfig(
+                proxy_username="qkapqaxf",  # Webshare代理用户名
+                proxy_password="ykth1r98h37y"  # Webshare代理密码
+            )
+            
+            # 记录我们正在使用的代理信息
+            logger.info(f"使用的Webshare代理设置 - 用户名: {proxy_config.proxy_username}")
+            print(f"\n===> 正在使用Webshare代理 (用户名: {proxy_config.proxy_username}) <===\n")
+            
+            # 我们将使用YouTube Transcript API内置的代理机制来获取字幕
+            # 这样可以验证代理是否起作用
+            
+            # 直接使用代理初始化API并获取字幕列表
+            logger.info("正在使用代理配置初始化YouTube Transcript API...")
+            transcript_api = YouTubeTranscriptApi(proxy_config=proxy_config)
+            transcript_list = transcript_api.list_transcripts(video_id)
+            logger.info("成功使用代理获取字幕列表!")
+            
+            # 在成功获取字幕后验证我们的IP地址
+            try:
+                # 1. 使用代理检查IP
+                # 从 WebshareProxyConfig 获取完整的代理URL
+                proxies = {"http": proxy_config.url, "https": proxy_config.url}
+                proxy_ip_response = requests.get("https://api.ipify.org?format=json", proxies=proxies, timeout=10)
+                
+                if proxy_ip_response.status_code == 200:
+                    proxy_ip = proxy_ip_response.json().get('ip')
+                    logger.info(f"通过代理的IP地址: {proxy_ip}")
+                    print(f"\n===> 通过代理的IP地址: {proxy_ip} <===\n")
+                
+                # 2. 不使用代理检查IP(仅作对比)
+                direct_ip_response = requests.get("https://api.ipify.org?format=json", timeout=10)
+                if direct_ip_response.status_code == 200:
+                    direct_ip = direct_ip_response.json().get('ip')
+                    logger.info(f"直接连接的IP地址: {direct_ip}")
+                    print(f"\n===> 直接连接的IP地址: {direct_ip} <===\n")
+                    
+                # 验证代理是否生效
+                if 'proxy_ip' in locals() and 'direct_ip' in locals() and proxy_ip != direct_ip:
+                    logger.info("代理验证成功: IP地址不同说明代理有效")
+                    print(f"\n===> 代理验证成功！代理IP与直连 IP 不同 <===\n")
+            except Exception as e:
+                logger.warning(f"IP验证时出错: {str(e)}")
+                print(f"\n===> 无法验证IP地址: {str(e)} <===\n")
+            logger.info("成功使用代理获取字幕列表!")
             
             # Prioritize English subtitles
             try:

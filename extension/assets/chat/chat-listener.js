@@ -13,9 +13,6 @@ class ChatListener {
     this.init();
   }
   
-  /**
-   * Initialize chat listener
-   */
   async init() {
     if (this.initialized) return;
     
@@ -41,10 +38,6 @@ class ChatListener {
     }
   }
   
-  /**
-   * Set up custom event listeners
-   * This allows the chat listener to integrate with the updated chat UI
-   */
   setupCustomEventListeners() {
     // Create global function, allowing chat UI to directly trigger subtitle collection
     window.triggerSubtitleCollection = async (videoId) => {
@@ -78,9 +71,6 @@ class ChatListener {
     console.log('[ChatListener] Custom event listeners set up');
   }
   
-  /**
-   * Check if current tab is a YouTube video page
-   */
   async checkCurrentTab() {
     try {
       // Get current active tab
@@ -106,9 +96,6 @@ class ChatListener {
     }
   }
   
-  /**
-   * Handle user send chat message event
-   */
   async handleChatMessageSent(event) {
     try {
       console.log('[ChatListener] Received chat message event');

@@ -17,13 +17,27 @@ from google import genai
 # Setup logging
 logger = logging.getLogger(__name__)
 
+# Import memory service modules
+from .memory_service import (
+    get_memory_instance,
+    add_memory, 
+    retrieve_memories, 
+    reset_all_memories,
+    memory_executor,
+    get_memory_category
+)
+
+# Get memory instance and log status
+memory = get_memory_instance()
+logger.info(f"Memory system status: {'initialized' if memory else 'not initialized'}")
+
 # Gemini API Configuration
 # TODO: Replace with your actual API key
-GEMINI_API_KEY = "YOUR-GEMINI-API-KEY"  # Replace with your actual API key
+GEMINI_API_KEY = "Your-API-Key"  # Use the same API key as in gemini_views.py
 GEMINI_MODEL = "gemini-2.0-flash-lite"  # Use the latest available model
 
 # Cache settings
-CACHE_TIMEOUT = 60 * 60 * 24 * 7  # Session cache retention for 7 days
+CACHE_TIMEOUT = 60 * 30  # 0.5 hours
 
 # Initialize Gemini client
 client = genai.Client(api_key=GEMINI_API_KEY)
@@ -235,6 +249,57 @@ def chat_completion(request):
                 # Add current user message
                 conversation.append({"role": "user", "parts": [{"text": user_message}]})
                 
+                # Initialize user memories
+                user_memories = None
+                
+                # Retrieve relevant memories for the user
+                if memory:
+                    try:
+                        # Try to get memories related to current video first if any
+                        if youtube_video_id:
+                            # Try to find memories related to the current video
+                            video_memories = retrieve_memories(
+                                query=user_message, 
+                                user_id=str(user_id),
+                                limit=3,
+                                youtube_video_id=youtube_video_id
+                            )
+                            
+                            if video_memories and video_memories.get('results') and len(video_memories['results']) > 0:
+                                logger.info(f"Retrieved {len(video_memories['results'])} memories for current video {youtube_video_id}")
+                                user_memories = video_memories
+                        
+                        # If no video-specific memories found or no video is playing, search for general memories
+                        if not user_memories or not user_memories.get('results') or len(user_memories['results']) == 0:
+                            general_memories = retrieve_memories(
+                                query=user_message, 
+                                user_id=str(user_id),
+                                limit=5  # Limit to top 5 most relevant memories
+                            )
+                            
+                            if general_memories and general_memories.get('results'):
+                                logger.info(f"Retrieved {len(general_memories['results'])} general memories for user {user_id}")
+                                user_memories = general_memories
+                            else:
+                                logger.info(f"No memories found for user {user_id}")
+                    except Exception as mem_error:
+                        logger.error(f"Error retrieving memories: {str(mem_error)}")
+                        logger.error(traceback.format_exc())
+                
+                # Add memory context to user message if available
+                if user_memories and user_memories.get('results') and len(user_memories['results']) > 0:
+                    # Format memory results for inclusion
+                    memory_context = "\n\nRELEVANT CONTEXT FROM YOUR MEMORY:\n"
+                    for i, result in enumerate(user_memories['results']):
+                        memory_text = result.get('text', '')
+                        if memory_text:
+                            memory_context += f"{i+1}. {memory_text}\n"
+                    
+                    # Enhance user message with memory context
+                    enhanced_message = user_message + memory_context
+                    conversation[-1]["parts"][0]["text"] = enhanced_message
+                    logger.info(f"Enhanced user message with {len(user_memories['results'])} memory items")
+                
                 # Prepare system instruction for Gemini model
                 system_instruction = SYSTEM_INSTRUCTION
                 
@@ -403,7 +468,8 @@ Response Format:
                     logger.error(f"Error in stream processing: {str(e)}")
                     logger.error(traceback.format_exc())
                     # If an error occurs during processing, send an error message
-                    yield f"data: {json.dumps({'content': '\nAn error occurred. Please try again.', 'done': False})}\n\n"
+                    error_message = {'content': '\nAn error occurred. Please try again.', 'done': False}
+                    yield f"data: {json.dumps(error_message)}\n\n"
                 
                 # Ensure a completion signal is sent in any case
                 yield f"data: {json.dumps({'content': '', 'done': True, 'model': GEMINI_MODEL})}\n\n"
@@ -420,6 +486,29 @@ Response Format:
                         content=full_response,
                         video=video_obj
                     )
+                    
+                    # Store conversation to memory system if available
+                    if memory:
+                        try:
+                            # Get appropriate memory category based on message content and video context
+                            memory_category = get_memory_category(user_message, youtube_video_title)
+                            logger.info(f"Classified memory as: {memory_category}")
+                            
+                            # Submit memory addition task to the executor to handle asynchronously
+                            memory_executor.submit(
+                                add_memory, 
+                                user_message, 
+                                user_id, 
+                                youtube_video_id, 
+                                youtube_video_title, 
+                                full_response,
+                                memory_category  # Pass the determined category
+                            )
+                            logger.info(f"Submitted memory addition task for user {user_id} with category {memory_category}")
+                        except Exception as mem_add_error:
+                            # Log error but don't interrupt main flow
+                            logger.error(f"Error submitting memory task: {str(mem_add_error)}")
+                            logger.error(traceback.format_exc())
                     
                     # If there is no title, automatically generate a session title - new feature
                     if not chat_session.title and chat_session.messages.count() >= 2:
@@ -446,7 +535,8 @@ Response Format:
                 logger.error(f"Error in generate_stream: {str(e)}")
                 logger.error(traceback.format_exc())
                 # Send an error message
-                yield f"data: {json.dumps({'content': '\nAn error occurred. Please try again.', 'done': False})}\n\n"
+                error_message = {'content': '\nAn error occurred. Please try again.', 'done': False}
+                yield f"data: {json.dumps(error_message)}\n\n"
             
             # Asynchronously record user activity
             try:

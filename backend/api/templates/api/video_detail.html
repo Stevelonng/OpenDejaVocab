@@ -132,7 +132,7 @@
     
     .subtitle-container {
         flex: 1;
-        overflow-y: auto;
+        overflow-y: auto; /* 确保垂直滚动 */
         padding: 0.75rem;
     }
     
@@ -728,8 +728,6 @@
         .subtitle-panel {
             position: relative;
             top: 0;
-            height: auto;
-            max-height: 500px;
             order: 2;
         }
         
@@ -912,6 +910,31 @@
         let currentVideoId = "{{ video.youtube_id }}";
         let allSubtitles = {};
         
+        // 设置字幕面板高度与播放器部分匹配
+        function adjustSubtitlePanelHeight() {
+            const playerSection = document.querySelector('.player-card');
+            const subtitlePanel = document.querySelector('.subtitle-panel');
+            const subtitleHeader = document.querySelector('.subtitle-header');
+            const subtitleContainer = document.querySelector('.subtitle-container');
+            
+            if (playerSection && subtitlePanel && subtitleHeader) {
+                const playerHeight = playerSection.offsetHeight;
+                subtitlePanel.style.height = `${playerHeight}px`;
+                
+                if (subtitleContainer) {
+                    const headerHeight = subtitleHeader.offsetHeight;
+                    subtitleContainer.style.height = `${playerHeight - headerHeight}px`;
+                }
+            }
+        }
+        
+        // 初始调整高度
+        setTimeout(adjustSubtitlePanelHeight, 500); // 延迟执行确保元素已加载
+        
+        // 窗口大小改变时重新调整
+        window.addEventListener('resize', adjustSubtitlePanelHeight);
+        
+        // YouTube player initialization
         function onYouTubeIframeAPIReady() {
             // Initialize player but don't load any video
             player = new YT.Player('youtube-player', {

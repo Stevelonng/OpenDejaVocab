@@ -277,7 +277,6 @@ export function useFavoriteWord() {
 
       // Cannot sync to backend without authentication token
       if (!authToken) {
-        console.error('[ERROR] No auth token available for API request');
         return false;  // Default to failed operation when no token
       }
 
@@ -294,8 +293,6 @@ export function useFavoriteWord() {
         `${baseApiUrl}web/toggle-favorite/` : 
         `${baseApiUrl}api/web/toggle-favorite/`;
       
-      console.log(`[DEBUG] Sending favorite toggle request to: ${toggleUrl}`);
-
       // Build request body
       const formData = new FormData();
       formData.append('word', word);
@@ -309,27 +306,20 @@ export function useFavoriteWord() {
         },
         body: formData
       });
-
-      console.log(`[DEBUG] Favorite toggle response status: ${response.status}`);
       
       if (response.ok) {
         const data = await response.json();
         if (data.status === 'success') {
           // Immediately broadcast change to ensure all pages update in real-time
           broadcastFavoriteWordChange(word, data.is_favorite);
-          console.log(`[INFO] Successfully ${data.is_favorite ? 'favorited' : 'unfavorited'} word: ${word}`);
           return data.is_favorite;
         } else {
-          console.error(`[ERROR] API returned error: ${JSON.stringify(data)}`);
           return false;
         }
       } else {
-        const errorText = await response.text();
-        console.error(`[ERROR] API request failed: ${response.status} ${errorText}`);
         return false;
       }
     } catch (error) {
-      console.error(`[ERROR] Exception in syncFavoriteWordWithBackend:`, error);
       return false;
     }
   };

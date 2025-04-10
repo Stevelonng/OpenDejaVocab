@@ -19,7 +19,7 @@ import {
  */
 
 // Default API configuration (production environment only)
-const DEFAULT_API_URL = 'https://dejavocab.com/';
+const DEFAULT_API_URL = 'http://47.245.54.174:8000/';
 
 // Create auto subtitle hook
 export function useAutoSubtitles() {
@@ -64,7 +64,6 @@ export function useAutoSubtitles() {
     // If API URL is not configured, use default production environment
     if (!apiUrl) {
       apiUrl = DEFAULT_API_URL;
-      console.log('[Auto Subtitle] Using default production API:', apiUrl);
     }
     
     // Ensure URL ends with "/"
@@ -82,7 +81,6 @@ export function useAutoSubtitles() {
       
       // Check if auto collection is enabled
       if (!isAutoCollectEnabled.value) {
-        console.log('[Auto Subtitle] Auto collection is disabled');
         isLoading.value = false;
         return;
       }
@@ -90,16 +88,13 @@ export function useAutoSubtitles() {
       // Get current video information
       const videoInfo = await getCurrentVideoInfo();
       if (!videoInfo) {
-        console.log('[Auto Subtitle] Unable to get video information');
         error.value = 'Unable to get video information';
         isLoading.value = false;
         return;
       }
       
       // Check if subtitles are already saved in local storage
-      console.log('[Auto Subtitle] Checking if subtitles are already saved locally:', videoInfo.videoId);
       if (await hasLocalSubtitles(videoInfo.videoId)) {
-        console.log('[Auto Subtitle] Subtitles already exist locally, skipping collection');
         isLoading.value = false;
         return;
       }
@@ -108,21 +103,18 @@ export function useAutoSubtitles() {
       const { baseUrl, authToken } = await getApiBaseUrl();
       
       if (!baseUrl) {
-        console.log('[Auto Subtitle] Unable to determine API URL');
         error.value = 'Unable to determine API URL';
         isLoading.value = false;
         return;
       }
       
       if (!authToken) {
-        console.log('[Auto Subtitle] No authentication token found, login required to use auto subtitle feature');
         error.value = 'Not logged in, please login first';
         isLoading.value = false;
         return;
       }
             
       // Call auto subtitle API to get subtitles
-      console.log('[Auto Subtitle] Starting subtitle retrieval for video:', videoInfo.videoId);
       const response = await fetch(`${baseUrl}auto-subtitles/?url=${encodeURIComponent(videoInfo.url)}`, {
         headers: {
           'Authorization': `Token ${authToken}`
@@ -131,9 +123,6 @@ export function useAutoSubtitles() {
       
       if (!response.ok) {
         if (response.status === 404) {
-          // 404 error usually means no subtitles found or video doesn't exist
-          console.log('[Auto Subtitle] No subtitles available for this video');
-          
           // Record to local storage to avoid repeated attempts
           const noSubtitleVideos = await browser.storage.local.get(['noSubtitleVideos']) as { noSubtitleVideos?: string[] };
           const videos = noSubtitleVideos.noSubtitleVideos || [];
@@ -141,20 +130,17 @@ export function useAutoSubtitles() {
           if (!videos.includes(videoInfo.videoId)) {
             videos.push(videoInfo.videoId);
             await browser.storage.local.set({ noSubtitleVideos: videos });
-            console.log('[Auto Subtitle] Video marked as no subtitles:', videoInfo.videoId);
           }
           
           error.value = 'No subtitles available for this video';
           isLoading.value = false;
           return;
         } else if (response.status === 401 || response.status === 403) {
-          console.log('[Auto Subtitle] Authentication failed, please login again');
           showNotification('Authentication failed, please login to your DejaVocab account again');
           error.value = 'Authentication failed, please login again';
           isLoading.value = false;
           return;
         } else {
-          console.log(`[Auto Subtitle] Retrieval failed: ${response.status} ${response.statusText}`);
           showNotification(`Failed to get subtitles (${response.status}), please try again later`);
           error.value = `Retrieval failed: ${response.status}`;
           isLoading.value = false;
@@ -171,15 +157,12 @@ export function useAutoSubtitles() {
         // Save to local storage
         await saveSubtitlesToStorage({ subtitles: formattedSubtitles, videoInfo });
         
-        console.log('[Auto Subtitle] Successfully collected:', formattedSubtitles.length, 'subtitles');
       } else {
-        console.log('[Auto Subtitle] Returned data format is incorrect');
         error.value = 'Returned data format is incorrect';
       }
       
       isLoading.value = false;
     } catch (err) {
-      console.error('[Auto Subtitle] Error:', err);
       error.value = err instanceof Error ? err.message : 'Unknown error';
       isLoading.value = false;
     }
@@ -195,7 +178,6 @@ export function useAutoSubtitles() {
       // Check if URL has changed
       if (window.location.href !== lastUrl) {
         // URL has changed, possibly a new video
-        console.log('[Auto Subtitle] URL change detected:', lastUrl, '->', window.location.href);
         lastUrl = window.location.href;
         
         // If it's a YouTube video page, try to get subtitles for the new video

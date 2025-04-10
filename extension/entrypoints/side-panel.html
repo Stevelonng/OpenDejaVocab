@@ -14,6 +14,8 @@
   <link href="../assets/guide/youtube-guide.css" rel="stylesheet">
   <!-- Introduces chat interface styles -->
   <link id="chat-ui-css" href="../assets/chat/chat-ui.css" rel="stylesheet">
+  <!-- Introduces custom link styles -->
+  <link href="../assets/chat/convo.css" rel="stylesheet">
   <!-- Introduces notification system styles -->
   <link href="../assets/notification/notification.css" rel="stylesheet">
 </head>
@@ -63,7 +65,7 @@
           <h1 class="brand-name">Déjà <span class="accent-text">Vocab</span></h1>
         </div>
         <div class="header-controls">
-          <a href="https://dejavocab.com" target="_blank" class="website-link" title="访问官方网站">
+          <a href="http://47.245.54.174:8000" target="_blank" class="website-link" title="访问官方网站">
             <i class="bi bi-globe"></i>
             <span>官网</span>
           </a>
@@ -158,12 +160,24 @@
               </div>
             </div>
             
-            <button id="register-button" class="btn btn-primary">
-              <span class="btn-text">创建账户</span>
-              <div class="btn-loader hidden">
-                <div class="spinner"></div>
+            <div class="flex items-center justify-between mt-4">
+              <div class="privacy-policy-checkbox">
+                <input type="checkbox" id="privacy-checkbox" class="mr-2">
+                <label for="privacy-checkbox" class="text-sm text-gray-600">
+                  我已阅读并同意
+                  <a href="#" id="register-privacy-link" class="text-primary hover:text-primary-dark">
+                    <i class="bi bi-shield-check"></i>
+                    隐私政策
+                  </a>
+                </label>
               </div>
-            </button>
+              <button id="register-button" class="btn btn-primary" disabled>
+                <span class="btn-text">创建账户</span>
+                <div class="btn-loader hidden">
+                  <div class="spinner"></div>
+                </div>
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -199,11 +213,11 @@
         </div>
         
         <div class="supported-sites">
-          <a href="https://www.youtube.com" class="site-link" target="_blank">
+          <a href="https://www.youtube.com" class="site-link current-tab-link" target="_blank">
             <i class="bi bi-youtube"></i> 
             <span>YouTube</span>
           </a>
-          <a href="https://dejavocab.com" class="site-link" target="_blank">
+          <a href="http://47.245.54.174:8000" class="site-link" target="_blank">
             <i class="bi bi-globe"></i> 
             <span>Déjà Vocab</span>
           </a>
@@ -215,7 +229,7 @@
     <div id="main-container" class="chat-main-container hidden">
       <div class="chat-container" id="chat-container">
         <div class="chat-header">
-          <a href="https://dejavocab.com" target="_blank" class="header-left" title="访问官方网站">
+          <a href="http://47.245.54.174:8000" target="_blank" class="header-left" title="访问官方网站">
             <div class="logo-icon mini">
               <svg height="28" version="1.1" viewBox="0 0 42 42" width="28">
                 <defs>
@@ -273,9 +287,8 @@
             </button>
           </form>
           <div class="notes-export-container">
-            <!-- Remove session export button, only keep mode toggle button -->
-            <button id="chat-mode-toggle" class="mode-toggle-button small-toggle">
-              <i class="bi bi-layers"></i> 专注模式
+            <button id="memory-mode-toggle" class="mode-toggle-button small-toggle">
+              <i class="bi bi-bookmark"></i> 记忆模式
             </button>
           </div>
         </div>
@@ -297,11 +310,8 @@
       document.addEventListener('DOMContentLoaded', () => {
         // Avoid duplicate initialization
         if (window.NOTIFICATION_SYSTEM_INITIALIZED) {
-          console.log('[INFO] Notification system already initialized');
           return;
         }
-        
-        console.log('[INFO] Initializing notification system');
         
         // Get instance and initialize
         const notificationSystem = NotificationSystem.getInstance();
@@ -309,8 +319,29 @@
         
         // Mark as initialized
         window.NOTIFICATION_SYSTEM_INITIALIZED = true;
+        
+        // Add handler for YouTube links to open in current tab
+        document.addEventListener('click', (event) => {
+          // Check if the clicked element is a link with current-tab-link class
+          if (event.target.closest('.current-tab-link')) {
+            event.preventDefault();
+            
+            // Get the URL from the clicked link
+            const linkElement = event.target.closest('.current-tab-link');
+            const url = linkElement.getAttribute('href');
+            
+            // Use Chrome extension API to update the current tab
+            if (url && chrome && chrome.tabs) {
+              chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
+                if (tabs[0]) {
+                  chrome.tabs.update(tabs[0].id, {url: url});
+                }
+              });
+            }
+          }
+        });
       });
     </script>
   </div>
   </body>
-</html> 
+</html>

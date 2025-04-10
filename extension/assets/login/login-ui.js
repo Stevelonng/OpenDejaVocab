@@ -2,10 +2,7 @@
 import browser from 'webextension-polyfill';
 import ChatUI from '../chat/chat-ui.js';
 
-/**
- * Déjà Vocab - Enhanced Login UI
- * Modern authentication interface with improved UX and animations
- */
+
 class LoginUI {
   // Singleton instance
   static instance = null;
@@ -22,7 +19,7 @@ class LoginUI {
 
   constructor() {
     // API URL setting
-    this.apiUrl = 'https://dejavocab.com/api/';
+    this.apiUrl = 'http://47.245.54.174:8000/api/';
     this.environment = 'production';
     this.darkMode = true; // Dark mode state - default enabled
     
@@ -49,6 +46,8 @@ class LoginUI {
       registerEmail: null,
       registerPassword: null,
       registerConfirmPassword: null,
+      registerPrivacyLink: null,
+      privacyCheckbox: null,
       
       // Password toggle buttons
       passwordToggles: []
@@ -67,6 +66,7 @@ class LoginUI {
     this.toggleDarkMode = this.toggleDarkMode.bind(this);
     this.loadDarkModeSetting = this.loadDarkModeSetting.bind(this);
     this.saveDarkModeSetting = this.saveDarkModeSetting.bind(this);
+    this.updateRegisterButtonState = this.updateRegisterButtonState.bind(this);
   }
 
   /**
@@ -174,9 +174,6 @@ class LoginUI {
     }
   }
 
-  /**
-   * Hide YouTube guide interface
-   */
   hideYouTubeGuide() {
     const guideContainer = document.getElementById('youtube-guide');
     if (guideContainer) {
@@ -185,9 +182,6 @@ class LoginUI {
     }
   }
   
-  /**
-   * Initialize page element references
-   */
   initElements() {
     console.log('[INFO] Initializing page element references');
     
@@ -212,6 +206,8 @@ class LoginUI {
     this.elements.registerEmail = document.getElementById('register-email');
     this.elements.registerPassword = document.getElementById('register-password');
     this.elements.registerConfirmPassword = document.getElementById('register-confirm-password');
+    this.elements.registerPrivacyLink = document.getElementById('register-privacy-link');
+    this.elements.privacyCheckbox = document.getElementById('privacy-checkbox');
     
     // Password toggle buttons
     this.elements.passwordToggles = document.querySelectorAll('.toggle-password');
@@ -226,9 +222,6 @@ class LoginUI {
     }
   }
 
-  /**
-   * Set up all event listeners
-   */
   setupEventListeners() {
     console.log('[INFO] Setting up event listeners');
     
@@ -243,11 +236,20 @@ class LoginUI {
     
     // Dark mode toggle
     this.setupDarkModeToggle();
+    
+    // Add privacy policy link click handler
+    this.elements.registerPrivacyLink.addEventListener('click', (e) => {
+      e.preventDefault();
+      // Open privacy policy in new tab
+      window.open(this.apiUrl + 'privacy-policy/', '_blank');
+    });
+
+    // Add privacy checkbox change handler
+    this.elements.privacyCheckbox.addEventListener('change', () => {
+      this.updateRegisterButtonState();
+    });
   }
 
-  /**
-   * Set up tab switching event
-   */
   setupTabSwitching() {
     const { loginTab, registerTab, loginContent, registerContent, tabIndicator } = this.elements;
     
@@ -272,9 +274,6 @@ class LoginUI {
     });
   }
 
-  /**
-   * Set up form submission event
-   */
   setupFormSubmission() {
     const { loginButton, registerButton, loginEmail, loginPassword } = this.elements;
     
@@ -297,9 +296,6 @@ class LoginUI {
     }
   }
 
-  /**
-   * Set up dark mode toggle event
-   */
   setupDarkModeToggle() {
     const darkModeToggle = document.getElementById('login-dark-mode-toggle');
     if (!darkModeToggle) return;
@@ -307,9 +303,6 @@ class LoginUI {
     darkModeToggle.addEventListener('click', this.toggleDarkMode);
   }
 
-  /**
-   * Set up password visibility toggle
-   */
   setupPasswordToggle() {
     const { passwordToggles } = this.elements;
     
@@ -332,9 +325,6 @@ class LoginUI {
     });
   }
 
-  /**
-   * Check if user is already logged in
-   */
   async checkLoginStatus() {
     console.log('[INFO] Checking user login status');
     
@@ -351,9 +341,6 @@ class LoginUI {
     }
   }
 
-  /**
-   * Handle login request
-   */
   async handleLogin() {
     const { loginButton, loginEmail, loginPassword, loginStatus } = this.elements;
     
@@ -444,30 +431,8 @@ class LoginUI {
         const userId = data.user_id || data.userId || '';
         const username = data.username || '';
         
-        // Use notification system to display login success
-        if (window.NotificationSystem) {
-          const notificationSystem = window.NotificationSystem.getInstance();
-          notificationSystem.show({
-            type: 'success',
-            title: 'Login successful',
-            message: `<div style="text-align: center;">
-              <p><strong>Welcome back, ${username}!</strong></p>
-              <p>Preparing your personalized learning environment...</p>
-            </div>`,
-            icon: 'check-circle',
-            buttonText: 'Start learning',
-            allowHTML: true,
-            autoClose: true,
-            autoCloseDelay: 2000
-          });
-        } else {
-          this.showStatus('Login successful!', 'success');
-        }
-        
-        // Delay displaying chat interface to allow user to see success message
-        setTimeout(() => {
-          this.showLoggedInState(data.token, userId, username);
-        }, 1000);
+        // Immediately show the chat interface without notifications
+        this.showLoggedInState(data.token, userId, username);
       } else {
         // Use notification system to display error
         if (window.NotificationSystem) {
@@ -503,9 +468,6 @@ class LoginUI {
     }
   }
 
-  /**
-   * Handle registration request
-   */
   async handleRegister() {
     const { 
       registerButton, registerName, registerEmail, 
@@ -552,6 +514,24 @@ class LoginUI {
         });
       } else {
         alert('Passwords do not match');
+      }
+      this.setButtonLoading(registerButton, false);
+      return;
+    }
+    
+    if (!this.elements.privacyCheckbox.checked) {
+      if (window.NotificationSystem) {
+        const notificationSystem = window.NotificationSystem.getInstance();
+        notificationSystem.show({
+          type: 'error',
+          title: 'Registration failed',
+          message: 'Please agree to the privacy policy',
+          icon: 'exclamation-triangle',
+          buttonText: 'I understand',
+          allowHTML: true
+        });
+      } else {
+        alert('Please agree to the privacy policy');
       }
       this.setButtonLoading(registerButton, false);
       return;
@@ -660,9 +640,6 @@ class LoginUI {
     }
   }
 
-  /**
-   * Set button loading state
-   */
   setButtonLoading(button, isLoading) {
     if (!button) return;
     
@@ -680,9 +657,6 @@ class LoginUI {
     }
   }
 
-  /**
-   * Display status message
-   */
   showStatus(message, type = 'info') {
     const { loginStatus } = this.elements;
     if (!loginStatus) return;
@@ -698,12 +672,9 @@ class LoginUI {
     loginStatus.classList.remove('hidden');
   }
 
-  /**
-   * Update API URL
-   */
   updateApiUrl() {
-    // Always use localhost environment
-    this.apiUrl = 'https://dejavocab.com/api/';
+    // Always use 47.245.57.52 environment
+    this.apiUrl = 'http://47.245.54.174:8000/api/';
     
     console.log('[INFO] Updated API URL to', this.apiUrl);
     
@@ -712,9 +683,20 @@ class LoginUI {
       .then(() => console.log('[INFO] API URL updated'));
   }
 
-  /**
-   * Display logged in state (switch to chat interface)
-   */
+  updateRegisterButtonState() {
+    const isCheckboxChecked = this.elements.privacyCheckbox.checked;
+    this.elements.registerButton.disabled = !isCheckboxChecked;
+    
+    // Update button appearance
+    if (isCheckboxChecked) {
+      this.elements.registerButton.classList.remove('opacity-50');
+      this.elements.registerButton.classList.add('opacity-100');
+    } else {
+      this.elements.registerButton.classList.remove('opacity-100');
+      this.elements.registerButton.classList.add('opacity-50');
+    }
+  }
+
   showLoggedInState(token, userId, username) {
     console.log('[INFO] Displaying logged in state');
     
@@ -725,48 +707,70 @@ class LoginUI {
       username: username
     }).then(() => {
       console.log('[INFO] User information saved');
-    }).catch(error => {
-      console.error('[ERROR] Error saving user information:', error);
-    });
-    
-    // Get login interface and chat interface elements
-    const authContainer = document.getElementById('auth-main-content');
-    const chatContainer = document.getElementById('main-container');
-    
-    // Hide login interface
-    if (authContainer) {
-      authContainer.classList.add('hidden');
-    }
-    
-    // Display chat interface
-    if (chatContainer) {
-      chatContainer.classList.remove('hidden');
+      
+      // Get login interface and chat interface elements
+      const authContainer = document.getElementById('auth-main-content');
+      const chatContainer = document.getElementById('main-container');
+      
+      // Hide login interface
+      if (authContainer) {
+        authContainer.classList.add('hidden');
+      }
       
       // Initialize chat interface
       try {
         console.log('[INFO] Initializing chat interface after login');
         
-        // Reset global initialization flag to fix non-responsive issue, but do not create a new instance
-        if (window.CHAT_UI_INITIALIZED) {
-          console.log('[INFO] Found initialized ChatUI, resetting global flag');
-          window.CHAT_UI_INITIALIZED = false;
+        // Reset global initialization flags
+        window.CHAT_UI_INITIALIZED = false;
+        window.URL_MONITOR_INITIALIZED = false;
+        if (window.URL_MONITOR_INTERVAL) {
+          clearInterval(window.URL_MONITOR_INTERVAL);
+          window.URL_MONITOR_INTERVAL = null;
         }
         
-        // Use a short delay to ensure DOM is fully ready and browser storage is updated
-        setTimeout(() => {
-          // Use the proper global getter method instead of creating a new instance
-          // This will utilize the existing singleton pattern and initialization check
-          const chatUI = window.getChatUI();
+        // Reset instance if it exists
+        if (window.CHAT_UI_INSTANCE) {
+          window.CHAT_UI_INSTANCE = null;
+        }
+        
+        console.log('[INFO] Performing full initialization after login');
+        // Use getInstance directly and call init() - similar to refresh flow
+        const chatUI = ChatUI.getInstance();
+        
+        // Force a complete initialization - identical to refresh path
+        chatUI.init().then(() => {
+          console.log('[INFO] Chat UI initialization complete after login');
           
-          // Ensure future calls to getChatUI() return this valid instance
-          window.CHAT_UI_INITIALIZED = true;
-          
-          // Attempt to focus input box
-          const inputBox = document.getElementById('chat-input');
-          if (inputBox) {
-            inputBox.focus();
+          // Now check if we're on YouTube before showing the interface
+          if (chatUI.stateManager) {
+            // Check if we're on YouTube
+            chatUI.stateManager.checkIfYouTube().then(isYouTube => {
+              if (isYouTube) {
+                // On YouTube - show chat interface
+                if (chatContainer) {
+                  chatContainer.classList.remove('hidden');
+                  document.body.classList.add('chat-active');
+                }
+                chatUI.stateManager.activateChatView();
+              } else {
+                // Not on YouTube - keep chat interface hidden
+                if (chatContainer) {
+                  chatContainer.classList.add('hidden');
+                }
+                chatUI.stateManager.deactivateChatView();
+              }
+            });
           }
-        }, 300); // 300ms delay to ensure DOM and storage updates
+          
+          // Attempt to focus input box if on YouTube
+          setTimeout(() => {
+            const inputBox = document.getElementById('chat-input');
+            if (inputBox && chatContainer && !chatContainer.classList.contains('hidden')) {
+              inputBox.focus();
+            }
+          }, 500);
+        });
       } catch (error) {
         console.error('[ERROR] Error initializing chat interface:', error);
         
@@ -791,10 +795,7 @@ class LoginUI {
           });
         });
       }
-    }
-    
-    // Add logged in state class to body
-    document.body.classList.add('chat-active');
+    });
   }
 }
 

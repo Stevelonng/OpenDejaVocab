@@ -343,6 +343,93 @@
         color: #f59e0b;
     }
     
+    /* 隐私政策复选框样式 */
+    .privacy-policy-checkbox {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        margin-bottom: 1.5rem;
+        padding: 0.75rem;
+        border-radius: 0.75rem;
+        background-color: rgba(255, 255, 255, 0.9);
+        transition: all 0.3s ease;
+        position: relative;
+    }
+
+    .dark .privacy-policy-checkbox {
+        background-color: rgba(30, 41, 59, 0.7);
+    }
+
+    .privacy-policy-checkbox:hover {
+        background-color: rgba(255, 255, 255, 0.95);
+    }
+
+    .dark .privacy-policy-checkbox:hover {
+        background-color: rgba(30, 41, 59, 0.85);
+    }
+
+    .privacy-policy-checkbox input[type="checkbox"] {
+        width: 1.25rem;
+        height: 1.25rem;
+        border: 2px solid var(--gray-300);
+        border-radius: 0.375rem;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        top: 0.5rem;
+        left: 0.5rem;
+    }
+
+    .dark .privacy-policy-checkbox input[type="checkbox"] {
+        border-color: var(--gray-600);
+    }
+
+    .privacy-policy-checkbox input[type="checkbox"]:checked {
+        background-color: var(--primary-600);
+        border-color: var(--primary-600);
+        background-image: url("data:image/svg+xml,%3Csvg width='16' height='12' viewBox='0 0 16 12' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1.5 6L6 10.5L14.5 1.5' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: center;
+        background-size: 12px 12px;
+    }
+
+    .privacy-policy-checkbox .privacy-policy-label {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        color: var(--gray-600);
+        font-size: 0.95rem;
+        cursor: pointer;
+        flex: 1;
+        margin-left: 2.5rem;
+    }
+
+    .dark .privacy-policy-checkbox .privacy-policy-label {
+        color: var(--gray-400);
+    }
+
+    .privacy-policy-checkbox .privacy-policy-label a {
+        color: var(--primary-600);
+        text-decoration: none;
+        font-weight: 500;
+    }
+
+    .dark .privacy-policy-checkbox .privacy-policy-label a {
+        color: var(--primary-400);
+    }
+
+    .privacy-policy-checkbox .privacy-policy-label a:hover {
+        color: var(--primary-700);
+        text-decoration: underline;
+    }
+
+    .dark .privacy-policy-checkbox .privacy-policy-label a:hover {
+        color: var(--primary-300);
+    }
+
+    .privacy-policy-checkbox .privacy-policy-label a i {
+        font-size: 1rem;
+    }
+    
     /* 动画效果 */
     @keyframes fadeInUp {
         from {
@@ -421,9 +508,20 @@
                     <label for="password2">确认密码</label>
                     <div class="invalid-feedback">请再次输入密码</div>
                 </div>
-                
+
+                <div class="privacy-policy-checkbox">
+                    <input type="checkbox" id="privacy-policy" name="privacy-policy" required>
+                    <div class="privacy-policy-label">
+                        我已阅读并同意
+                        <a href="{% url 'privacy_policy' %}" target="_blank">
+                            <i class="bi bi-shield-check"></i>
+                            隐私政策
+                        </a>
+                    </div>
+                </div>
+
                 <div class="d-grid">
-                    <button type="submit" class="btn btn-register">
+                    <button type="submit" class="btn btn-register" id="register-submit" disabled>
                         <i class="bi bi-person-plus"></i>创建账号
                     </button>
                 </div>
@@ -452,6 +550,18 @@
         
         Array.from(forms).forEach(form => {
             const inputs = form.querySelectorAll('input');
+            const submitButton = document.getElementById('register-submit');
+            const privacyCheckbox = document.getElementById('privacy-policy');
+            
+            // 初始化时检查隐私政策复选框
+            updateSubmitButtonState();
+            
+            // 监听隐私政策复选框变化
+            privacyCheckbox.addEventListener('change', updateSubmitButtonState);
+            
+            function updateSubmitButtonState() {
+                submitButton.disabled = !privacyCheckbox.checked;
+            }
             
             inputs.forEach(input => {
                 // 初始化时检查是否已有值（比如浏览器自动填充）

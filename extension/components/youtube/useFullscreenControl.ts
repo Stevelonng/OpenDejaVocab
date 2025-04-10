@@ -99,7 +99,7 @@ export function useFullscreenControl(
    */
   const createEnhancedToggleFullscreen = (
     fetchSubtitles: (forceRefresh: boolean, collect: boolean) => Promise<void>,
-    captureVideo: (updateFn: (time: number) => void) => boolean
+    captureVideo: (updateFn: (time: number) => void) => boolean | Promise<boolean>
   ) => {
     return async () => {
       // Fetch subtitles before entering fullscreen mode
@@ -108,8 +108,17 @@ export function useFullscreenControl(
         await fetchSubtitles(false, true); // Call subtitle fetch function, second parameter indicates subtitles should be collected
       }
       
-      // Call the basic fullscreen toggle function
-      toggleFullscreen(() => captureVideo((time) => {}));
+      // Call the basic fullscreen toggle function with async support
+      toggleFullscreen(() => {
+        const result = captureVideo((time) => {});
+        // 如果result是Promise，处理它并返回true以保持toggleFullscreen行为一致
+        if (result instanceof Promise) {
+          // 执行Promise，但仍然返回true继续执行
+          result.catch(err => console.error('Error in async captureVideo:', err));
+          return true;
+        }
+        return result;
+      });
     };
   };
   

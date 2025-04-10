@@ -20,10 +20,11 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-ax7%t=&q&36xj4%#237wz_u%%=6@r)!s!s$ii19afh(g5rpy!i'
+import os
+SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', 'django-insecure-ax7%t=&q&36xj4%#237wz_u%%=6@r)!s!s$ii19afh(g5rpy!i')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.environ.get('DJANGO_DEBUG', 'False').lower() == 'true'
 
 ALLOWED_HOSTS = [
     'localhost',
@@ -36,6 +37,8 @@ ALLOWED_HOSTS = [
     'www.linkiai.com',   # Include www subdomain
     '0b55-104-234-99-10.ngrok-free.app',  # ngrok domain
     '*.ngrok-free.app',  # Support all ngrok domains
+    '47.245.57.52',     # 阿里云服务器IP
+    '*',                # 允许所有主机（可选，在部署测试期间使用）
 ]
 
 
@@ -144,6 +147,25 @@ STATIC_ROOT = BASE_DIR / 'static'
 MEDIA_URL = 'media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
+# 生产环境安全设置
+if not DEBUG:
+    # 启用HTTPS相关设置
+    SECURE_SSL_REDIRECT = os.environ.get('DJANGO_SECURE_SSL_REDIRECT', 'False').lower() == 'true'
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    SECURE_BROWSER_XSS_FILTER = True
+    SECURE_CONTENT_TYPE_NOSNIFF = True
+    
+    # 建议的HSTS设置
+    SECURE_HSTS_SECONDS = 31536000  # 1 year
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    SECURE_HSTS_PRELOAD = True
+    
+    # 反向代理设置
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')  # 允许Django识别代理传递的HTTPS请求
+    USE_X_FORWARDED_HOST = True  # 使用X-Forwarded-Host头信息
+    USE_X_FORWARDED_PORT = True  # 使用X-Forwarded-Port头信息
+
 # Django REST Framework settings
 REST_FRAMEWORK = {
     # Give highest priority to Token authentication
@@ -163,13 +185,14 @@ REST_FRAMEWORK = {
 # CORS settings
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
+    "http://47.245.54.174",  # 加上双引号，将其作为字符串处理
     "http://localhost:8000",
     "http://127.0.0.1:8000",
     "https://dejavocab.com",
     "https://www.dejavocab.com",
     "https://www.youtube.com",
     "http://0b55-104-234-99-10.ngrok-free.app",
-    "https://0b55-104-234-99-10.ngrok-free.app"
+    "https://0b55-104-234-99-10.ngrok-free.app",
 ]
 
 # Support cookies in cross-origin requests
@@ -303,7 +326,7 @@ LOGGING = {
         'api': {
             'handlers': ['console', 'file'],
             'level': 'DEBUG',
-            'propagate': True,
+            'propagate': False,  # 修改为False防止日志消息重复
         },
     },
 }

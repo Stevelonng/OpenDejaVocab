@@ -16,7 +16,7 @@ import logging
 # Configure logging
 logger = logging.getLogger(__name__)
 
-from .models import Video, Subtitle, Sentence
+from .models import Video, Subtitle, Sentence, UserActivity
 from .serializers import VideoSerializer, SubtitleSerializer, SentenceSerializer
 
 
@@ -296,7 +296,52 @@ def fetch_subtitles(request, video_id):
         try:
             # Only get English subtitles
             logger.info(f"Attempting to list transcripts for {youtube_id}")
-            transcript_list = YouTubeTranscriptApi.list_transcripts(youtube_id)
+            
+            # 配置Webshare代理来解决IP封禁问题
+            from youtube_transcript_api.proxies import WebshareProxyConfig
+            import requests
+            
+            # 使用Webshare代理
+            proxy_config = WebshareProxyConfig(
+                proxy_username="qkapqaxf",  # Webshare代理用户名
+                proxy_password="ykth1r98h37y"  # Webshare代理密码
+            )
+            
+            # 记录我们正在使用的代理信息
+            logger.info(f"使用的Webshare代理设置 - 用户名: {proxy_config.proxy_username}")
+            print(f"\n===> views.py: 正在使用Webshare代理 (用户名: {proxy_config.proxy_username}) <===\n")
+            
+            # 使用代理初始化API
+            transcript_api = YouTubeTranscriptApi(proxy_config=proxy_config)
+            transcript_list = transcript_api.list_transcripts(youtube_id)
+            logger.info("成功使用代理获取字幕列表!")
+            
+            # 验证代理是否正常工作
+            try:
+                # 1. 使用代理检查IP
+                proxies = {"http": proxy_config.url, "https": proxy_config.url}
+                proxy_ip_response = requests.get("https://api.ipify.org?format=json", proxies=proxies, timeout=10)
+                
+                if proxy_ip_response.status_code == 200:
+                    proxy_ip = proxy_ip_response.json().get('ip')
+                    logger.info(f"views.py: 通过代理的IP地址: {proxy_ip}")
+                    print(f"\n===> views.py: 通过代理的IP地址: {proxy_ip} <===\n")
+                
+                # 2. 不使用代理检查IP(仅作对比)
+                direct_ip_response = requests.get("https://api.ipify.org?format=json", timeout=10)
+                if direct_ip_response.status_code == 200:
+                    direct_ip = direct_ip_response.json().get('ip')
+                    logger.info(f"views.py: 直接连接的IP地址: {direct_ip}")
+                    print(f"\n===> views.py: 直接连接的IP地址: {direct_ip} <===\n")
+                    
+                # 验证代理是否生效
+                if 'proxy_ip' in locals() and 'direct_ip' in locals() and proxy_ip != direct_ip:
+                    logger.info("views.py: 代理验证成功 - IP地址不同说明代理有效")
+                    print(f"\n===> views.py: 代理验证成功！代理IP与直连IP不同 <===\n")
+            except Exception as e:
+                logger.warning(f"views.py: IP验证时出错: {str(e)}")
+                print(f"\n===> views.py: 无法验证IP地址: {str(e)} <===\n")
+            
             logger.info(f"Successfully listed transcripts for {youtube_id}")
             
             # First try to get manually added English subtitles
@@ -640,8 +685,8 @@ def save_subtitles(request):
                     new_count = result.get('new_count', 0)
                     updated_count = result.get('updated_count', 0)
                     
-                    print(f"单词提取已完成: 视频'{video_obj.title}'处理了 {processed_count} 个单词 "
-                          f"(新增: {new_count}, 更新引用: {updated_count})")
+                    print(f"Word extraction has been completed. Video '{video_obj.title}' processed {processed_count} words "
+                          f"(new: {new_count}, updated: {updated_count})")
                 except Exception as e:
                     print(f"Word extraction error: {str(e)}")
             
@@ -808,3 +853,303 @@ def mark_subtitle(request, video_id):
             "error": str(e),
             "message": "Failed to mark subtitle"
         }, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def update_memory_mode(request):
+    """
+    Endpoint to update memory mode status
+    
+    Request body should contain:
+    - enabled: Boolean value to enable or disable memory mode
+    
+    Returns:
+    - success: Boolean indicating if the update was successful
+    """
+    try:
+        # Get enabled status from request
+        enabled = request.data.get('enabled', False)
+        user_id = request.user.id
+        
+        # Import memory service and update mode with user ID
+        from .memory_service import set_memory_mode_enabled
+        result = set_memory_mode_enabled(user_id, enabled)
+        
+        # Log the change
+        logger.info(f"Memory mode updated to {enabled} by user {request.user.id}")
+        
+        return Response({
+            'success': True,
+            'enabled': enabled
+        }, status=status.HTTP_200_OK)
+    except Exception as e:
+        logger.error(f"Error updating memory mode: {str(e)}")
+        return Response({
+            'success': False,
+            'error': str(e)
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_subtitle_translations(request):
+    """
+    Retrieve subtitle translations for a specific video.
+    
+    This endpoint returns all saved translations for a given video ID.
+    The translations are retrieved from the Sentence model.
+    
+    Query Parameters:
+    - video_id: YouTube video ID (required)
+    
+    Returns:
+    - 200: List of translations with text, translated text, and timing information
+    - 400: Bad request (missing video_id)
+    - 500: Server error
+    """
+    # Add debug information for authentication headers
+    auth_header = request.META.get('HTTP_AUTHORIZATION', '')
+    logger.info(f"Auth header received: {auth_header[:10]}..." if auth_header else "No auth header")
+    logger.info(f"User authenticated: {request.user.is_authenticated}")
+    logger.info(f"User: {request.user}")
+    try:
+        # Get video_id from query parameters
+        video_id = request.GET.get('video_id')
+        
+        if not video_id:
+            return Response({
+                'error': 'Missing required parameter: video_id'
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Construct YouTube URL to find the video
+        youtube_url = f'https://www.youtube.com/watch?v={video_id}'
+        logger.info(f"Looking for video with URL: {youtube_url}")
+        
+        # Find the video in the database - trying both exact and partial URL match
+        try:
+            # First try exact match
+            video = Video.objects.get(user=request.user, url=youtube_url)
+            logger.info(f"Found video with exact URL match: {video.title}")
+        except Video.DoesNotExist:
+            # Try with URL containing the video_id
+            try:
+                video = Video.objects.get(user=request.user, url__contains=video_id)
+                logger.info(f"Found video with partial URL match: {video.title}")
+            except Video.DoesNotExist:
+                # Log all videos for this user for debugging
+                all_videos = Video.objects.filter(user=request.user)
+                logger.info(f"User has {all_videos.count()} videos in database")
+                for v in all_videos:
+                    logger.info(f"Available video: {v.title}, URL: {v.url}")
+                # Return empty results if no video found
+                return Response({'results': []}, status=status.HTTP_200_OK)
+        
+        # Get all subtitles with translations for this video
+        subtitles = Subtitle.objects.filter(
+            video=video,
+            translation__isnull=False  # Only get subtitles that have translations
+        ).exclude(translation='')
+        
+        logger.info(f"Found {subtitles.count()} subtitles with translations for video: {video.title}")
+        
+        # Format the response
+        results = [{
+            'text': subtitle.text,
+            'translation': subtitle.translation,
+            'start_time': subtitle.start_time,
+            'end_time': subtitle.end_time
+        } for subtitle in subtitles]
+        
+        return Response({'results': results}, status=status.HTTP_200_OK)
+        
+    except Exception as e:
+        logger.error(f"Error retrieving subtitle translations: {str(e)}")
+        return Response({
+            'error': 'Failed to retrieve translations',
+            'details': str(e)
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+def save_subtitle_translation(request):
+    """
+    Save a subtitle translation to the database.
+    
+    This endpoint receives subtitle text and its translation, along with video information,
+    and saves it to the Sentence model with the translation field populated.
+    
+    Request body should contain:
+    - text: The original subtitle text
+    - translation: The translated text
+    - video_id: YouTube video ID
+    - video_title: The title of the video
+    - start_time: Start time of the subtitle in seconds (optional)
+    - end_time: End time of the subtitle in seconds (optional)
+    
+    Returns:
+    - 201: Successfully saved translation
+    - 400: Bad request or validation error
+    - 500: Server error
+    """
+    try:
+        # Get data from request
+        text = request.data.get('text')
+        translation = request.data.get('translation')
+        video_id = request.data.get('video_id')
+        video_title = request.data.get('video_title')
+        start_time = request.data.get('start_time')
+        end_time = request.data.get('end_time')
+        
+        # Validate required fields
+        if not text or not translation or not video_id:
+            return Response({
+                'error': 'Missing required fields: text, translation, and video_id are required'
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Get or create Video object
+        video, created = Video.objects.get_or_create(
+            user=request.user,
+            url=f'https://www.youtube.com/watch?v={video_id}',
+            defaults={'title': video_title or 'Unknown Title'}
+        )
+        
+        # Check if this sentence already exists
+        existing_sentence = Sentence.objects.filter(
+            user=request.user,
+            video=video,
+            text=text
+        ).first()
+        
+        if existing_sentence:
+            # Update existing sentence
+            existing_sentence.translation = translation
+            if start_time is not None:
+                existing_sentence.start_time = start_time
+            if end_time is not None:
+                existing_sentence.end_time = end_time
+            existing_sentence.save()
+            sentence = existing_sentence
+        else:
+            # Create new sentence
+            sentence = Sentence.objects.create(
+                user=request.user,
+                video=video,
+                text=text,
+                translation=translation,
+                start_time=start_time,
+                end_time=end_time
+            )
+        
+        # Log activity
+        UserActivity.objects.create(
+            user=request.user,
+            action_type='save_subtitle',
+            details={
+                'video_id': video_id,
+                'video_title': video_title,
+                'has_translation': True
+            }
+        )
+        
+        return Response({
+            'success': True,
+            'message': 'Translation saved successfully',
+            'sentence': {
+                'id': sentence.id,
+                'text': sentence.text,
+                'translation': sentence.translation,
+                'start_time': sentence.start_time,
+                'end_time': sentence.end_time,
+                'video_title': video.title
+            }
+        }, status=status.HTTP_201_CREATED)
+        
+    except Exception as e:
+        logger.error(f"Error saving subtitle translation: {str(e)}")
+        return Response({
+            'error': 'Failed to save translation',
+            'details': str(e)
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def update_subtitle_translation(request):
+    """
+    Update translation for a subtitle.
+    
+    This endpoint receives a subtitle ID and its translation,
+    then updates the subtitle record with the translation text.
+    
+    Request body should contain:
+    - subtitle_id: ID of the subtitle to update
+    - translation: The translated text
+    
+    Returns:
+    - 200: Successfully updated translation
+    - 400: Bad request or validation error
+    - 404: Subtitle not found
+    - 500: Server error
+    """
+    try:
+        # Get data from request
+        subtitle_id = request.data.get('subtitle_id')
+        translation = request.data.get('translation')
+        
+        # Validate required fields
+        if not subtitle_id or not translation:
+            return Response({
+                'error': 'Missing required fields: subtitle_id and translation are required'
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        try:
+            # Get the subtitle
+            subtitle = Subtitle.objects.get(id=subtitle_id)
+            
+            # Check if user has permission to update this subtitle
+            if subtitle.video.user != request.user:
+                return Response({
+                    'error': 'You do not have permission to update this subtitle'
+                }, status=status.HTTP_403_FORBIDDEN)
+            
+            # Update the translation
+            subtitle.translation = translation
+            subtitle.save()
+            
+            # Log activity
+            try:
+                UserActivity.objects.create(
+                    user=request.user,
+                    action_type='translate_subtitle',
+                    details={
+                        'subtitle_id': subtitle_id,
+                        'video_id': subtitle.video.url.split('v=')[1] if 'v=' in subtitle.video.url else '',
+                        'video_title': subtitle.video.title
+                    }
+                )
+            except Exception as e:
+                # 如果UserActivity创建失败，记录错误但不中断主要功能
+                logger.error(f"Error creating UserActivity: {str(e)}")
+            
+            return Response({
+                'success': True,
+                'message': 'Translation updated successfully',
+                'subtitle': {
+                    'id': subtitle.id,
+                    'text': subtitle.text,
+                    'translation': subtitle.translation,
+                    'start_time': subtitle.start_time,
+                    'end_time': subtitle.end_time
+                }
+            })
+            
+        except Subtitle.DoesNotExist:
+            return Response({
+                'error': 'Subtitle not found'
+            }, status=status.HTTP_404_NOT_FOUND)
+        
+    except Exception as e:
+        logger.error(f"Error updating subtitle translation: {str(e)}")
+        return Response({
+            'error': 'Failed to update translation',
+            'details': str(e)
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

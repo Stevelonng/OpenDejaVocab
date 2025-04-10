@@ -1,9 +1,8 @@
 import re
-from collections import Counter
 import spacy
 from .models import Video, Subtitle
 from .word_models import UserWord
-from .word_adapter import save_word, toggle_favorite, batch_save_words
+from .word_adapter import batch_save_words
 from youdao.spider import YoudaoSpider
 
 # Load English model

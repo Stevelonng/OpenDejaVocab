@@ -1,5 +1,4 @@
 from django.db import transaction
-from django.contrib.auth.models import User
 from .word_models import WordDefinition, UserWord
 import hashlib
 

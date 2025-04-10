@@ -176,34 +176,15 @@ export function useVideoFavoriteWords(
         throw new Error('Could not find matching video ID');
       }      
       
-      // Get all word references in the video
-      const wordReferencesResponse = await fetch(`${baseUrl}video/${videoId}/word-references/`, {
-        headers: {
-          'Authorization': `Token ${authToken}`
-        }
-      });
+      // 直接从本地字幕中提取收藏单词，不再调用可能不存在的API
+      console.log(`[useVideoFavoriteWords] Using local subtitle extraction for video ID: ${videoId}`);
+      createReferencesFromSubtitles();
       
-      if (!wordReferencesResponse.ok) {
-        // If API endpoint doesn't exist, try to extract words from existing subtitles
-        createReferencesFromSubtitles();
-        return;
-      }
-      
+      /* 移除了不存在的API调用和相关数据处理逻辑:
+      const wordReferencesResponse = await fetch(`${baseUrl}video/${videoId}/word-references/`...);
       const wordReferencesData = await wordReferencesResponse.json();
-      
-      // Format data
-      videoWordReferences.value = wordReferencesData.map((ref: any) => ({
-        word: ref.user_word.word_definition.text,
-        subtitle: {
-          id: ref.subtitle.id,
-          text: ref.subtitle.text,
-          startTime: ref.subtitle.start_time,
-          endTime: ref.subtitle.end_time
-        },
-        contextStart: ref.context_start,
-        contextEnd: ref.context_end,
-        isFavorite: ref.user_word.is_favorite
-      }));      
+      videoWordReferences.value = wordReferencesData.map(...);
+      */
     } catch (error: any) {
       const errorMessage = error.message || error.toString() || 'Unknown error';
       

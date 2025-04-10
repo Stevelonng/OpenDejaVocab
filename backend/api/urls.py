@@ -15,10 +15,11 @@ from . import gemini_views
 from . import chat_views
 from . import gemini_default_view
 from . import auto_subtitle_views  # Import new auto subtitle view
+from . import google_translate_api  # Import Google Translate API views
 from .chat_views import (
-    get_or_create_chat_session, end_chat_session, get_chat_sessions, 
-    export_chat_notes, get_session_videos, delete_chat_session,
-    ChatSessionListView, ChatSessionDetailView, delete_chat_session_web, download_chat_session
+    get_or_create_chat_session, get_chat_sessions,
+    export_chat_notes, get_session_videos,
+    ChatSessionListView, ChatSessionDetailView, delete_chat_session_web
 )
 
 router = DefaultRouter()
@@ -47,6 +48,7 @@ urlpatterns = [
     # Other API endpoints
     path('save-subtitles/', views.save_subtitles, name='save-subtitles'),
     path('add-sentence/', views.add_sentence, name='add-sentence'),
+    path('update-memory-mode/', views.update_memory_mode, name='update-memory-mode'),
     
     # Video related operations
     path('videos/<str:video_id>/fetch-subtitles/', views.fetch_subtitles, name='fetch-subtitles'),
@@ -167,4 +169,20 @@ urlpatterns = [
     path('chat/export-notes/<int:session_id>/', chat_views.export_chat_notes, name='export_chat_notes_alt'),
     path('chat/sessions/', chat_views.get_chat_sessions, name='get_chat_sessions_alt'),
     path('chat/session/<int:session_id>/', chat_views.get_chat_session, name='get_chat_session_alt'),
+    
+    # Memory mode API
+    path('api/memory-mode-status/', chat_views.get_memory_mode_status, name='get_memory_mode_status'),
+    path('api/memory-mode-status/update/', views.update_memory_mode, name='update_memory_mode'),
+    
+    # Google Translate API endpoints
+    path('translate/', google_translate_api.translate_text, name='translate_text'),
+    path('translate/languages/', google_translate_api.get_supported_languages, name='translate_languages'),
+    path('translate/batch/', google_translate_api.batch_translate, name='batch_translate'),
+    path('translate/detect/', google_translate_api.detect_language, name='detect_language'),
+    path('translate/sentence/', google_translate_api.auto_translate_sentence, name='auto_translate_sentence'),
+    
+    # Subtitle translation
+    path('save_subtitle_translation/', views.save_subtitle_translation, name='save_subtitle_translation'),
+    path('update_subtitle_translation/', views.update_subtitle_translation, name='update_subtitle_translation'),
+    path('subtitle_translations/', views.get_subtitle_translations, name='get_subtitle_translations'),
 ]

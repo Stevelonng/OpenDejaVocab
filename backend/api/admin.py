@@ -22,8 +22,7 @@ delete_all_records.short_description = " Delete all records (use with caution)"
 
 # Custom button method for Admin classes
 class AdminWithDeleteAllButton:
-    """Admin base class with a delete all records button"""
-    
+
     def get_urls(self):
         from django.urls import path
         urls = super().get_urls()
@@ -84,9 +83,9 @@ class VideoAdmin(AdminWithDeleteAllButton, admin.ModelAdmin):
     
 @admin.register(Subtitle)
 class SubtitleAdmin(AdminWithDeleteAllButton, admin.ModelAdmin):
-    list_display = ('text', 'start_time', 'end_time', 'video')
+    list_display = ('text', 'translation', 'start_time', 'end_time', 'video')
     list_filter = ('video__title',)
-    search_fields = ('text',)
+    search_fields = ('text', 'translation')
     
 @admin.register(Sentence)
 class SentenceAdmin(AdminWithDeleteAllButton, admin.ModelAdmin):

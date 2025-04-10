@@ -1,4 +1,3 @@
-
 .material-icon {
   font-family: 'Material Icons';
   font-weight: normal;
@@ -11,7 +10,6 @@
   word-wrap: normal;
   white-space: nowrap;
   direction: ltr;
-  vertical-align: middle;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
   -moz-osx-font-smoothing: grayscale;
@@ -646,11 +644,11 @@
   font-weight: 500;
   max-width: 100%;
   padding: var(--spacing-md);
+  padding-bottom: 0;
   word-wrap: break-word;
   cursor: default !important; 
 }
 
-/* Ensure text is visible in dark mode */
 .dark-mode .current-subtitle-text {
   color: var(--white);
 }
@@ -727,25 +725,61 @@
 }
 
 .loading-spinner {
-  width: 30px;
-  height: 30px;
-  border: 3px solid rgba(0, 0, 0, 0.1);
+  width: 40px;
+  height: 40px;
+  position: relative;
   border-radius: 50%;
-  border-top-color: var(--primary);
-  animation: spin 1s linear infinite;
-  margin-bottom: var(--spacing-sm);
+  background: conic-gradient(transparent, var(--primary));
+  animation: spin 1.2s linear infinite;
+  margin-bottom: var(--spacing-md);
+  box-shadow: 0 0 15px rgba(var(--primary-rgb), 0.4);
+}
+
+.loading-spinner::before {
+  content: '';
+  position: absolute;
+  top: 5px;
+  left: 5px;
+  right: 5px;
+  bottom: 5px;
+  background: var(--bg-secondary);
+  border-radius: 50%;
+  z-index: 1;
+}
+
+.loading-spinner::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: linear-gradient(90deg, transparent, rgba(var(--primary-rgb), 0.4), transparent);
+  filter: blur(12px);
+  opacity: 0.6;
+  animation: glow 2s ease-in-out infinite alternate;
+  z-index: 0;
 }
 
 .loading-text {
   font-size: 1rem;
+  font-weight: 500;
   color: var(--text-secondary);
-  animation: pulse 1.5s ease-in-out infinite;
+  background: linear-gradient(90deg, var(--text-secondary), var(--primary), var(--text-secondary));
+  background-size: 200% auto;
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+  animation: textShine 3s linear infinite;
+  letter-spacing: 0.5px;
 }
 
-@keyframes pulse {
-  0% { opacity: 0.6; }
-  50% { opacity: 1; }
-  100% { opacity: 0.6; }
+@keyframes textShine {
+  0% { background-position: 0% center; }
+  100% { background-position: 200% center; }
+}
+
+@keyframes glow {
+  0% { opacity: 0.4; filter: blur(12px); }
+  100% { opacity: 0.7; filter: blur(15px); }
 }
 
 /* Subtitles container */
@@ -797,11 +831,33 @@
 
 /* Loading subtitles message */
 .loading-subtitles {
-  color: var(--text-secondary);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
   text-align: center;
   padding: var(--spacing-xl) 0;
-  font-style: italic;
   letter-spacing: 0.5px;
+  min-height: 180px;
+  background: radial-gradient(circle at center, rgba(var(--primary-rgb), 0.05) 0%, transparent 70%);
+  border-radius: var(--radius-lg);
+  animation: bgPulse 3s ease-in-out infinite alternate;
+}
+
+.loading-subtitles span {
+  font-size: 1rem;
+  font-weight: 500;
+  background: linear-gradient(90deg, var(--text-secondary), var(--primary), var(--text-secondary));
+  background-size: 200% auto;
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+  animation: textShine 3s linear infinite;
+}
+
+@keyframes bgPulse {
+  0% { background-size: 100% 100%; }
+  100% { background-size: 120% 120%; }
 }
 
 /* Subtitles list */
@@ -861,7 +917,6 @@
   font-weight: 400;
 }
 
-/* Ensure text is visible in dark mode */
 .dark-mode .subtitle-item .text {
   color: var(--white);
 }
@@ -1435,6 +1490,35 @@
 
 .hoverable-word.favorite-word:hover {
   color: var(--primary-dark);
+}
+
+/* Subtitle translation styling */
+.subtitle-translation {
+  color: rgba(255, 255, 255, 0.92);
+  font-size: 1.25rem;
+  margin-top: 0.6rem;
+  font-weight: 400;
+  opacity: 0.95;
+  line-height: 1.5;
+  letter-spacing: 0.02em;
+  background: linear-gradient(90deg, rgba(var(--primary-rgb), 0.12), transparent);
+  /* padding: 4px 10px; */
+  border-radius: 4px;
+  display: block;
+  max-width: 100%;
+}
+
+.dark-mode .subtitle-translation {
+  color: rgba(255, 255, 255, 0.9);
+  background: linear-gradient(90deg, rgba(var(--primary-rgb), 0.18), transparent);
+}
+
+@media (max-width: 767.98px) {
+  .subtitle-translation {
+    font-size: 1.15rem;
+    margin-top: 0.4rem;
+    padding: 3px 8px;
+  }
 }
 
 /* Media queries for responsive design */

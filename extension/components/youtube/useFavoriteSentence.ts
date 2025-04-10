@@ -18,7 +18,7 @@ export const useFavoriteSentence = (subtitles: Ref<any[]>) => {
   // Save subtitle to backend
   const saveSentenceToBackend = async (text: string, subtitle: any) => {
     const { apiUrl: storedApiUrl, authToken } = await browser.storage.local.get(['apiUrl', 'authToken']);
-    const apiUrl = storedApiUrl || 'https://dejavocab.com/';
+    const apiUrl = storedApiUrl || 'http://47.245.54.174:8000/';
     
     if (!apiUrl || !authToken) return;
 
@@ -115,7 +115,7 @@ export const useFavoriteSentence = (subtitles: Ref<any[]>) => {
   // Remove sentence from backend
   const removeSentenceFromBackend = async (sentenceId: number) => {
     const { apiUrl: storedApiUrl, authToken } = await browser.storage.local.get(['apiUrl', 'authToken']);
-    const apiUrl = storedApiUrl || 'https://dejavocab.com/';
+    const apiUrl = storedApiUrl || 'http://47.245.54.174:8000/';
     
     if (!apiUrl || !authToken) {
       throw new Error('Missing API URL or authentication token');
@@ -124,72 +124,24 @@ export const useFavoriteSentence = (subtitles: Ref<any[]>) => {
     // Ensure API URL ends with /
     const baseApiUrl = typeof apiUrl === 'string' && apiUrl.endsWith('/') ? apiUrl : `${apiUrl}/`;
     
-    // Record the information of the deletion request.
-    console.log(`[DEBUG] Removing sentence ID: ${sentenceId}`);
-    
-    // First try the explicit unfavorite endpoint
-    let url = `${baseApiUrl}unfavorite-sentence/`;
-    console.log(`[DEBUG] Trying POST request to unfavorite endpoint: ${url}`);
-    
     try {
-      // First try the explicit unfavorite endpoint
-      let response = await fetch(url, {
-        method: 'POST',
+      // Use standard REST DELETE method
+      const url = `${baseApiUrl}sentences/${sentenceId}/`;
+      
+      const response = await fetch(url, {
+        method: 'DELETE', // REST API typically employs the DELETE method to delete resources.
         headers: {
-          'Content-Type': 'application/json',
           'Authorization': `Token ${authToken}`
-        },
-        body: JSON.stringify({ sentence_id: sentenceId })
+        }
       });
-      
-      // Record the response status
-      console.log(`[DEBUG] Response status from unfavorite endpoint: ${response.status}`);
-      
-      // If the explicit endpoint fails, fallback to standard REST DELETE method
-      if (!response.ok) {
-        console.log(`[DEBUG] Unfavorite endpoint failed, trying standard DELETE request`);
-        
-        // Try the standard REST DELETE method
-        url = `${baseApiUrl}sentences/${sentenceId}/`;
-        console.log(`[DEBUG] Sending DELETE request to: ${url}`);
-        
-        response = await fetch(url, {
-          method: 'DELETE', // REST API typically employs the DELETE method to delete resources.
-          headers: {
-            'Authorization': `Token ${authToken}`
-          }
-        });
-        
-        // Record the response status
-        console.log(`[DEBUG] Response status from DELETE request: ${response.status}`);
-      }
       
       if (!response.ok) {
         const responseBody = await response.text();
-        console.log(`[DEBUG] Error response body: ${responseBody}`);
         throw new Error(`Failed to delete sentence ${sentenceId}: ${response.status} ${responseBody}`);
       }
       
-      // Finally, try a forced refresh of the favorite status
-      try {
-        const refreshUrl = `${baseApiUrl}refresh-favorites/?sentence_id=${sentenceId}`;
-        console.log(`[DEBUG] Sending refresh request to: ${refreshUrl}`);
-        
-        await fetch(refreshUrl, {
-          method: 'GET',
-          headers: {
-            'Authorization': `Token ${authToken}`
-          }
-        });
-      } catch (refreshErr) {
-        // Ignore refresh errors, it won't affect the main process.
-        console.log(`[DEBUG] Refresh request failed, but continuing: `, refreshErr);
-      }
-      
-      console.log(`[DEBUG] Successfully deleted sentence ${sentenceId}`);
       return true;
     } catch (error) {
-      console.error(`[ERROR] Failed to delete sentence:`, error);
       throw error;
     }
   };
@@ -218,17 +170,12 @@ export const useFavoriteSentence = (subtitles: Ref<any[]>) => {
         
         // Get sentence ID
         let sentenceId = sentenceIdMapping.value[index];
-        console.log(`[DEBUG] Attempting to unfavorite index ${index}, sentence ID: ${sentenceId}`);
-        console.log(`[DEBUG] Current sentenceIdMapping:`, sentenceIdMapping.value);
-        console.log(`[DEBUG] Favorited indices:`, favoritedIndices.value);
         
         if (!sentenceId && subtitle?.text) {
-          // If the sentence ID is not found by index, try to find it from the API
-          console.log(`[DEBUG] Trying to find sentence ID by text: "${subtitle.text}"`);
-          
+          // If the sentence ID is not found by index, try to find it from the API          
           try {
             const { apiUrl: storedApiUrl, authToken } = await browser.storage.local.get(['apiUrl', 'authToken']);
-            const apiUrl = storedApiUrl || 'https://dejavocab.com/';
+            const apiUrl = storedApiUrl || 'http://47.245.54.174:8000/';
             
             if (apiUrl && authToken) {
               // Ensure API URL ends with /
@@ -249,7 +196,6 @@ export const useFavoriteSentence = (subtitles: Ref<any[]>) => {
                 if (data.results && data.results.length > 0) {
                   // Use the first matching result
                   sentenceId = data.results[0].id;
-                  console.log(`[DEBUG] Found sentence by text match: ID ${sentenceId}`);
                   
                   // Update the mapping
                   sentenceIdMapping.value[index] = sentenceId;
@@ -257,21 +203,17 @@ export const useFavoriteSentence = (subtitles: Ref<any[]>) => {
               }
             }
           } catch (err) {
-            console.error('[ERROR] Failed to find sentence by text:', err);
           }
         }
         
         if (!sentenceId) {
           error.value = 'Unable to find sentence ID';
-          console.error(`[ERROR] No sentence ID found for index ${index}`);
           loading.value = false;
           return;
         }
         
         // Call backend API to delete sentence
-        console.log(`[INFO] Removing sentence from backend: ${sentenceId}`);
         await removeSentenceFromBackend(sentenceId);
-        console.log(`[INFO] Successfully removed sentence ${sentenceId}`);
         
         // Remove from favorites list
         const indexInFavorites = favoritedIndices.value.indexOf(index);
@@ -340,7 +282,7 @@ export const useFavoriteSentence = (subtitles: Ref<any[]>) => {
       }
       
       const { apiUrl: storedApiUrl, authToken } = await browser.storage.local.get(['apiUrl', 'authToken']);
-      const apiUrl = storedApiUrl || 'https://dejavocab.com/';
+      const apiUrl = storedApiUrl || 'http://47.245.54.174:8000/';
       
       if (!apiUrl || !authToken) return;
       

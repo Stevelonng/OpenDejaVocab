@@ -265,9 +265,6 @@ export function useSubtitles(currentVideoTime: Ref<number>) {
             await removeSubtitlesFromStorage();
           }
         } catch (error) {
-          // If storage operation fails, log warning but continue execution
-          console.warn('[WARNING] Failed to clear subtitles from storage:', error);
-          // Do not throw error, as this may be due to invalid extension context
         }
       }
       
@@ -433,7 +430,7 @@ export function useSubtitles(currentVideoTime: Ref<number>) {
       }
       
       const apiData = await browser.storage.local.get(['apiUrl', 'authToken']) as { apiUrl?: string, authToken?: string };
-      const apiUrl = apiData.apiUrl || 'https://dejavocab.com';
+      const apiUrl = apiData.apiUrl || 'http://47.245.54.174:8000';
       const authToken = apiData.authToken;
       
       if (!authToken) {

@@ -1,0 +1,45 @@
+# 排除 extension 目录
+extension/
+
+# 排除 data 目录
+data/
+backend/youdao/data/
+
+# 数据库文件
+backend/db.sqlite3
+backend/**/*.db
+
+# 虚拟环境
+.venv/
+venv/
+env/
+
+# 确保local_packages目录被包含
+!local_packages/
+
+# Git相关
+.git/
+.gitignore
+
+# 缓存文件
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+
+# 开发环境配置
+.idea/
+.vscode/
+
+# 日志文件
+*.log
+logs/
+
+# Qdrant存储
+qdrant_storage/
+
+# Node.js
+node_modules/
+npm-debug.log
+yarn-debug.log
+yarn-error.log

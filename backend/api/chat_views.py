@@ -10,14 +10,12 @@ from .models import Video
 from .chat_models import ChatSession, ChatMessage
 from django.views.generic import ListView, DetailView
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.shortcuts import render, get_object_or_404, redirect
-from django.http import HttpResponse, FileResponse
+from django.shortcuts import get_object_or_404, redirect
+from django.http import HttpResponse
 from django.contrib import messages
 from io import BytesIO
 import docx
-from docx.shared import Pt, RGBColor
 from reportlab.lib.pagesizes import letter
-from reportlab.pdfgen import canvas
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
 
@@ -25,7 +23,7 @@ from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
 logger = logging.getLogger(__name__)
 
 # Cache settings
-SESSION_CACHE_TIMEOUT = 60 * 60 * 24 * 7  # Session cache retention for 7 days
+SESSION_CACHE_TIMEOUT = 60 * 30  # 0.5 hours
 
 
 def get_or_create_chat_session(request):
@@ -224,52 +222,116 @@ def delete_chat_session(request):
     """
     Completely delete the current active chat session, without saving any records
     Unlike end_chat_session, this function will delete the session and its messages from the database
+    
+    同时会清除缓存中的默认模式聊天会话
     """
+    user_id = request.user.id
+    video_id = request.data.get('videoId', '')  # Get video ID from request if available
+    deleted_db_sessions = 0
+    deleted_cache_sessions = 0
+    
     try:
-        # Get the current session ID
+        # 处理数据库中存储的会话
         session_id = request.session.get('current_chat_session_id')
         
-        if not session_id:
-            return Response(
-                {"error": "No active chat session found"},
-                status=status.HTTP_404_NOT_FOUND
-            )
+        if session_id:
+            # Find the session, ensuring only the user's own sessions can be deleted
+            try:
+                chat_session = ChatSession.objects.get(
+                    id=session_id,
+                    user=request.user
+                )
+                
+                # Log the deletion operation
+                logger.info(f"Deleting database chat session {session_id} for user {request.user.username}")
+                
+                # First, delete all related messages
+                ChatMessage.objects.filter(session=chat_session).delete()
+                
+                # Then delete the session itself
+                chat_session.delete()
+                
+                # Clear the current session ID from the session
+                del request.session['current_chat_session_id']
+                request.session.modified = True
+                
+                deleted_db_sessions = 1
+            except ChatSession.DoesNotExist:
+                logger.info(f"No database chat session found with ID {session_id} for user {request.user.username}")
         
-        # Find the session, ensuring only the user's own sessions can be deleted
+        # 处理缓存中存储的默认模式会话
         try:
-            chat_session = ChatSession.objects.get(
-                id=session_id,
-                user=request.user
-            )
-        except ChatSession.DoesNotExist:
-            return Response(
-                {"error": "Chat session not found"},
-                status=status.HTTP_404_NOT_FOUND
-            )
+            from django.core.cache import cache
+            deleted_keys = []
+            
+            # 1. 确保删除当前特定视频的会话缓存 (更精确的删除)
+            if video_id:
+                # 构建特定于当前视频的缓存键
+                video_session_key = f"default_mode_{user_id}_{video_id}"
+                # 尝试删除这个特定的缓存条目
+                cache.delete(video_session_key)
+                logger.info(f"删除用户 {user_id} 的特定视频缓存会话: {video_session_key}")
+                deleted_keys.append(video_session_key)
+            
+            # 2. 通用前缀匹配删除 (适用于LocMemCache)
+            # 查找缓存中所有以该前缀开头的键
+            user_session_prefix = f"default_mode_{user_id}"
+            
+            # 检查是否是LocMemCache (本地内存缓存)
+            if hasattr(cache, '_cache'):
+                for key in cache._cache.keys():
+                    if isinstance(key, str) and key.startswith(user_session_prefix):
+                        if key not in deleted_keys:  # 避免重复删除
+                            cache.delete(key)
+                            logger.info(f"删除用户 {user_id} 的缓存会话: {key}")
+                            deleted_keys.append(key)
+            
+            # 3. 尝试删除通用用户会话
+            general_session_key = f"default_mode_{user_id}"
+            if general_session_key not in deleted_keys:
+                cache.delete(general_session_key)
+                logger.info(f"删除用户 {user_id} 的通用缓存会话: {general_session_key}")
+                deleted_keys.append(general_session_key)
+            
+            # 4. 确保重置与字幕相关的会话状态
+            # 为当前视频重置缓存状态 (如果有视频ID)
+            if video_id:
+                reset_key = f"default_mode_{user_id}_{video_id}"
+                cache.set(reset_key, {
+                    "conversation": [],
+                    "youtube_video_id": video_id,
+                    "subtitles_added": False,  # 重要：重置字幕添加状态
+                }, timeout=60*30)  # 使用与gemini_default_view.py中相同的超时时间
+                logger.info(f"已重置用户 {user_id} 视频 {video_id} 的会话状态，包括subtitles_added标志")
+            
+            # 还要创建通用会话缓存
+            session_key = f"default_mode_{user_id}_current"
+            cache.set(session_key, {
+                "messages": [],
+                "subtitles_added": False,  # 重要：重置字幕添加状态
+                "last_video_id": None
+            }, timeout=60*30)
+            logger.info(f"已重置用户 {user_id} 的通用会话状态，包括subtitles_added标志")
+            
+            deleted_cache_sessions = len(deleted_keys)
+        except Exception as cache_error:
+            logger.error(f"删除缓存会话时出错: {str(cache_error)}")
+            logger.error(traceback.format_exc())
         
-        # Log the deletion operation
-        logger.info(f"Deleting chat session {session_id} for user {request.user.username}")
-        
-        # First, delete all related messages
-        ChatMessage.objects.filter(session=chat_session).delete()
-        
-        # Then, delete the session itself
-        chat_session.delete()
-        
-        # Remove the session ID from the Django session
-        request.session.pop('current_chat_session_id', None)
-        
-        return Response(
-            {"success": True, "message": "Chat session completely deleted"},
-            status=status.HTTP_200_OK
-        )
-    
+        # 返回成功响应
+        return Response({
+            "status": "success",
+            "message": f"已删除 {deleted_db_sessions} 个数据库会话和 {deleted_cache_sessions} 个缓存会话",
+            "deleted_db_sessions": deleted_db_sessions,
+            "deleted_cache_sessions": deleted_cache_sessions
+        })
     except Exception as e:
-        logger.error(f"Error deleting chat session: {str(e)}")
-        return Response(
-            {"error": f"Error deleting chat session: {str(e)}"},
-            status=status.HTTP_500_INTERNAL_SERVER_ERROR
-        )
+        logger.error(f"删除会话时出错: {str(e)}")
+        logger.error(traceback.format_exc())
+        return Response({
+            "status": "error",
+            "message": f"删除会话失败: {str(e)}"
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 @api_view(['GET'])
@@ -458,6 +520,56 @@ def export_chat_notes(request, session_id=None):
     except ChatSession.DoesNotExist:
         return JsonResponse({'status': 'error', 'message': 'Session does not exist'}, status=404)
 
+
+# Memory mode API endpoints
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_memory_mode_status(request):
+    """
+    Get the memory mode status for the current user.
+    Memory mode determines whether the chat history is retained
+    between sessions for better context preservation.
+    """
+    user = request.user
+    
+    # Use the centralized function to get memory status
+    from .memory_service import get_user_memory_mode_status
+    is_enabled = get_user_memory_mode_status(user.id)
+    
+    return Response({
+        'enabled': is_enabled,
+        'userId': user.id
+    })
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def update_memory_mode_status(request):
+    """
+    Update the memory mode status for the current user.
+    Expects a JSON body with: {'enabled': true|false}
+    """
+    user = request.user
+    
+    # Extract 'enabled' status from request body
+    try:
+        is_enabled = request.data.get('enabled', False)
+        if not isinstance(is_enabled, bool):
+            is_enabled = bool(is_enabled)
+    except (ValueError, TypeError):
+        return Response(
+            {'error': 'Invalid value for enabled parameter. Must be true or false.'},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+    
+    # Update cache with user-specific key
+    cache_key = f'memory_mode_status_{user.id}'
+    cache.set(cache_key, is_enabled, timeout=86400 * 30)  # Cache for 30 days
+    
+    return Response({
+        'enabled': is_enabled,
+        'userId': user.id,
+        'updated': True
+    })
 
 # Web views for chat sessions
 class ChatSessionListView(LoginRequiredMixin, ListView):

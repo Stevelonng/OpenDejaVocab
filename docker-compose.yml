@@ -1,0 +1,40 @@
+version: '3.8'
+
+services:
+  # 主应用服务
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      - QDRANT_URL=http://qdrant:6333  # 设置Qdrant的URL为容器服务名
+      - DJANGO_SETTINGS_MODULE=subtitle_collector.settings
+      - DATABASE_URL=sqlite:///db.sqlite3
+      - MEM0_QDRANT_HOST=qdrant  # 添加Mem0 Qdrant主机配置
+      - MEM0_QDRANT_PORT=6333    # 添加Mem0 Qdrant端口配置
+    volumes:
+      - ./backend/db.sqlite3:/app/backend/db.sqlite3  # 修改为正确的数据库路径
+    depends_on:
+      - qdrant
+    networks:
+      - deja_vocab_network
+
+  # Qdrant向量数据库服务
+  qdrant:
+    image: qdrant/qdrant:latest
+    ports:
+      - "6333:6333"  # REST API
+      - "6334:6334"  # GRPC
+    volumes:
+      - qdrant_storage:/qdrant/storage  # 使用命名卷而不是本地目录
+    networks:
+      - deja_vocab_network
+
+networks:
+  deja_vocab_network:
+    driver: bridge
+
+volumes:
+  qdrant_storage:  # Qdrant数据持久化

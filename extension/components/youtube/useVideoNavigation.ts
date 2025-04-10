@@ -29,14 +29,12 @@ export function useVideoNavigation(onVideoChange?: (videoId: string, videoTitle:
         }
         
         // Update video information in storage
-        console.log('Detected video change, updating storage, ID:', videoId, 'Title:', title);
         updateVideoInfoStorage(videoId, title);
       }
   };
 
   // Observe browser history changes
   const handleHistoryChange = () => {
-    console.log('Detected browser history change');
     updateCurrentVideo();
   };
 
@@ -52,7 +50,6 @@ export function useVideoNavigation(onVideoChange?: (videoId: string, videoTitle:
   const initObservers = () => {
     // Listen to title changes
     titleObserver = new MutationObserver(() => {
-      console.log('Detected title change:', document.title);
       updateCurrentVideo();
     });
 
@@ -97,16 +94,12 @@ export function useVideoNavigation(onVideoChange?: (videoId: string, videoTitle:
 
   // Initialize observers on mount
   onMounted(() => {
-    console.log('[VideoNavigation] Component mounted, initializing observers...');
-    
     // Wait a short time to ensure YouTube page is fully loaded
     setTimeout(() => {
-      console.log('[VideoNavigation] Starting delayed initialization');
       initObservers();
       
       // Force an immediate update attempt after a small delay
       setTimeout(() => {
-        console.log('[VideoNavigation] Forcing initial video info update');
         updateCurrentVideo();
       }, 500);
     }, 1000);

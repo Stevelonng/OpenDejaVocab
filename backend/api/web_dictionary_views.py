@@ -5,13 +5,12 @@ from django.utils.decorators import method_decorator
 from django.contrib import messages
 from django.http import JsonResponse, HttpResponse, Http404
 
-import json
 import os
 from youdao.spider import YoudaoSpider
 from youdao.config import VOICE_DIR
 from .word_models import WordDefinition, UserWord, WordReference
-from .models import Video, Subtitle, Sentence
-from .word_adapter import get_user_words, save_word, delete_word, update_word, batch_save_words, toggle_favorite, delete_all_words as adapter_delete_all_words, get_word_detail, check_word_favorite
+from .models import Video, Subtitle
+from .word_adapter import get_user_words, delete_word, update_word, toggle_favorite, delete_all_words as adapter_delete_all_words, get_word_detail, check_word_favorite
 from .word_extractor import WordExtractor
 
 @method_decorator(login_required, name='dispatch')

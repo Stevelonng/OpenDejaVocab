@@ -49,7 +49,7 @@ export default defineBackground(() => {
   
   // Define side panel request interface
   interface SidePanelRequest {
-    action: 'openPopup' | 'recordLoginRequest' | 'checkIfYouTube';
+    action: 'openPopup' | 'recordLoginRequest' | 'checkIfYouTube' | 'sendSubtitleToSidePanel';
   }
   
   // Check if request is a side panel request
@@ -61,7 +61,8 @@ export default defineBackground(() => {
       (
         (request as any).action === 'openPopup' ||
         (request as any).action === 'recordLoginRequest' ||
-        (request as any).action === 'checkIfYouTube'
+        (request as any).action === 'checkIfYouTube' ||
+        (request as any).action === 'sendSubtitleToSidePanel'
       )
     );
   }
@@ -169,6 +170,44 @@ export default defineBackground(() => {
           } catch (error) {
             console.error('[BACKGROUND] Error checking page type:', error);
             sendResponse({ isYouTube: false, message: 'Error checking page type' });
+          }
+        }
+        
+        // Handle requests to send subtitles to side panel
+        if (request.action === 'sendSubtitleToSidePanel') {
+          try {
+            // Get subtitle text from request
+            const subtitleText = (request as any).subtitleText;
+            
+            if (!subtitleText) {
+              sendResponse({ success: false, message: 'No subtitle text provided' });
+              return;
+            }
+            
+            console.log('[BACKGROUND] Forwarding subtitle to side panel:', subtitleText);
+            
+            // Instead of broadcasting to all tabs, save to storage
+            // This is more reliable as the side panel can read from storage when active
+            await browser.storage.local.set({
+              pendingSubtitleText: subtitleText,
+              pendingSubtitleTimestamp: Date.now() // Add timestamp to ensure changes are detected
+            });
+            
+            // Try to send direct message to side panel as well (as a backup approach)
+            try {
+              await browser.runtime.sendMessage({
+                action: 'receiveSubtitleText',
+                subtitleText: subtitleText
+              });
+            } catch (error) {
+              // Ignore error - we're using storage as primary mechanism
+              console.log('[BACKGROUND] Direct message to side panel failed, using storage mechanism instead');
+            }
+            
+            sendResponse({ success: true, message: 'Subtitle text saved for side panel' });
+          } catch (error) {
+            console.error('[BACKGROUND] Error sending subtitle to side panel:', error);
+            sendResponse({ success: false, message: 'Failed to send subtitle to side panel' });
           }
         }
       } catch (error) {
