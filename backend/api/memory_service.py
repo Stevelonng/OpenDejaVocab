@@ -43,12 +43,7 @@ if not OPENAI_API_KEY:
     logger.warning("未找到OPENAI_API_KEY环境变量，请确保.env文件包含此密钥")
 os.environ["OPENAI_API_KEY"] = OPENAI_API_KEY
 
-# 从环境变量获取Qdrant配置
-QDRANT_HOST = os.environ.get("MEM0_QDRANT_HOST", "localhost")
-QDRANT_PORT = int(os.environ.get("MEM0_QDRANT_PORT", "6333"))
-
-# 记录Qdrant连接配置
-logger.info(f"使用Qdrant配置: host={QDRANT_HOST}, port={QDRANT_PORT}")
+# Qdrant configuration using local hardcoded values: localhost:6333
 
 # Mem0 配置
 MEM0_CONFIG = {
@@ -59,10 +54,10 @@ MEM0_CONFIG = {
         }
     },
     "vector_store": {
-        "store": "qdrant",
+        "provider": "qdrant",
         "config": {
-            "host": QDRANT_HOST,
-            "port": QDRANT_PORT,
+            "host": "localhost",
+            "port": 6333,
             "collection_name": "deja_vocab_memories"
         }
     },
