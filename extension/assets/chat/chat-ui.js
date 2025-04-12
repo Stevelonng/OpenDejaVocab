@@ -120,7 +120,7 @@ class ChatUI {
       const environment = settings.environment || 'production';
       
       // Set default API URL if not stored
-      this.apiUrl = settings.apiUrl || 'http://47.245.54.174:8000/api/';
+      this.apiUrl = settings.apiUrl || 'https://linkie.fun/api/';
       await browser.storage.local.set({ apiUrl: this.apiUrl });
       
       this.environment = environment;
@@ -454,6 +454,9 @@ class ChatUI {
       content: userMessage
     });
     
+    // Show typing indicator immediately after user message
+    const typingElement = this.showTypingIndicator();
+    
     // Set up message manager
     this.messageManager.setApiBaseUrl(this.getApiBaseUrl());
     this.messageManager.setAuthToken(this.authToken);
@@ -462,6 +465,7 @@ class ChatUI {
     
     try {
       // Wait for subtitle collection to complete in background
+      console.log('[INFO] Collecting subtitles in background...');
       await this.collectSubtitlesInBackground();
       
       // Get latest subtitle data from browser storage
@@ -512,7 +516,8 @@ class ChatUI {
           subtitles: currentSubtitles,
           videoId: currentVideoId,
           videoTitle: currentVideoTitle
-        }
+        },
+        typingElement // Pass the existing typing indicator
       );
       
     } catch (error) {
@@ -545,7 +550,6 @@ class ChatUI {
       // Create typing indicator (three dots animation)
       const dotsContainer = document.createElement('div');
       dotsContainer.className = 'typing-dots';
-      
       // Create three animation dots
       for (let i = 0; i < 3; i++) {
         const dot = document.createElement('div');
@@ -911,9 +915,9 @@ class ChatUI {
   getApiBaseUrl() {
     try {
       // Only return local development environment URL
-      return 'http://47.245.54.174:8000/api';
+      return 'https://linkie.fun/api';
     } catch (error) {
-      return 'http://47.245.54.174:8000/api'; // Even if it fails, return the local URL
+      return 'https://linkie.fun/api'; // Even if it fails, return the local URL
     }
   }
 

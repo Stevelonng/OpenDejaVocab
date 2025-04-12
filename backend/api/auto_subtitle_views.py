@@ -5,6 +5,9 @@ from youtube_transcript_api import YouTubeTranscriptApi, TranscriptsDisabled, No
 import re
 import logging
 import sys
+import requests
+import random
+import os
 
 logger = logging.getLogger(__name__)
 
@@ -115,6 +118,159 @@ def extract_youtube_id(url):
     match = re.search(youtube_regex, url)
     return match.group(1) if match else None
 
+def get_proxy_list(api_key=None):
+    """
+    获取Webshare代理服务列表
+    
+    参数:
+    - api_key: Webshare API密钥，如果未提供则使用环境变量或默认值
+    
+    返回: 格式化的代理URL列表 ["http://ip:port", ...]
+    """
+    if not api_key:
+        api_key = os.getenv("WEBSHARE_API_KEY", "mardhw1qhirkyzi3lqqa2xhnwlnnev2j3y61580j")
+    
+    url = "https://proxy.webshare.io/api/v2/proxy/list/?mode=direct"
+    headers = {"Authorization": f"Token {api_key}"}
+    
+    try:
+        logger.info("正在从Webshare API获取代理列表(direct模式)...")
+        response = requests.get(url, headers=headers, timeout=10)
+        response.raise_for_status()
+        proxies_data = response.json()["results"]
+        
+        # 由于使用IP授权(8.211.168.18)，不需要凭证
+        proxy_list = [f"http://{proxy['proxy_address']}:{proxy['port']}" for proxy in proxies_data]
+        logger.info(f"成功获取 {len(proxy_list)} 个代理")
+        return proxy_list
+    except Exception as e:
+        logger.error(f"获取代理列表失败: {str(e)}")
+        # 如果API获取失败，返回空列表
+        return []
+
+def test_proxy(proxy, test_url="https://api.ipify.org", retries=1):
+    """
+    测试代理连接是否可用
+    
+    参数:
+    - proxy: 代理地址 "http://ip:port"
+    - test_url: 测试URL，默认为api.ipify.org
+    - retries: 重试次数
+    
+    返回: 成功则返回代理地址，失败则返回None
+    """
+    proxies = {"http": proxy, "https": proxy}
+    for attempt in range(retries):
+        try:
+            response = requests.get(test_url, proxies=proxies, timeout=10)
+            response.raise_for_status()
+            logger.info(f"代理 {proxy} 测试成功，返回IP: {response.text}")
+            return proxy
+        except requests.RequestException as e:
+            logger.warning(f"代理 {proxy} 测试失败 (尝试 {attempt+1}/{retries}): {e}")
+    return None
+
+def get_youtube_subtitles_with_proxy(video_id, proxy_list=None):
+    """
+    使用代理获取YouTube字幕
+    
+    参数:
+    - video_id: YouTube视频ID
+    - proxy_list: 代理列表，如果未提供则自动获取
+    
+    返回: (字幕数据, 语言代码) 元组，或在失败时抛出异常
+    """
+    if not proxy_list:
+        proxy_list = get_proxy_list()
+    
+    if not proxy_list:
+        logger.warning("没有可用代理，尝试直接连接")
+        transcript_list = YouTubeTranscriptApi.list_transcripts(video_id)
+    else:
+        # 复制代理列表，避免修改原始列表
+        available_proxies = proxy_list.copy()
+        random.shuffle(available_proxies)  # 打乱列表顺序
+        
+        # 最多尝试10个代理
+        max_attempts = min(len(available_proxies), 10)
+        success = False
+        
+        # 保存原始环境变量
+        original_http_proxy = os.environ.get('HTTP_PROXY')
+        original_https_proxy = os.environ.get('HTTPS_PROXY')
+        
+        try:
+            for attempt in range(max_attempts):
+                if not available_proxies:
+                    break
+                    
+                # 随机选择一个代理
+                proxy = available_proxies.pop(0)  # 取出第一个代理
+                logger.info(f"使用代理 ({attempt+1}/{max_attempts}): {proxy}")
+                
+                try:
+                    # 设置环境变量代理
+                    os.environ['HTTP_PROXY'] = proxy
+                    os.environ['HTTPS_PROXY'] = proxy
+                    
+                    # 直接获取字幕，不进行代理测试
+                    logger.info("正在使用代理获取字幕...")
+                    transcript_list = YouTubeTranscriptApi.list_transcripts(video_id)
+                    logger.info("成功获取字幕列表!")
+                    success = True
+                    break  # 成功获取，跳出循环
+                    
+                except Exception as e:
+                    # 当前代理失败，尝试下一个
+                    logger.error(f"代理 {proxy} 获取字幕失败: {str(e)}")
+                    # 清除代理设置，为下一次尝试做准备
+                    os.environ.pop('HTTP_PROXY', None)
+                    os.environ.pop('HTTPS_PROXY', None)
+            
+            # 如果所有代理都尝试失败，尝试直接连接
+            if not success:
+                logger.warning("所有代理都失败，尝试直接连接YouTube...")
+                # 直接连接
+                transcript_list = YouTubeTranscriptApi.list_transcripts(video_id)
+                
+        finally:
+            # 恢复原始环境变量
+            if original_http_proxy:
+                os.environ['HTTP_PROXY'] = original_http_proxy
+            else:
+                os.environ.pop('HTTP_PROXY', None)
+                
+            if original_https_proxy:
+                os.environ['HTTPS_PROXY'] = original_https_proxy
+            else:
+                os.environ.pop('HTTPS_PROXY', None)
+    
+    # 优先获取英文字幕
+    try:
+        transcript = transcript_list.find_transcript(['en'])
+        raw_subtitles = transcript.fetch()
+        language = 'en'
+        logger.info(f"成功获取英文字幕，数量: {len(raw_subtitles)}")
+    except:
+        # 如果没有英文字幕，尝试获取其他语言
+        try:
+            transcript = transcript_list.find_transcript(['zh-Hans', 'zh', 'ja', 'ko'])
+            raw_subtitles = transcript.fetch()
+            language = transcript.language_code
+            logger.info(f"没有英文字幕，使用 {language} 字幕，数量: {len(raw_subtitles)}")
+        except Exception as e:
+            # 如果没有找到常规字幕，尝试自动生成的字幕
+            try:
+                transcript = transcript_list.find_generated_transcript(['en'])
+                raw_subtitles = transcript.fetch()
+                language = 'en-generated'
+                logger.info(f"使用自动生成的英文字幕，数量: {len(raw_subtitles)}")
+            except Exception as e2:
+                logger.error(f"无法获取任何字幕: {str(e2)}")
+                raise NoTranscriptFound(f"无法找到任何字幕: {str(e2)}")
+    
+    return raw_subtitles, language
+
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def auto_fetch_subtitles(request):
@@ -133,77 +289,16 @@ def auto_fetch_subtitles(request):
     try:
         logger.info(f"Starting auto fetch subtitles for video {video_id}")
         
-        # Try to get subtitles
+        # 使用代理轮换获取字幕
         try:
-            # 配置Webshare代理来解决IP封禁问题
-            from youtube_transcript_api.proxies import WebshareProxyConfig
-            import requests
+            raw_subtitles, language = get_youtube_subtitles_with_proxy(video_id)
+            logger.info(f"成功获取字幕，语言: {language}, 数量: {len(raw_subtitles)}")
             
-            # 使用Webshare代理
-            proxy_config = WebshareProxyConfig(
-                proxy_username="qkapqaxf",  # Webshare代理用户名
-                proxy_password="ykth1r98h37y"  # Webshare代理密码
-            )
-            
-            # 记录我们正在使用的代理信息
-            logger.info(f"使用的Webshare代理设置 - 用户名: {proxy_config.proxy_username}")
-            print(f"\n===> 正在使用Webshare代理 (用户名: {proxy_config.proxy_username}) <===\n")
-            
-            # 我们将使用YouTube Transcript API内置的代理机制来获取字幕
-            # 这样可以验证代理是否起作用
-            
-            # 直接使用代理初始化API并获取字幕列表
-            logger.info("正在使用代理配置初始化YouTube Transcript API...")
-            transcript_api = YouTubeTranscriptApi(proxy_config=proxy_config)
-            transcript_list = transcript_api.list_transcripts(video_id)
-            logger.info("成功使用代理获取字幕列表!")
-            
-            # 在成功获取字幕后验证我们的IP地址
-            try:
-                # 1. 使用代理检查IP
-                # 从 WebshareProxyConfig 获取完整的代理URL
-                proxies = {"http": proxy_config.url, "https": proxy_config.url}
-                proxy_ip_response = requests.get("https://api.ipify.org?format=json", proxies=proxies, timeout=10)
-                
-                if proxy_ip_response.status_code == 200:
-                    proxy_ip = proxy_ip_response.json().get('ip')
-                    logger.info(f"通过代理的IP地址: {proxy_ip}")
-                    print(f"\n===> 通过代理的IP地址: {proxy_ip} <===\n")
-                
-                # 2. 不使用代理检查IP(仅作对比)
-                direct_ip_response = requests.get("https://api.ipify.org?format=json", timeout=10)
-                if direct_ip_response.status_code == 200:
-                    direct_ip = direct_ip_response.json().get('ip')
-                    logger.info(f"直接连接的IP地址: {direct_ip}")
-                    print(f"\n===> 直接连接的IP地址: {direct_ip} <===\n")
-                    
-                # 验证代理是否生效
-                if 'proxy_ip' in locals() and 'direct_ip' in locals() and proxy_ip != direct_ip:
-                    logger.info("代理验证成功: IP地址不同说明代理有效")
-                    print(f"\n===> 代理验证成功！代理IP与直连 IP 不同 <===\n")
-            except Exception as e:
-                logger.warning(f"IP验证时出错: {str(e)}")
-                print(f"\n===> 无法验证IP地址: {str(e)} <===\n")
-            logger.info("成功使用代理获取字幕列表!")
-            
-            # Prioritize English subtitles
-            try:
-                transcript = transcript_list.find_transcript(['en'])
-                raw_subtitles = transcript.fetch()
-                language = 'en'
-                logger.info(f"Successfully fetched English subtitles, count: {len(raw_subtitles)}")
-            except:
-                # If English subtitles not found, get any available subtitles
-                transcript = transcript_list.find_transcript(['zh-Hans', 'zh', 'ja', 'ko'])
-                raw_subtitles = transcript.fetch()
-                language = transcript.language_code
-                logger.info(f"No English subtitles, using {language} subtitles, count: {len(raw_subtitles)}")
-                
         except (TranscriptsDisabled, NoTranscriptFound) as e:
             logger.error(f"Failed to fetch subtitles: {str(e)}")
             return Response({"error": f"Video has no available subtitles: {str(e)}"}, status=404)
         
-        # Standardize format
+        # 标准化格式
         subtitles = []
         for i, item in enumerate(raw_subtitles):
             # Convert the transcript object to a dictionary to ensure we can access attributes uniformly
@@ -235,6 +330,7 @@ def auto_fetch_subtitles(request):
                     "end": item_dict["start"] + item_dict["duration"],
                     "text": item_dict["text"]
                 })
+        
         logger.info(f"Processed timestamps for {len(subtitles)} subtitles")
         
         # Preprocess subtitles: filter out auto-generated noise markers and single character subtitles

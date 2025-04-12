@@ -24,7 +24,7 @@ import os
 SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', 'django-insecure-ax7%t=&q&36xj4%#237wz_u%%=6@r)!s!s$ii19afh(g5rpy!i')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.environ.get('DJANGO_DEBUG', 'False').lower() == 'true'
+DEBUG = os.environ.get('DJANGO_DEBUG', 'True').lower() == 'true'
 
 ALLOWED_HOSTS = [
     'localhost',
@@ -38,6 +38,7 @@ ALLOWED_HOSTS = [
     '0b55-104-234-99-10.ngrok-free.app',  # ngrok domain
     '*.ngrok-free.app',  # Support all ngrok domains
     '47.245.57.52',     # 阿里云服务器IP
+    '47.245.54.174',    # 新的阿里云服务器IP
     '*',                # 允许所有主机（可选，在部署测试期间使用）
 ]
 
@@ -185,7 +186,8 @@ REST_FRAMEWORK = {
 # CORS settings
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
-    "http://47.245.54.174",  # 加上双引号，将其作为字符串处理
+    "http://47.245.54.174",  # 阿里云服务器IP
+    "http://47.245.54.174:8000",  # 阿里云服务器IP带端口
     "http://localhost:8000",
     "http://127.0.0.1:8000",
     "https://dejavocab.com",
@@ -229,6 +231,8 @@ CORS_ALLOW_HEADERS = [
 CSRF_TRUSTED_ORIGINS = [
     "http://localhost:8000",
     "http://127.0.0.1:8000",
+    "http://47.245.54.174",
+    "http://47.245.54.174:8000",
     "https://dejavocab.com",
     "https://www.dejavocab.com",
     "http://0b55-104-234-99-10.ngrok-free.app",
@@ -330,6 +334,33 @@ LOGGING = {
         },
     },
 }
+
+# Content Security Policy settings
+CSP_DEFAULT_SRC = ("'self'",)
+CSP_SCRIPT_SRC = ("'self'", "'unsafe-inline'", "https://cdn.jsdelivr.net", "https://unpkg.com")
+CSP_STYLE_SRC = ("'self'", "'unsafe-inline'", "https://cdn.jsdelivr.net", "https://fonts.googleapis.com")
+CSP_FONT_SRC = ("'self'", "https://fonts.gstatic.com")
+CSP_IMG_SRC = ("'self'", "data:")
+CSP_CONNECT_SRC = ("'self'",)
+CSP_FRAME_ANCESTORS = ("'self'",)
+CSP_FORM_ACTION = ("'self'",)
+CSP_BASE_URI = ("'self'",)
+CSP_OBJECT_SRC = ("'none'",)
+CSP_MEDIA_SRC = ("'self'")
+CSP_FRAME_SRC = ("'self'")
+CSP_CHILD_SRC = ("'self'")
+CSP_MANIFEST_SRC = ("'self'")
+CSP_WORKER_SRC = ("'self'")
+
+# CSRF设置
+CSRF_TRUSTED_ORIGINS = [
+    'https://linkie.fun',
+    'https://www.linkie.fun',
+    'https://dejavocab.com',
+    'https://www.dejavocab.com',
+    'http://localhost:8000',
+    'http://127.0.0.1:8000',
+]
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field

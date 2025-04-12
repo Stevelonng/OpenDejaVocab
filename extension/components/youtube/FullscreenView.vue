@@ -31,16 +31,13 @@
 
         <!-- Current subtitle display area -->
         <div class="current-subtitle-display" v-if="videoElement && subtitlesEnabled && (!immersiveMode || (immersiveMode && currentSubtitleIndex >= 0))">
-          <div v-if="loading" class="subtitle-loading-animation">
+          <div v-if="loading" class="loading-subtitles">
             <div class="loading-spinner"></div>
-            <div class="loading-text">Loading subtitles...</div>
+            <span>Loading subtitles...</span>
           </div>
           <div v-else>
             <div class="current-subtitle-text" v-html="processedCurrentSubtitle"></div>
-            <div v-if="isTranslationLoading && autoTranslateEnabled" class="subtitle-translation loading-translation">
-              <div class="loading-text">Loading translation...</div>
-            </div>
-            <div class="subtitle-translation" v-else-if="subtitleTranslations[currentSubtitleIndex]">
+            <div class="subtitle-translation" v-if="subtitleTranslations[currentSubtitleIndex]">
               {{ subtitleTranslations[currentSubtitleIndex] }}
             </div>
           </div>
@@ -173,7 +170,7 @@
 
       <!-- Control buttons -->
       <div class="controls-row">
-        <a href="http://47.245.54.174:8000" target="_blank" class="dejavocab-logo controls-logo" title="Visit DejaVocab">
+        <a href="https://linkie.fun" target="_blank" class="dejavocab-logo controls-logo" title="Visit DejaVocab">
           <div class="logo-container">
             <div class="logo-icon">
               <div class="shine-effect"></div>
@@ -235,9 +232,15 @@
           <span class="material-icon">{{ subtitlesEnabled ? 'subtitles' : 'subtitles_off' }}</span>
           <span class="btn-label">{{ subtitlesEnabled ? '关闭字幕' : '显示字幕' }}</span>
         </button>
-        <button @click="toggleTranslation" class="control-btn" :class="{'active': autoTranslateEnabled}" aria-label="翻译">
+        <button 
+          @click.stop="toggleTranslation" 
+          :class="['control-btn', autoTranslateEnabled ? 'active' : '', (loading || !subtitles || !subtitles.length || isTranslationLoading) ? 'disabled' : '']" 
+          :disabled="loading || !subtitles || !subtitles.length || isTranslationLoading"
+          aria-label="Toggle translation"
+          :title="(loading || !subtitles || !subtitles.length) ? '请等待字幕加载完成' : (isTranslationLoading ? '翻译加载中...' : '')"
+        >
           <span class="material-icon">translate</span>
-          <span class="btn-label">{{ autoTranslateEnabled ? '关闭翻译' : '开启翻译' }}</span>
+          <span>{{ isTranslationLoading ? '翻译中...' : (autoTranslateEnabled ? '关闭翻译' : '开启翻译') }}</span>
         </button>
       </div>
     </div>
@@ -263,10 +266,12 @@ import { useTranslate } from './useTranslate';
 import { getYouTubeVideoId, getCurrentVideoTitle } from './InfoVideo';
 import { browser } from 'wxt/browser';
 
-// 为window对象添加__cachedTranslations属性类型声明
+// Add custom property type declarations for the window object
 declare global {
   interface Window {
+    __subtitleCache: Record<string, string>;
     __cachedTranslations?: Record<number, string>;
+    __cachedTranslationsByVideo?: Record<string, Record<number, string>>;
   }
 }
 
@@ -286,6 +291,7 @@ const {
 const subtitleTranslations = ref<Record<number, string>>({});
 const autoTranslateEnabled = ref(false); // 默认关闭翻译功能
 const isTranslationLoading = ref(false); // Loading state for translations
+const pendingTranslationState = ref(false); // 翻译开关的临时状态
 
 const isNarrowScreen = ref(false);
 
@@ -380,6 +386,11 @@ const {
   updateCurrentVideo,
   updateVideoInfoStorage
 } = useVideoNavigation((videoId, videoTitle) => {
+  // 进入新视频时，确保翻译功能始终默认关闭
+  autoTranslateEnabled.value = false;
+  // 清空翻译内容
+  subtitleTranslations.value = {};
+  
   // When video changes, reload subtitles
   setTimeout(() => {
     // Force refresh subtitles, ignore cache
@@ -578,72 +589,99 @@ const toggleFullscreen = createEnhancedToggleFullscreen(
 
 // Toggle translation function with loading state
 const toggleTranslation = async () => {
-  // 切换翻译状态
-  autoTranslateEnabled.value = !autoTranslateEnabled.value;
+  // 检查字幕是否已加载完成
+  if (loading.value || !subtitles.value || subtitles.value.length === 0) {
+    console.warn('[FullscreenView] Cannot toggle translation - subtitles not loaded yet');
+    return;
+  }
   
-  // 如果开启翻译
+  // 如果正在加载翻译，不允许任何操作
+  if (isTranslationLoading.value) {
+    console.warn('[FullscreenView] Translation is in progress, please wait...');
+    return;
+  }
+  
+  // 如果当前是开启状态，直接关闭
   if (autoTranslateEnabled.value) {
-    isTranslationLoading.value = true; // 显示加载状态
-    
-    // 记录开始时间，确保加载提示至少显示1秒
-    const startTime = Date.now();
-    
-    try {
-      // 检查是否有缓存的翻译
-      if (window.__cachedTranslations && Object.keys(window.__cachedTranslations).length > 0) {
-        console.log(`[FullscreenView] Using ${Object.keys(window.__cachedTranslations).length} cached translations`);
-        subtitleTranslations.value = { ...window.__cachedTranslations };
-        
-        // 确保加载提示至少显示1秒
-        const elapsed = Date.now() - startTime;
-        if (elapsed < 1000) {
-          console.log(`[FullscreenView] Waiting ${1000 - elapsed}ms to show loading state`);
-          setTimeout(() => {
-            isTranslationLoading.value = false;
-          }, 1000 - elapsed);
-        } else {
-          isTranslationLoading.value = false;
-        }
-      } else {
-        // 没有缓存，尝试从后端获取
-        const videoId = getYouTubeVideoId(window.location.href);
-        if (videoId && subtitles.value && subtitles.value.length > 0) {
-          console.log('[FullscreenView] No cached translations, fetching from backend');
-          const savedTranslations = await fetchTranslationsFromBackend(videoId, subtitles.value);
-          if (Object.keys(savedTranslations).length > 0) {
-            console.log(`[FullscreenView] Loaded ${Object.keys(savedTranslations).length} translations from backend`);
-            window.__cachedTranslations = { ...savedTranslations };
-            subtitleTranslations.value = { ...savedTranslations };
-          }
-        }
-        
-        // 确保加载提示至少显示1秒
-        const elapsed = Date.now() - startTime;
-        if (elapsed < 1000) {
-          console.log(`[FullscreenView] Waiting ${1000 - elapsed}ms to show loading state`);
-          setTimeout(() => {
-            isTranslationLoading.value = false;
-          }, 1000 - elapsed);
-        } else {
-          isTranslationLoading.value = false;
-        }
-      }
-    } catch (error) {
-      console.error('[FullscreenView] Error fetching translations:', error);
-      
-      // 即使出错，也确保加载提示显示一定时间
-      const elapsed = Date.now() - startTime;
-      if (elapsed < 1000) {
-        setTimeout(() => {
-          isTranslationLoading.value = false;
-        }, 1000 - elapsed);
-      } else {
-        isTranslationLoading.value = false;
-      }
-    }
-  } else {
-    // 关闭翻译，清空翻译显示
+    autoTranslateEnabled.value = false;
     subtitleTranslations.value = {};
+    return;
+  }
+  
+  // 处理开启翻译的情况
+  // 先记录我们希望切换到的状态
+  pendingTranslationState.value = true;
+  isTranslationLoading.value = true; // 显示加载状态
+  
+  try {
+    console.log('[FullscreenView] Translation enabled');
+    
+    // 获取视频ID
+    const videoId = getYouTubeVideoId(window.location.href);
+    
+    // 检查是否有缓存的翻译（先检查本次翻译过程中的缓存）
+    if (typeof window !== 'undefined' && (window as any).__cachedTranslations && 
+        Object.keys((window as any).__cachedTranslations).length > 0) {
+      
+      console.log(`[FullscreenView] Using ${Object.keys((window as any).__cachedTranslations).length} cached translations`);
+      subtitleTranslations.value = { ...(window as any).__cachedTranslations };
+      
+      // 使用缓存翻译，应用状态变更
+      autoTranslateEnabled.value = pendingTranslationState.value;
+    }
+    // 如果没有缓存或缓存不足，尝试在线翻译
+    else if (videoId && subtitles.value && subtitles.value.length > 0) {
+      console.log('[FullscreenView] Translation enabled - checking for saved translations first');
+      
+      // 从后端获取已保存的翻译（作为备选）
+      const savedTranslations = await fetchTranslationsFromBackend(videoId, subtitles.value);
+      
+      if (Object.keys(savedTranslations).length > 0) {
+        console.log(`[FullscreenView] Loaded ${Object.keys(savedTranslations).length} saved translations from backend`);
+        // 存储到缓存
+        if (typeof window !== 'undefined') {
+          (window as any).__cachedTranslations = { ...savedTranslations };
+        }
+        subtitleTranslations.value = { ...savedTranslations };
+        
+        // 加载后端翻译成功，应用状态变更
+        autoTranslateEnabled.value = pendingTranslationState.value;
+        
+        // 更新缓存状态
+        console.log(`[FullscreenView] Updated cache for video ${videoId}`);
+      } else {
+        // 从后端没有找到翻译，尝试在线翻译
+        console.log('[FullscreenView] No saved translations found, translating online');
+        const results = await batchTranslateSubtitles(subtitles.value, 'zh-CN', videoId, getCurrentVideoTitle());
+        
+        if (results && results.length > 0) {
+          // 存储翻译结果到本地状态（batchTranslateSubtitles函数已经更新了全局缓存）
+          const translations: Record<number, string> = {};
+          results.forEach((result, index) => {
+            translations[index] = result.translatedText;
+          });
+          
+          subtitleTranslations.value = translations;
+          
+          // 在线翻译成功，应用状态变更
+          autoTranslateEnabled.value = pendingTranslationState.value;
+        } else {
+          // 翻译失败
+          console.error('[FullscreenView] Online translation failed, no results returned');
+          autoTranslateEnabled.value = false;
+        }
+      }
+    } else {
+      // 视频ID获取失败或没有字幕
+      console.error('[FullscreenView] Cannot get video ID or subtitles');
+      autoTranslateEnabled.value = false;
+    }
+  } catch (error) {
+    console.error('[FullscreenView] Error fetching translations:', error);
+    autoTranslateEnabled.value = false; // 出错时不应用变更
+  } finally {
+    isTranslationLoading.value = false; // 无论成功失败都关闭加载状态
+    pendingTranslationState.value = false; // 重置待处理状态
   }
 };
 
@@ -653,6 +691,7 @@ const refreshTranslations = async () => {
     const videoId = getYouTubeVideoId(window.location.href);
     if (videoId && subtitles.value && subtitles.value.length > 0) {
       console.log('[FullscreenView] Manually refreshing translations');
+      // Try to load saved translations from backend
       const savedTranslations = await fetchTranslationsFromBackend(videoId, subtitles.value);
       if (Object.keys(savedTranslations).length > 0) {
         console.log(`[FullscreenView] Loaded ${Object.keys(savedTranslations).length} translations from backend`);
@@ -693,7 +732,7 @@ watch(subtitles, async (newSubtitles) => {
       if (videoId) {
         console.log('[FullscreenView] Trying to fetch saved translations for video:', videoId);
         
-        // 尝试从后台获取已保存的翻译并缓存下来（但不应用）
+        // 尝试从后端获取已保存的翻译并缓存下来（但不应用）
         const savedTranslations = await fetchTranslationsFromBackend(videoId, newSubtitles);
         
         if (Object.keys(savedTranslations).length > 0) {
@@ -707,7 +746,7 @@ watch(subtitles, async (newSubtitles) => {
             subtitleTranslations.value = { ...savedTranslations };
           }
         } 
-        // 如果没有已保存的翻译且启用了自动翻译，则进行在线翻译
+        // 如果没有已保存的翻译，则进行在线翻译
         else if (autoTranslateEnabled.value) {
           console.log('[FullscreenView] No saved translations found, translating in real-time');
           const results = await batchTranslateSubtitles(newSubtitles, 'zh-CN', videoId, getCurrentVideoTitle());
@@ -729,30 +768,44 @@ watch(autoTranslateEnabled, async (enabled) => {
   
   if (enabled && subtitles.value && subtitles.value.length > 0) {
     try {
-      // 首先检查是否有缓存的翻译
-      if (window.__cachedTranslations && Object.keys(window.__cachedTranslations).length > 0) {
-        console.log(`[FullscreenView] Using ${Object.keys(window.__cachedTranslations).length} cached translations`);
-        subtitleTranslations.value = { ...window.__cachedTranslations };
+      // Get current video ID
+      const videoId = getYouTubeVideoId(window.location.href);
+      if (!videoId) {
+        console.error('[FullscreenView] Cannot get video ID for caching translations');
+        return;
+      }
+      
+      // Initialize the cache object by video ID if not exists
+      if (!window.__cachedTranslationsByVideo) {
+        window.__cachedTranslationsByVideo = {};
+      }
+      
+      // Check if we have cached translations for this specific video
+      if (window.__cachedTranslationsByVideo[videoId] && 
+          Object.keys(window.__cachedTranslationsByVideo[videoId]).length > 0) {
+        console.log(`[FullscreenView] Using ${Object.keys(window.__cachedTranslationsByVideo[videoId]).length} cached translations for video ${videoId}`);
+        subtitleTranslations.value = { ...window.__cachedTranslationsByVideo[videoId] };
         return; // 使用缓存的翻译，不需要重新获取或在线翻译
       }
       
       // 如果没有缓存，从后端获取翻译
-      const videoId = getYouTubeVideoId(window.location.href);
-      if (videoId) {
-        console.log('[FullscreenView] Translation enabled - checking for saved translations first');
+      console.log('[FullscreenView] Translation enabled - checking for saved translations first');
+      
+      // 尝试从后端获取已保存的翻译
+      const savedTranslations = await fetchTranslationsFromBackend(videoId, subtitles.value);
+      
+      // 如果有已保存的翻译，则使用它们
+      if (Object.keys(savedTranslations).length > 0) {
+        console.log(`[FullscreenView] Loaded ${Object.keys(savedTranslations).length} saved translations`);
+        subtitleTranslations.value = { ...savedTranslations };
         
-        // 尝试从后端获取已保存的翻译
-        const savedTranslations = await fetchTranslationsFromBackend(videoId, subtitles.value);
+        // 更新按视频ID存储的缓存
+        window.__cachedTranslationsByVideo[videoId] = { ...savedTranslations };
+        console.log(`[FullscreenView] Updated cache for video ${videoId}`);
         
-        // 如果有已保存的翻译，则使用它们
-        if (Object.keys(savedTranslations).length > 0) {
-          console.log(`[FullscreenView] Loaded ${Object.keys(savedTranslations).length} saved translations`);
-          subtitleTranslations.value = { ...savedTranslations };
-          window.__cachedTranslations = { ...savedTranslations }; // 更新缓存
-          return; // 已加载已保存的翻译，不需要在线翻译
-        } else {
-          console.log('[FullscreenView] No saved translations found, using online translation');
-        }
+        return; // 已加载已保存的翻译，不需要在线翻译
+      } else {
+        console.log('[FullscreenView] No saved translations found, using online translation');
       }
       
       // 如果没有找到已保存的翻译，或者出现错误，则使用在线翻译
@@ -783,7 +836,37 @@ const {
   togglePlay
 );
 
+// Define custom event interface
+interface VideoInfoEvent {
+  detail: {
+    videoId: string;
+    title: string;
+    timestamp: number;
+  }
+}
 
+// Listen for video changes that happen outside our component
+const handleVideoInfoUpdated = (event: Event) => {
+  // Type conversion to custom event
+  const customEvent = event as CustomEvent<VideoInfoEvent['detail']>;
+  console.log('[INFO] Video info update event received');
+
+  // 视频切换时重置翻译状态
+  if (customEvent.detail && customEvent.detail.videoId) {
+    console.log('[INFO] Video changed to:', customEvent.detail.title);
+    
+    // 清空翻译显示和缓存
+    subtitleTranslations.value = {};
+    
+    // 如果翻译正在加载中，取消加载状态
+    if (isTranslationLoading.value) {
+      isTranslationLoading.value = false;
+    }
+    
+    // 清空翻译缓存
+    window.__cachedTranslations = {};
+  }
+};
 
 // Set up fullscreen icon
 onMounted(() => {
@@ -802,31 +885,10 @@ onMounted(() => {
     }
   }
 
-  // Define custom event interface
-  interface VideoInfoEvent {
-    detail: {
-      videoId: string;
-      title: string;
-      timestamp: number;
-    }
-  }
-
-  // Listen for video changes that happen outside our component
-  const handleVideoInfoUpdated = (event: Event) => {
-    // Type conversion to custom event
-    const customEvent = event as CustomEvent<VideoInfoEvent['detail']>;
-    console.log('[INFO] Video info update event received');
-
-    // Only process event data, no longer trigger new storage updates to avoid infinite loop
-    if (customEvent.detail && customEvent.detail.videoId) {
-      console.log('[INFO] Video from event:', customEvent.detail.title);
-    }
-  };
-
   // Add event listener for video changes
   document.addEventListener('youtube-video-info-updated', handleVideoInfoUpdated);
 
-  // Clean up interval on unmount
+  // Clean up on unmount
   onUnmounted(() => {
     clearVideoDetectionInterval();
     document.removeEventListener('youtube-video-info-updated', handleVideoInfoUpdated);
@@ -889,4 +951,44 @@ useFullscreenIcon(hasVideoOnPage, toggleFullscreen);
 @import '/assets/fonts/material-icons.css';
 /* Import main style file */
 @import './Modern-FullscreenView.css';
+/* 翻译加载样式 */
+.loading-translation {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: rgba(0, 0, 0, 0.7);
+  border-radius: 8px;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 500;
+  margin-top: 8px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+  animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+  0% { opacity: 0.8; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.05); }
+  100% { opacity: 0.8; transform: scale(1); }
+}
+
+.loading-translation .loading-spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: white;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.control-btn.disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background-color: rgba(0, 0, 0, 0.05);
+}
 </style>

@@ -19,7 +19,7 @@ import {
  */
 
 // Default API configuration (production environment only)
-const DEFAULT_API_URL = 'http://47.245.54.174:8000/';
+const DEFAULT_API_URL = 'https://linkie.fun/';
 
 // Create auto subtitle hook
 export function useAutoSubtitles() {
@@ -79,50 +79,78 @@ export function useAutoSubtitles() {
       isLoading.value = true;
       error.value = null;
       
+      console.log('[INFO] 开始获取字幕');
+      
       // Check if auto collection is enabled
       if (!isAutoCollectEnabled.value) {
+        console.log('[INFO] 自动收集字幕功能已禁用');
         isLoading.value = false;
         return;
       }
       
       // Get current video information
       const videoInfo = await getCurrentVideoInfo();
+      console.log('[INFO] 当前视频信息:', videoInfo);
       if (!videoInfo) {
+        console.error('[ERROR] 无法获取视频信息');
         error.value = 'Unable to get video information';
         isLoading.value = false;
         return;
       }
       
       // Check if subtitles are already saved in local storage
-      if (await hasLocalSubtitles(videoInfo.videoId)) {
+      const hasLocal = await hasLocalSubtitles(videoInfo.videoId);
+      console.log('[INFO] 本地是否已有字幕:', hasLocal);
+      if (hasLocal) {
+        console.log('[INFO] 本地已存在字幕，跳过请求');
         isLoading.value = false;
         return;
       }
       
       // Get API configuration
       const { baseUrl, authToken } = await getApiBaseUrl();
+      console.log('[INFO] API基础URL:', baseUrl);
+      console.log('[INFO] 是否有有效的认证Token:', authToken ? '是' : '否');
       
       if (!baseUrl) {
+        console.error('[ERROR] 无法确定API URL');
         error.value = 'Unable to determine API URL';
         isLoading.value = false;
         return;
       }
       
       if (!authToken) {
+        console.error('[ERROR] 未登录，请先登录');
         error.value = 'Not logged in, please login first';
         isLoading.value = false;
         return;
       }
+      
+      // 构建请求URL
+      const requestUrl = `${baseUrl}auto-subtitles/?url=${encodeURIComponent(videoInfo.url)}`;
+      console.log('[INFO] 请求URL:', requestUrl);
+      console.log('[INFO] 当前window.location.origin:', window.location.origin);
+      console.log('[INFO] 视频ID:', videoInfo.videoId);
             
       // Call auto subtitle API to get subtitles
-      const response = await fetch(`${baseUrl}auto-subtitles/?url=${encodeURIComponent(videoInfo.url)}`, {
+      console.log('[INFO] 开始发送API请求...');
+      const response = await fetch(requestUrl, {
+        method: 'GET',
         headers: {
-          'Authorization': `Token ${authToken}`
+          'Authorization': `Token ${authToken}`,
+          'Content-Type': 'application/json',
+          'Origin': window.location.origin
         }
       });
       
+      console.log('[INFO] API响应状态码:', response.status);
+      console.log('[INFO] 响应头:', [...response.headers.entries()]);
+      
       if (!response.ok) {
+        console.error('[ERROR] API请求失败:', response.status, response.statusText);
+        
         if (response.status === 404) {
+          console.log('[INFO] 未找到字幕 (404)');
           // Record to local storage to avoid repeated attempts
           const noSubtitleVideos = await browser.storage.local.get(['noSubtitleVideos']) as { noSubtitleVideos?: string[] };
           const videos = noSubtitleVideos.noSubtitleVideos || [];
@@ -130,17 +158,20 @@ export function useAutoSubtitles() {
           if (!videos.includes(videoInfo.videoId)) {
             videos.push(videoInfo.videoId);
             await browser.storage.local.set({ noSubtitleVideos: videos });
+            console.log('[INFO] 已将视频添加到无字幕列表');
           }
           
           error.value = 'No subtitles available for this video';
           isLoading.value = false;
           return;
         } else if (response.status === 401 || response.status === 403) {
+          console.error('[ERROR] 认证错误:', response.status);
           showNotification('Authentication failed, please login to your DejaVocab account again');
           error.value = 'Authentication failed, please login again';
           isLoading.value = false;
           return;
         } else {
+          console.error('[ERROR] API错误:', response.status);
           showNotification(`Failed to get subtitles (${response.status}), please try again later`);
           error.value = `Retrieval failed: ${response.status}`;
           isLoading.value = false;
@@ -148,21 +179,28 @@ export function useAutoSubtitles() {
         }
       }
       
+      console.log('[INFO] 解析响应数据');
       const data = await response.json();
+      console.log('[INFO] 收到的数据结构:', Object.keys(data));
       
       if (data.subtitles && Array.isArray(data.subtitles)) {
+        console.log('[INFO] 字幕数量:', data.subtitles.length);
         // Convert subtitle format
         const formattedSubtitles: Subtitle[] = data.subtitles.map((sub: ApiSubtitle) => convertApiSubtitleToInternal(sub));
         
         // Save to local storage
         await saveSubtitlesToStorage({ subtitles: formattedSubtitles, videoInfo });
+        console.log('[INFO] 字幕已成功保存到本地存储');
         
       } else {
+        console.error('[ERROR] 返回的数据格式不正确:', data);
         error.value = 'Returned data format is incorrect';
       }
       
       isLoading.value = false;
+      console.log('[INFO] 自动字幕获取完成');
     } catch (err) {
+      console.error('[ERROR] 自动字幕函数错误:', err);
       error.value = err instanceof Error ? err.message : 'Unknown error';
       isLoading.value = false;
     }

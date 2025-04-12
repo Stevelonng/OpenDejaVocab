@@ -18,7 +18,7 @@ export const useFavoriteSentence = (subtitles: Ref<any[]>) => {
   // Save subtitle to backend
   const saveSentenceToBackend = async (text: string, subtitle: any) => {
     const { apiUrl: storedApiUrl, authToken } = await browser.storage.local.get(['apiUrl', 'authToken']);
-    const apiUrl = storedApiUrl || 'http://47.245.54.174:8000/';
+    const apiUrl = storedApiUrl || 'https://linkie.fun/';
     
     if (!apiUrl || !authToken) return;
 
@@ -115,7 +115,7 @@ export const useFavoriteSentence = (subtitles: Ref<any[]>) => {
   // Remove sentence from backend
   const removeSentenceFromBackend = async (sentenceId: number) => {
     const { apiUrl: storedApiUrl, authToken } = await browser.storage.local.get(['apiUrl', 'authToken']);
-    const apiUrl = storedApiUrl || 'http://47.245.54.174:8000/';
+    const apiUrl = storedApiUrl || 'https://linkie.fun/';
     
     if (!apiUrl || !authToken) {
       throw new Error('Missing API URL or authentication token');
@@ -164,7 +164,13 @@ export const useFavoriteSentence = (subtitles: Ref<any[]>) => {
   const toggleFavorite = async (index: number, subtitle: any) => {
     try {
       if (isFavorited(index)) {
-        // If already favorited, then unfavor
+        // 先更新UI - 立即移除从收藏列表中
+        const indexInFavorites = favoritedIndices.value.indexOf(index);
+        if (indexInFavorites !== -1) {
+          favoritedIndices.value.splice(indexInFavorites, 1);
+        }
+        
+        // 再处理后端API
         loading.value = true;
         error.value = null;
         
@@ -175,7 +181,7 @@ export const useFavoriteSentence = (subtitles: Ref<any[]>) => {
           // If the sentence ID is not found by index, try to find it from the API          
           try {
             const { apiUrl: storedApiUrl, authToken } = await browser.storage.local.get(['apiUrl', 'authToken']);
-            const apiUrl = storedApiUrl || 'http://47.245.54.174:8000/';
+            const apiUrl = storedApiUrl || 'https://linkie.fun/';
             
             if (apiUrl && authToken) {
               // Ensure API URL ends with /
@@ -215,16 +221,13 @@ export const useFavoriteSentence = (subtitles: Ref<any[]>) => {
         // Call backend API to delete sentence
         await removeSentenceFromBackend(sentenceId);
         
-        // Remove from favorites list
-        const indexInFavorites = favoritedIndices.value.indexOf(index);
-        if (indexInFavorites !== -1) {
-          favoritedIndices.value.splice(indexInFavorites, 1);
-        }
-        
         // Remove from ID mapping
         delete sentenceIdMapping.value[index];
       } else {
-        // If not favorited, then favor
+        // 先更新UI - 立即添加到收藏列表
+        favoritedIndices.value.push(index);
+        
+        // 再处理后端API
         loading.value = true;
         error.value = null;
         
@@ -245,7 +248,7 @@ export const useFavoriteSentence = (subtitles: Ref<any[]>) => {
         
         // If save successful, add to favorites list
         if (result) {
-          favoritedIndices.value.push(index);
+          // sentenceIdMapping.value[index] = result.id;
         }
       }
     } catch (err) {
@@ -282,7 +285,7 @@ export const useFavoriteSentence = (subtitles: Ref<any[]>) => {
       }
       
       const { apiUrl: storedApiUrl, authToken } = await browser.storage.local.get(['apiUrl', 'authToken']);
-      const apiUrl = storedApiUrl || 'http://47.245.54.174:8000/';
+      const apiUrl = storedApiUrl || 'https://linkie.fun/';
       
       if (!apiUrl || !authToken) return;
       

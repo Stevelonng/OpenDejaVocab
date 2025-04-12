@@ -1,8 +1,8 @@
 {
-  "name": "deja-vocab",
+  "name": "DejaVocab - 得记单词",
   "description": "Every word counts - Vocab second brain",
   "private": true,
-  "version": "1.0.1",
+  "version": "1.0.2",
   "type": "module",
   "scripts": {
     "dev": "wxt",

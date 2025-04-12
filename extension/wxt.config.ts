@@ -15,7 +15,7 @@ export default defineConfig({
     ],
     // Add external resource access permissions
     host_permissions: [
-      "http://47.245.54.174:8000/*",    // Local development environment API
+      "https://dejavocab.com/*",    // Local development environment API
       "*://*.youtube.com/*"         // YouTube permission
     ],
     // Content security policy
