@@ -19,7 +19,7 @@ class LoginUI {
 
   constructor() {
     // API URL setting
-    this.apiUrl = 'https://linkie.fun/api/';
+    this.apiUrl = 'https://dejavocab.com/api/';
     this.environment = 'production';
     this.darkMode = true; // Dark mode state - default enabled
     
@@ -674,7 +674,7 @@ class LoginUI {
 
   updateApiUrl() {
     // Always use 47.245.57.52 environment
-    this.apiUrl = 'https://linkie.fun/api/';
+    this.apiUrl = 'https://dejavocab.com/api/';
     
     console.log('[INFO] Updated API URL to', this.apiUrl);
     

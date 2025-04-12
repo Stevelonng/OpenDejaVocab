@@ -18,7 +18,7 @@ export const useFavoriteSentence = (subtitles: Ref<any[]>) => {
   // Save subtitle to backend
   const saveSentenceToBackend = async (text: string, subtitle: any) => {
     const { apiUrl: storedApiUrl, authToken } = await browser.storage.local.get(['apiUrl', 'authToken']);
-    const apiUrl = storedApiUrl || 'https://linkie.fun/';
+    const apiUrl = storedApiUrl || 'https://dejavocab.com/';
     
     if (!apiUrl || !authToken) return;
 
@@ -115,7 +115,7 @@ export const useFavoriteSentence = (subtitles: Ref<any[]>) => {
   // Remove sentence from backend
   const removeSentenceFromBackend = async (sentenceId: number) => {
     const { apiUrl: storedApiUrl, authToken } = await browser.storage.local.get(['apiUrl', 'authToken']);
-    const apiUrl = storedApiUrl || 'https://linkie.fun/';
+    const apiUrl = storedApiUrl || 'https://dejavocab.com/';
     
     if (!apiUrl || !authToken) {
       throw new Error('Missing API URL or authentication token');
@@ -181,7 +181,7 @@ export const useFavoriteSentence = (subtitles: Ref<any[]>) => {
           // If the sentence ID is not found by index, try to find it from the API          
           try {
             const { apiUrl: storedApiUrl, authToken } = await browser.storage.local.get(['apiUrl', 'authToken']);
-            const apiUrl = storedApiUrl || 'https://linkie.fun/';
+            const apiUrl = storedApiUrl || 'https://dejavocab.com/';
             
             if (apiUrl && authToken) {
               // Ensure API URL ends with /
@@ -285,7 +285,7 @@ export const useFavoriteSentence = (subtitles: Ref<any[]>) => {
       }
       
       const { apiUrl: storedApiUrl, authToken } = await browser.storage.local.get(['apiUrl', 'authToken']);
-      const apiUrl = storedApiUrl || 'https://linkie.fun/';
+      const apiUrl = storedApiUrl || 'https://dejavocab.com/';
       
       if (!apiUrl || !authToken) return;
       

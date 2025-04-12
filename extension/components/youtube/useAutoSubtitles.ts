@@ -19,7 +19,7 @@ import {
  */
 
 // Default API configuration (production environment only)
-const DEFAULT_API_URL = 'https://linkie.fun/';
+const DEFAULT_API_URL = 'https://dejavocab.com/';
 
 // Create auto subtitle hook
 export function useAutoSubtitles() {

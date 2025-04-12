@@ -430,7 +430,7 @@ export function useSubtitles(currentVideoTime: Ref<number>) {
       }
       
       const apiData = await browser.storage.local.get(['apiUrl', 'authToken']) as { apiUrl?: string, authToken?: string };
-      const apiUrl = apiData.apiUrl || 'https://linkie.fun';
+      const apiUrl = apiData.apiUrl || 'https://dejavocab.com';
       const authToken = apiData.authToken;
       
       if (!authToken) {

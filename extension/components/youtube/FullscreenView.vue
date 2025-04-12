@@ -170,7 +170,7 @@
 
       <!-- Control buttons -->
       <div class="controls-row">
-        <a href="https://linkie.fun" target="_blank" class="dejavocab-logo controls-logo" title="Visit DejaVocab">
+        <a href="https://dejavocab.com" target="_blank" class="dejavocab-logo controls-logo" title="Visit DejaVocab">
           <div class="logo-container">
             <div class="logo-icon">
               <div class="shine-effect"></div>
