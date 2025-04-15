@@ -19,7 +19,7 @@ import {
  */
 
 // Default API configuration (production environment only)
-const DEFAULT_API_URL = 'https://dejavocab.com/';
+const DEFAULT_API_URL = 'http://localhost:8000/';
 
 // Create auto subtitle hook
 export function useAutoSubtitles() {

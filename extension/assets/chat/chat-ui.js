@@ -120,7 +120,7 @@ class ChatUI {
       const environment = settings.environment || 'production';
       
       // Set default API URL if not stored
-      this.apiUrl = settings.apiUrl || 'https://dejavocab.com/api/';
+      this.apiUrl = settings.apiUrl || 'http://localhost:8000/api/';
       await browser.storage.local.set({ apiUrl: this.apiUrl });
       
       this.environment = environment;
@@ -915,9 +915,9 @@ class ChatUI {
   getApiBaseUrl() {
     try {
       // Only return local development environment URL
-      return 'https://dejavocab.com/api';
+      return 'http://localhost:8000/api';
     } catch (error) {
-      return 'https://dejavocab.com/api'; // Even if it fails, return the local URL
+      return 'http://localhost:8000/api'; // Even if it fails, return the local URL
     }
   }
 

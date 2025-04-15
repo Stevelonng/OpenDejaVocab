@@ -430,7 +430,7 @@ export function useSubtitles(currentVideoTime: Ref<number>) {
       }
       
       const apiData = await browser.storage.local.get(['apiUrl', 'authToken']) as { apiUrl?: string, authToken?: string };
-      const apiUrl = apiData.apiUrl || 'https://dejavocab.com';
+      const apiUrl = apiData.apiUrl || 'http://localhost:8000';
       const authToken = apiData.authToken;
       
       if (!authToken) {
