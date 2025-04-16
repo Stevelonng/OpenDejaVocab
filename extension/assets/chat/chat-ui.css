@@ -1162,3 +1162,120 @@ pre code {
   background: var(--primary-dark, #7e57c2);
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.4);
 }
+
+/* 消息中的网页引用样式 */
+.message-webpage-reference-container {
+  padding: 0;
+  padding-right: 45px;
+  margin-bottom: 2px;
+  display: flex;
+  justify-content: flex-end;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.message-webpage-reference {
+  display: flex;
+  align-items: center;
+  padding: 4px 8px;
+  background-color: rgba(0, 0, 0, 0.02);
+  border-radius: 4px;
+  font-size: 12px;
+  max-width: calc(100% - 48px);  /* 48px是头像宽度加边距 */
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.message-webpage-reference:hover {
+  background-color: rgba(0, 0, 0, 0.04);
+}
+
+.message-webpage-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  margin-right: 4px;
+  color: rgba(0, 0, 0, 0.5);
+}
+
+.message-webpage-info {
+  flex: 1;
+  overflow: hidden;
+}
+
+.message-webpage-label {
+  color: rgba(0, 0, 0, 0.6);
+  font-weight: 400;
+  display: flex;
+  align-items: center;
+}
+
+.message-webpage-label::after {
+  content: '';
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  margin-left: 4px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='8' viewBox='0 0 8 8' fill='none'%3E%3Cpath fill-rule='evenodd' clip-rule='evenodd' d='M6.91 2.69a.533.533 0 0 1 0 .754L4.566 5.789a.8.8 0 0 1-1.132 0L1.09 3.444a.533.533 0 0 1 .754-.754L4 4.846 6.156 2.69a.533.533 0 0 1 .754 0' fill='currentColor'%3E%3C/path%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: center;
+  transition: transform 0.2s;
+}
+
+.message-webpage-content {
+  margin-top: 4px;
+  background-color: white;
+  border-radius: 4px;
+  padding: 6px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.message-webpage-content[style*="display: block"] + .message-webpage-label::after {
+  transform: rotate(180deg);
+}
+
+.message-webpage-title {
+  margin-bottom: 2px;
+  font-weight: 400;
+}
+
+.message-webpage-title a {
+  color: var(--primary);
+  text-decoration: none;
+}
+
+.message-webpage-title a:hover {
+  text-decoration: underline;
+}
+
+.message-webpage-url {
+  color: rgba(0, 0, 0, 0.4);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 11px;
+}
+
+/* 暗色模式适配 */
+.dark .message-webpage-reference {
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+.dark .message-webpage-reference:hover {
+  background-color: rgba(255, 255, 255, 0.08);
+}
+
+.dark .message-webpage-icon,
+.dark .message-webpage-label {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.dark .message-webpage-content {
+  background-color: rgba(30, 31, 43, 0.8);
+}
+
+.dark .message-webpage-url {
+  color: rgba(255, 255, 255, 0.4);
+}

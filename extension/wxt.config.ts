@@ -16,7 +16,8 @@ export default defineConfig({
     // Add external resource access permissions
     host_permissions: [
       "https://dejavocab.com/*",    // Local development environment API
-      "*://*.youtube.com/*"         // YouTube permission
+      "*://*.youtube.com/*",        // YouTube permission
+      "*://*.bilibili.com/*"        // Bilibili permission
     ],
     // Content security policy
     content_security_policy: {
@@ -35,6 +36,16 @@ export default defineConfig({
       {
         matches: ["*://*.youtube.com/*"],
         js: ["auto-subtitles-entry.js"],
+        run_at: "document_idle"
+      },
+      {
+        matches: ["*://*.bilibili.com/video/*"],
+        js: ["bilibili-content.js"],
+        run_at: "document_idle"
+      },
+      {
+        matches: ["<all_urls>"],
+        js: ["webpage-content.js"],
         run_at: "document_idle"
       }
     ]

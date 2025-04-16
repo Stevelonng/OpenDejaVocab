@@ -12,10 +12,11 @@ from . import feedback_views
 from . import privacy_views
 from . import word_reference_views
 from . import gemini_views
-from . import chat_views
 from . import gemini_default_view
+from . import chat_views
 from . import auto_subtitle_views  # Import new auto subtitle view
 from . import google_translate_api  # Import Google Translate API views
+from . import bilibili_subtitle_views  # 添加B站字幕视图导入
 from .chat_views import (
     get_or_create_chat_session, get_chat_sessions,
     export_chat_notes, get_session_videos,
@@ -56,6 +57,9 @@ urlpatterns = [
     
     # Auto subtitle collection endpoint (not saved to database)
     path('auto-subtitles/', auto_subtitle_views.auto_fetch_subtitles, name='auto-subtitles'),
+    
+    # B站字幕API
+    path('bilibili/subtitle', bilibili_subtitle_views.fetch_bilibili_subtitle, name='fetch_bilibili_subtitle'),
     
     # Word reference API endpoints
     path('create-word-reference/', word_reference_views.create_word_reference, name='create_word_reference'),

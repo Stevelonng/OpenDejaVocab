@@ -253,7 +253,7 @@ Answering rules:
 # 添加会话级别字幕缓存
 subtitle_cache = {}  # video_id -> subtitles list
 
-def enhance_user_message(message, username, subtitles_data=None, video_title=None, memories=None):
+def enhance_user_message(message, username, subtitles_data=None, video_title=None, memories=None, webpage_content=None):
     """Enhance user message, providing more context"""
     enhanced_message = message
     
@@ -318,6 +318,23 @@ def enhance_user_message(message, username, subtitles_data=None, video_title=Non
         memories_text = "\n".join(formatted_memories)
         enhanced_message = f"User Context:\n{memories_text}\n\n" + enhanced_message
     
+    # 添加网页内容（如果存在）
+    if webpage_content:
+        webpage_title = webpage_content.get('title', '')
+        webpage_url = webpage_content.get('url', '')
+        webpage_content_text = webpage_content.get('content', '')
+        
+        if webpage_title and webpage_url and webpage_content_text:
+            # 添加网页上下文，使用一个清晰的标签
+            webpage_context = f"""
+## Referenced Webpage Context
+Title: {webpage_title}
+URL: {webpage_url}
+Content: {webpage_content_text}
+"""
+            enhanced_message = f"{webpage_context}\n\n" + enhanced_message
+            logger.info(f"Added webpage context from: {webpage_url}")
+    
     return enhanced_message
 
 @api_view(['POST'])
@@ -337,6 +354,9 @@ def chat_completion_default(request):
         user_id = request.data.get('userId') or request.user.id
         username = request.data.get('username') or request.user.username
         update_context_only = request.data.get('updateContextOnly', False)
+        
+        # 获取网页内容（如果有）
+        webpage_content = request.data.get('webpageContent', None)
         
         # Log - avoid Chinese characters
         if update_context_only:
@@ -473,7 +493,8 @@ def chat_completion_default(request):
                     username, 
                     subtitles_data if is_asking_about_subtitles else None,
                     youtube_video_title if is_asking_about_video else None,
-                    user_memories  # Add memories to the enhanced message
+                    user_memories,  # Add memories to the enhanced message
+                    webpage_content  # Add webpage content to the enhanced message
                 )
                 
                 # Add the enhanced user message to the conversation

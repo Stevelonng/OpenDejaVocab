@@ -448,11 +448,56 @@ class ChatUI {
       }
     }
     
+    // 获取网页内容（如果有）
+    let webpageContent = null;
+    try {
+      const result = await browser.storage.local.get('webpageContent');
+      webpageContent = result.webpageContent || null;
+    } catch (error) {
+      console.warn('[WARN] Failed to get webpage content:', error);
+    }
+    
+    // 添加网页浏览信息到用户消息（如果有）
+    let enhancedUserMessage = userMessage;
+    if (webpageContent && webpageContent.title && webpageContent.url) {
+      // 在消息中添加网页引用标记，但UI中不显示这部分，供后续解析
+      const webpageInfo = JSON.stringify({
+        type: 'webpage_reference',
+        title: webpageContent.title,
+        url: webpageContent.url
+      });
+      enhancedUserMessage = `${userMessage}\n<webpage_ref>${webpageInfo}</webpage_ref>`;
+    }
+    
     // Add user message to chat interface immediately
     this.addMessageToChat({
       role: 'user',
-      content: userMessage
+      content: enhancedUserMessage,
+      webpageContent: webpageContent // 传递网页内容，用于显示引用
     });
+    
+    // 发送消息后清除网页引用显示
+    try {
+      // 调用 WebpageReader 的清除方法
+      if (window.WebpageReader && window.WebpageReader.getInstance) {
+        const reader = window.WebpageReader.getInstance();
+        reader.removeWebpageReference();
+      } else {
+        // 直接清空容器
+        const container = document.getElementById('webpage-reference-container');
+        if (container) {
+          container.innerHTML = '';
+        }
+      }
+      
+      // 同时清除存储中的网页内容数据
+      if (webpageContent) {
+        await browser.storage.local.remove('webpageContent');
+        console.log('[INFO] Cleared webpage content from storage after sending message');
+      }
+    } catch (error) {
+      console.warn('[WARN] Failed to clear webpage reference:', error);
+    }
     
     // Show typing indicator immediately after user message
     const typingElement = this.showTypingIndicator();
@@ -477,7 +522,9 @@ class ChatUI {
       const storageData = await browser.storage.local.get([
         'currentSubtitles', 
         'currentVideoInfo', 
-        'lastSubtitlesVideoId'
+        'lastSubtitlesVideoId',
+        // Add Bilibili related storage keys
+        'bilibiliCurrentVideoId'
       ]);
       
       // Process subtitle data
@@ -497,6 +544,54 @@ class ChatUI {
           });
       }
       
+      // Get current URL to detect if we're on Bilibili
+      const tabs = await browser.tabs.query({ active: true, currentWindow: true });
+      const currentUrl = tabs[0]?.url || '';
+      const isBilibili = currentUrl.includes('bilibili.com/video');
+      
+      // Check for Bilibili subtitles if we're on Bilibili
+      if (isBilibili && storageData.bilibiliCurrentVideoId) {
+        const bilibiliVideoId = storageData.bilibiliCurrentVideoId;
+        // Fetch Bilibili subtitles
+        const bilibiliData = await browser.storage.local.get([
+          'bilibiliSubtitles',
+          'bilibiliVideoInfo'
+        ]);
+        
+        console.log('[INFO] Checking for Bilibili data:', bilibiliData);
+        
+        // Get Bilibili subtitles if available
+        if (bilibiliData.bilibiliSubtitles && 
+            Array.isArray(bilibiliData.bilibiliSubtitles) && 
+            bilibiliData.bilibiliSubtitles.length > 0 &&
+            bilibiliData.bilibiliVideoInfo &&
+            bilibiliData.bilibiliVideoInfo.videoId === bilibiliVideoId) {
+          
+          console.log('[INFO] Found Bilibili subtitles:', bilibiliData.bilibiliSubtitles.length);
+          
+          // Use Bilibili subtitles
+          currentSubtitles = bilibiliData.bilibiliSubtitles.map(subtitle => ({
+            text: subtitle.text,
+            startTime: subtitle.startTime,
+            endTime: subtitle.endTime,
+            id: subtitle.id
+          }));
+          
+          // Use Bilibili video info
+          if (bilibiliData.bilibiliVideoInfo) {
+            currentVideoId = bilibiliData.bilibiliVideoInfo.videoId;
+            currentVideoTitle = bilibiliData.bilibiliVideoInfo.title || '';
+            
+            // Update lastVideoId if needed
+            if (currentVideoId) {
+              this.lastVideoId = currentVideoId;
+            }
+          }
+        } else {
+          console.log('[WARN] No matching Bilibili subtitles found for video ID:', bilibiliVideoId);
+        }
+      }
+      
       // Process video info data
       if (storageData.currentVideoInfo) {
         currentVideoId = storageData.currentVideoInfo.videoId;
@@ -510,7 +605,7 @@ class ChatUI {
       
       // Send message via message manager
       await this.messageManager.handleSendMessage(
-        userMessage,
+        enhancedUserMessage,
         this.chatHistory,
         {
           subtitles: currentSubtitles,
@@ -586,6 +681,70 @@ class ChatUI {
       return null;
     }
     
+    // 处理网页引用信息
+    let processedContent = message.content;
+    let webpageRefInfo = null;
+    
+    // 从消息内容中移除网页引用标记，但记录引用信息
+    const webpageRefMatch = processedContent.match(/<webpage_ref>(.*?)<\/webpage_ref>/);
+    
+    if (webpageRefMatch) {
+      // 移除标记，保持消息内容干净
+      processedContent = processedContent.replace(/<webpage_ref>.*?<\/webpage_ref>/, '').trim();
+      
+      try {
+        webpageRefInfo = JSON.parse(webpageRefMatch[1]);
+      } catch (error) {
+        console.warn('[WARN] Failed to parse webpage reference:', error);
+      }
+    }
+    
+    // 如果有网页引用信息，添加到消息上方
+    if ((webpageRefInfo || message.webpageContent) && message.role === 'user') {
+      const webpageData = webpageRefInfo || message.webpageContent;
+      
+      if (webpageData && webpageData.title && webpageData.url) {
+        // 创建网页引用元素（在消息元素上方）
+        const refElement = document.createElement('div');
+        refElement.className = 'message-webpage-reference-container';
+        
+        // 添加图标和文本
+        refElement.innerHTML = `
+          <div class="message-webpage-reference">
+            <div class="message-webpage-icon">
+              <i class="bi bi-file-earmark-text"></i>
+            </div>
+            <div class="message-webpage-info">
+              <span class="message-webpage-label">浏览了1个文件</span>
+              <div class="message-webpage-content" style="display: none;">
+                <div class="message-webpage-title">
+                  <a href="${webpageData.url}" target="_blank" rel="noopener noreferrer">${webpageData.title}</a>
+                </div>
+                <div class="message-webpage-url">${webpageData.url}</div>
+              </div>
+            </div>
+          </div>
+        `;
+        
+        // 添加点击事件，切换显示详细内容
+        const labelEl = refElement.querySelector('.message-webpage-label');
+        const contentEl = refElement.querySelector('.message-webpage-content');
+        
+        if (labelEl && contentEl) {
+          labelEl.addEventListener('click', () => {
+            if (contentEl.style.display === 'none') {
+              contentEl.style.display = 'block';
+            } else {
+              contentEl.style.display = 'none';
+            }
+          });
+        }
+        
+        // 将引用元素添加到消息元素之前
+        this.messagesContainer.appendChild(refElement);
+      }
+    }
+    
     // Create message element
     const messageElement = document.createElement('div');
     messageElement.className = `message ${message.role}-message`;
@@ -602,11 +761,12 @@ class ChatUI {
     // Add message content
     const contentElement = document.createElement('div');
     contentElement.className = 'message-content';
-    // Use markdownManager to process Markdown format
+    
+    // 使用 markdownManager 处理 Markdown 格式
     if (message.role === 'system') {
-      contentElement.textContent = message.content;
+      contentElement.textContent = processedContent;
     } else {
-      contentElement.innerHTML = this.markdownManager.renderMarkdown(message.content);
+      contentElement.innerHTML = this.markdownManager.renderMarkdown(processedContent);
     }
     
     messageElement.appendChild(contentElement);

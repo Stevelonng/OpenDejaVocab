@@ -195,10 +195,15 @@ CORS_ALLOWED_ORIGINS = [
     "https://www.youtube.com",
     "http://0b55-104-234-99-10.ngrok-free.app",
     "https://0b55-104-234-99-10.ngrok-free.app",
+    "https://www.bilibili.com",  # 添加B站域名
 ]
 
 # Support cookies in cross-origin requests
 CORS_ALLOW_CREDENTIALS = True
+
+# 允许所有域名的CORS请求（开发环境使用）
+if DEBUG:
+    CORS_ALLOW_ALL_ORIGINS = True
 
 # Use regex to match all Chrome extension IDs
 CORS_ALLOWED_ORIGIN_REGEXES = [

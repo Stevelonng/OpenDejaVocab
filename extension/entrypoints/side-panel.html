@@ -280,6 +280,7 @@
         </div>
         
         <div class="chat-input-container">
+          <div class="webpage-reference-container" id="webpage-reference-container"></div>
           <form class="chat-form">
             <textarea class="chat-textarea" id="chat-input" placeholder="输入消息..." rows="1"></textarea>
             <button class="send-button" id="send-button" type="button">
@@ -289,6 +290,9 @@
           <div class="notes-export-container">
             <button id="memory-mode-toggle" class="mode-toggle-button small-toggle">
               <i class="bi bi-bookmark"></i> 记忆模式
+            </button>
+            <button id="read-webpage-toggle" class="mode-toggle-button small-toggle">
+              <i class="bi bi-file-earmark-text"></i> 阅读网页
             </button>
           </div>
         </div>
@@ -300,6 +304,26 @@
     
     <!-- Chat UI JavaScript -->
     <script type="module" id="chat-ui-script" src="../assets/chat/chat-ui.js"></script>
+    
+    <!-- Webpage Reader JavaScript -->
+    <script type="module">
+      import WebpageReader from '../assets/webpage/webpage-reader.js';
+      
+      // 初始化网页阅读器
+      document.addEventListener('DOMContentLoaded', () => {
+        // 避免重复初始化
+        if (window.WEBPAGE_READER_INITIALIZED) {
+          return;
+        }
+        
+        // 获取实例并初始化
+        const webpageReader = WebpageReader.getInstance();
+        webpageReader.initialize();
+        
+        // 标记为已初始化
+        window.WEBPAGE_READER_INITIALIZED = true;
+      });
+    </script>
     
     <!-- Notification System JavaScript -->
     <script type="module">
